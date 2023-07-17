@@ -1,0 +1,43 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           sine-nomine
+version:        0.0.0
+build-type:     Simple
+
+library
+  exposed-modules:
+      Fixpoint.Api
+      Fixpoint.Error
+      Fixpoint.Error.Passthrough
+      Fixpoint.Examples
+      Fixpoint.Internal
+      Fixpoint.IO
+      Fixpoint.IO.Passthrough
+      Fixpoint.State
+      Fixpoint.TH
+      Fixpoint.THTests
+      Fixpoint.Writer
+      Fixpoint.Writer.Passthrough
+      NextBind
+      Oldstyle.Ltl
+      ShopExample
+  other-modules:
+      Paths_sine_nomine
+  hs-source-dirs:
+      ./
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N8
+  build-depends:
+      ansi-terminal
+    , base
+    , containers
+    , inspection-testing
+    , mtl
+    , parallel
+    , random
+    , template-haskell
+    , th-abstraction
+  default-language: Haskell2010

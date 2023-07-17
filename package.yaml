@@ -1,0 +1,21 @@
+name: sine-nomine
+version: 0.0.0
+
+dependencies:
+  - ansi-terminal
+  - base
+  - containers
+  - inspection-testing
+  - mtl
+  - parallel
+  - random
+  - template-haskell
+  - th-abstraction
+
+library:
+  source-dirs: .
+  ghc-options:
+    -Wall
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N8
