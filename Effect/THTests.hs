@@ -9,11 +9,11 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | This module only exists to test the TemplateHaskell in "Fixpoint.TH"
-module Fixpoint.THTests where
+module Effect.THTests where
 
 import Data.Kind
-import Fixpoint.Api
-import Fixpoint.TH
+import Effect
+import Effect.TH
 
 data Foo (m :: Type -> Type) a where
   Foo :: ((m a -> b) -> m c) -> Foo m c

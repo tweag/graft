@@ -16,14 +16,14 @@
 --
 -- This is the version this is based upon:
 -- https://github.com/tweag/cooked-validators/blob/a460c1718d8d21bada510d83b705b24b0f8d36e0/src/Cooked/Ltl.hs
-module Oldstyle.Ltl where
+module Logic.Ltl where
 
 import Control.Arrow
 import Control.Monad
 import Control.Monad.Writer
 import Data.Functor.Const
 import Data.Kind
-import Fixpoint.Api
+import Effect
 
 -- * LTL formulas and operations on them
 

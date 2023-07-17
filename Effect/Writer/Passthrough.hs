@@ -4,11 +4,11 @@
 {-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Fixpoint.Writer.Passthrough where
+module Effect.Writer.Passthrough where
 
 import Control.Monad.Writer
-import Fixpoint.Api
-import Fixpoint.Writer
+import Effect
+import Effect.Writer
 
 -- | A "passthough" instance for 'WriterOperation's: Modifications are applied
 -- in all nested positions of 'Listen' and 'Pass', but don't actually change the

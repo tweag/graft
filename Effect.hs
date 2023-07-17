@@ -9,7 +9,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | Types and functions wrapping "Fixpoint.Internal" into an user-facing API
-module Fixpoint.Api
+module Effect
   ( OperationInject,
     AST,
     astInject,
@@ -23,7 +23,7 @@ module Fixpoint.Api
 where
 
 import Data.Kind
-import Fixpoint.Internal
+import Effect.Internal
 
 -- * Lists of operation types
 

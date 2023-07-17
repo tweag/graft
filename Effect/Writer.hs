@@ -6,11 +6,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Fixpoint.Writer where
+module Effect.Writer where
 
 import Control.Monad.Writer
-import Fixpoint.Api
-import Fixpoint.TH
+import Effect
+import Effect.TH
 import Language.Haskell.TH
 
 data WriterOperation w m a where

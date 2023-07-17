@@ -5,7 +5,7 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Fixpoint.Internal where
+module Effect.Internal where
 
 import Control.Monad
 import Data.Kind

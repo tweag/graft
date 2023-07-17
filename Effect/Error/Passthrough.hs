@@ -3,11 +3,11 @@
 {-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Fixpoint.Error.Passthrough where
+module Effect.Error.Passthrough where
 
 import Control.Monad.Except
-import Fixpoint.Api
-import Fixpoint.Error
+import Effect
+import Effect.Error
 
 -- | A "passthough" instance for 'ErrorOperation's: Modifications are applied in
 -- all nested positions of 'CatchError', but don't actually change the semantics

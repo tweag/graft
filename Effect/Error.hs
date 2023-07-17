@@ -6,10 +6,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Fixpoint.Error where
+module Effect.Error where
 
 import Control.Monad.Except
-import Fixpoint.TH
+import Effect.TH
 import Language.Haskell.TH
 
 data ErrorOperation e m a where

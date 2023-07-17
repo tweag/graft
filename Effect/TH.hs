@@ -2,7 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 
-module Fixpoint.TH
+module Effect.TH
   ( makeOperation,
     makeReification,
     makeInterpretation,
@@ -12,7 +12,7 @@ where
 import Control.Monad
 import Data.Bifunctor
 import Data.Char (toLower)
-import Fixpoint.Api
+import Effect
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 

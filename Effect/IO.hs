@@ -6,11 +6,11 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Fixpoint.IO where
+module Effect.IO where
 
 import Control.Monad.IO.Class
 import Data.Kind
-import Fixpoint.TH
+import Effect.TH
 
 data IOOperation (m :: Type -> Type) a where
   LiftIO :: IO a -> IOOperation m a

@@ -21,11 +21,11 @@ import Data.Kind
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe
-import Fixpoint.Api
-import Fixpoint.Error
-import Fixpoint.TH
+import Effect
+import Effect.Error
+import Effect.TH
 import Language.Haskell.TH hiding (Type)
-import NextBind
+import Logic.NextBind
 
 newtype Customer = Customer String deriving (Eq, Ord, Show)
 

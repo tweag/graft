@@ -7,11 +7,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Fixpoint.State where
+module Effect.State where
 
 import Control.Monad.State
 import Data.Kind
-import Fixpoint.TH
+import Effect.TH
 import Language.Haskell.TH hiding (Type)
 
 data StateOperation s (m :: Type -> Type) a where

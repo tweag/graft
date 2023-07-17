@@ -18,10 +18,10 @@ import Control.Monad
 import Control.Monad.Identity
 import Control.Monad.State
 import Control.Monad.Writer
-import Fixpoint.Api
-import Fixpoint.State
-import Fixpoint.Writer
-import Oldstyle.Ltl
+import Effect
+import Effect.State
+import Effect.Writer
+import Logic.Ltl
 
 -- * example domain
 

@@ -3,11 +3,11 @@
 {-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Fixpoint.IO.Passthrough where
+module Effect.IO.Passthrough where
 
 import Control.Monad.IO.Class
-import Fixpoint.Api
-import Fixpoint.IO
+import Effect
+import Effect.IO
 
 -- | A "passthough" instance for 'IOOperation's: Modifications don't change anything.
 instance MonadIO m => InterpretOperationState x m IOOperation where

@@ -5,10 +5,10 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
-module NextBind where
+module Logic.NextBind where
 
 import Control.Monad
-import Fixpoint.Api
+import Effect
 
 data NextBind t x where
   DoNothing :: x -> NextBind t x
