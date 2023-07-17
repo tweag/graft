@@ -9,6 +9,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | A re-implementation of the "LTL" module from cooked-validators using
@@ -16,7 +17,18 @@
 --
 -- This is the version this is based upon:
 -- https://github.com/tweag/cooked-validators/blob/a460c1718d8d21bada510d83b705b24b0f8d36e0/src/Cooked/Ltl.hs
-module Logic.Ltl where
+module Logic.Ltl
+  ( Ltl (..),
+    somewhere,
+    everywhere,
+    MonadLtl (..),
+    InterpretLtl (..),
+    Functor2 (..),
+    InterpretLtlHigherOrder (..),
+    interpretLtlAST,
+    interpretLtlASTWithInitialFormulas,
+  )
+where
 
 import Control.Arrow
 import Control.Monad
@@ -211,14 +223,16 @@ class (Monad m) => MonadLtl mod m where
 data LtlOperation mod (m :: Type -> Type) a where
   ModifyLtl :: Ltl mod -> m a -> LtlOperation mod m a
 
-instance {-# OVERLAPPING #-} (MonadPlus m) => InterpretOperationState (Const [Ltl mod]) m (LtlOperation mod) where
-  interpretOperationState evalActs ltls (ModifyLtl ltl acts) = do
+instance {-# OVERLAPPING #-} (MonadPlus m) => InterpretEffectStateful (Const [Ltl mod]) m (LtlOperation mod) where
+  interpretEffectStateful evalActs ltls (ModifyLtl ltl acts) = do
     (a, Const ltls') <- evalActs (Const $ ltl : getConst ltls) acts
     if finished . head $ ltls'
       then return (a, Const ltls')
       else mzero
 
-instance (OperationInject (LtlOperation mod) ops) => MonadLtl mod (AST ops) where
+type LtlAST mod ops = AST (LtlOperation mod ': ops)
+
+instance MonadLtl mod (LtlAST mod ops) where
   modifyLtl ltl acts = astInject $ ModifyLtl ltl acts
 
 -- ** Obtaining instances of 'MonadLtl'
@@ -243,8 +257,8 @@ class InterpretLtl mod m op where
 instance (InterpretLtl mod m op) => InterpretLtlHigherOrder mod m op where
   interpretLtlHigherOrder op = Direct $ interpretLtl op
 
-instance (Semigroup mod, MonadPlus m, InterpretOperation m op, InterpretLtlHigherOrder mod m op) => InterpretOperationState (Const [Ltl mod]) m op where
-  interpretOperationState evalActs (Const ltls) op =
+instance (Semigroup mod, MonadPlus m, InterpretEffect m op, InterpretLtlHigherOrder mod m op) => InterpretEffectStateful (Const [Ltl mod]) m op where
+  interpretEffectStateful evalActs (Const ltls) op =
     case interpretLtlHigherOrder op of
       Nested subASTs unnest ->
         fmap (second Const)
@@ -258,7 +272,7 @@ instance (Semigroup mod, MonadPlus m, InterpretOperation m op, InterpretLtlHighe
                 case now of
                   Nothing ->
                     (,Const later)
-                      <$> interpretOperation
+                      <$> interpretEffect
                         (fmap fst . evalActs (Const []))
                         op
                   Just x -> do
@@ -274,9 +288,9 @@ instance (Semigroup mod, MonadPlus m, InterpretOperation m op, InterpretLtlHighe
 -- | interpret a list of 'Ltl' formulas and an 'AST' into a 'MonadPlus' domain,
 -- and prune all branches where the formulas are not all 'finished' after the
 -- complete evaluation of the 'AST'.
-interpretASTLtlWithInitialFormulas :: (MonadPlus m, InterpretConstraintListState (Const [Ltl mod]) m ops) => [Ltl mod] -> AST ops a -> m a
-interpretASTLtlWithInitialFormulas ltls acts = do
-  (a, finals) <- interpretASTState (Const ltls) acts
+interpretLtlASTWithInitialFormulas :: (MonadPlus m, InterpretEffectsStateful (Const [Ltl mod]) m ops) => [Ltl mod] -> LtlAST mod ops a -> m a
+interpretLtlASTWithInitialFormulas ltls acts = do
+  (a, finals) <- interpretASTStateful (Const ltls) acts
   if all finished finals
     then return a
     else mzero
@@ -285,5 +299,5 @@ interpretASTLtlWithInitialFormulas ltls acts = do
 -- composite modification. This function has an ambiguous type, and you'll have
 -- to type-apply it to tye type of the atomic modifications to avoid
 -- "Overlapping instances" errors.
-interpretASTLtl :: forall mod m ops a. (MonadPlus m, InterpretConstraintListState (Const [Ltl mod]) m ops) => AST ops a -> m a
-interpretASTLtl = interpretASTLtlWithInitialFormulas ([] @(Ltl mod))
+interpretLtlAST :: forall mod m ops a. (MonadPlus m, InterpretEffectsStateful (Const [Ltl mod]) m ops) => LtlAST mod ops a -> m a
+interpretLtlAST = interpretLtlASTWithInitialFormulas ([] @(Ltl mod))

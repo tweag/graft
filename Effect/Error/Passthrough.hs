@@ -9,12 +9,12 @@ import Control.Monad.Except
 import Effect
 import Effect.Error
 
--- | A "passthough" instance for 'ErrorOperation's: Modifications are applied in
+-- | A "passthough" instance for 'ErrorEffect's: Modifications are applied in
 -- all nested positions of 'CatchError', but don't actually change the semantics
--- of any 'ErrorOperation'.
-instance MonadError e m => InterpretOperationState x m (ErrorOperation e) where
-  interpretOperationState interpAST x (CatchError acts handler) =
+-- of any 'ErrorEffect'.
+instance (MonadError e m) => InterpretEffectStateful x m (ErrorEffect e) where
+  interpretEffectStateful interpAST x (CatchError acts handler) =
     catchError
       (interpAST x acts)
       (interpAST x . handler)
-  interpretOperationState interpAST x op = (,x) <$> interpretOperation (fmap fst . interpAST x) op
+  interpretEffectStateful interpAST x op = (,x) <$> interpretEffect (fmap fst . interpAST x) op

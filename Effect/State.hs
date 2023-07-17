@@ -14,8 +14,8 @@ import Data.Kind
 import Effect.TH
 import Language.Haskell.TH hiding (Type)
 
-data StateOperation s (m :: Type -> Type) a where
-  Put :: s -> StateOperation s m ()
-  Get :: StateOperation s m s
+data StateEffect s (m :: Type -> Type) a where
+  Put :: s -> StateEffect s m ()
+  Get :: StateEffect s m s
 
-makeOperation [t|MonadState $(varT (mkName "s"))|] [t|StateOperation $(varT (mkName "s"))|]
+makeEffect [t|MonadState $(varT (mkName "s"))|] [t|StateEffect $(varT (mkName "s"))|]

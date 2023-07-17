@@ -3,7 +3,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE StandaloneDeriving #-}
 
 module Logic.NextBind where
 
@@ -49,14 +48,14 @@ class InterpretNextBind t m op where
     op (AST ops) a ->
     Interpretation t m ops a
 
-instance (MonadPlus m, InterpretOperation m op, InterpretNextBind t m op) => InterpretOperationState (NextBind t) m op where
-  interpretOperationState evalActs nextBind op =
+instance (MonadPlus m, InterpretEffect m op, InterpretNextBind t m op) => InterpretEffectStateful (NextBind t) m op where
+  interpretEffectStateful evalActs nextBind op =
     case interpretNextBind op of
       Nested acts changeMod wrap -> wrap $ evalActs (changeMod nextBind) acts
       Direct direct -> case nextBind of
         DoNothing x ->
           fmap (,DoNothing x) $
-            interpretOperation (fmap fst . evalActs (DoNothing x)) op
+            interpretEffect (fmap fst . evalActs (DoNothing x)) op
         Fail -> mzero
         Now t -> do
           mAx <- direct t
@@ -64,10 +63,10 @@ instance (MonadPlus m, InterpretOperation m op, InterpretNextBind t m op) => Int
             Just (a, x) -> return (a, DoNothing x)
             Nothing -> mzero
         Next x y -> do
-          (a, x') <- interpretOperationState evalActs x op
+          (a, x') <- interpretEffectStateful evalActs x op
           if finished x'
             then msum $ map (return . (a,) . y) $ immediate x'
             else return (a, Next x' y)
         Branch l r ->
-          interpretOperationState evalActs l op
-            `mplus` interpretOperationState evalActs r op
+          interpretEffectStateful evalActs l op
+            `mplus` interpretEffectStateful evalActs r op

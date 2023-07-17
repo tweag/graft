@@ -9,6 +9,6 @@ import Control.Monad.IO.Class
 import Effect
 import Effect.IO
 
--- | A "passthough" instance for 'IOOperation's: Modifications don't change anything.
-instance MonadIO m => InterpretOperationState x m IOOperation where
-  interpretOperationState _ x (LiftIO io) = (,x) <$> liftIO io
+-- | A "passthough" instance for 'IOEffect's: Modifications don't change anything.
+instance (MonadIO m) => InterpretEffectStateful x m IOEffect where
+  interpretEffectStateful _ x (LiftIO io) = (,x) <$> liftIO io

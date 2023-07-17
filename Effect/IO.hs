@@ -12,7 +12,7 @@ import Control.Monad.IO.Class
 import Data.Kind
 import Effect.TH
 
-data IOOperation (m :: Type -> Type) a where
-  LiftIO :: IO a -> IOOperation m a
+data IOEffect (m :: Type -> Type) a where
+  LiftIO :: IO a -> IOEffect m a
 
-makeOperation [t|MonadIO|] [t|IOOperation|]
+makeEffect [t|MonadIO|] [t|IOEffect|]

@@ -3,7 +3,7 @@
 {-# LANGUAGE TupleSections #-}
 
 module Effect.TH
-  ( makeOperation,
+  ( makeEffect,
     makeReification,
     makeInterpretation,
   )
@@ -21,10 +21,10 @@ import Language.Haskell.TH.Datatype
 -- 'makeInterpretation', since this function is merely a wrapper around these
 -- two. You must also use these two macros if you want to add extra constraints
 -- to the instances.
-makeOperation :: Q Type -> Q Type -> Q [Dec]
-makeOperation qClass qOperation = do
-  d1 <- makeReification (\ops -> [t|OperationInject $qOperation $(varT ops)|]) qClass qOperation
-  d2 <- makeInterpretation (\m -> [t|$qClass $(varT m)|]) qOperation
+makeEffect :: Q Type -> Q Type -> Q [Dec]
+makeEffect qClass qEffect = do
+  d1 <- makeReification (\ops -> [t|EffectInject $qEffect $(varT ops)|]) qClass qEffect
+  d2 <- makeInterpretation (\m -> [t|$qClass $(varT m)|]) qEffect
   return $ d1 ++ d2
 
 -- | Write a "reification" instance for an operation type. Such an instance
@@ -33,20 +33,20 @@ makeOperation qClass qOperation = do
 --
 -- For example, given the operation type
 --
--- > data ErrorOperation e m a where
--- >   ThrowError :: e -> ErrorOperation e m a
--- >   CatchError :: m a -> (e -> m a) -> ErrorOperation e m a
+-- > data ErrorEffect e m a where
+-- >   ThrowError :: e -> ErrorEffect e m a
+-- >   CatchError :: m a -> (e -> m a) -> ErrorEffect e m a
 --
 -- the TH splice
 --
 -- > makeReification
--- >   (\ops -> [t|OperationInject (ErrorOperation $(varT (mkName "e"))) $(varT ops)|])
+-- >   (\ops -> [t|EffectInject (ErrorEffect $(varT (mkName "e"))) $(varT ops)|])
 -- >   [t|MonadError $(varT (mkName "e"))|]
--- >   [t|ErrorOperation $(varT (mkName "e"))|]
+-- >   [t|ErrorEffect $(varT (mkName "e"))|]
 --
 -- will expand into an instance like
 --
--- > instance OperationInject (ErrorOperation e) ops => MonadError e (AST ops) where
+-- > instance EffectInject (ErrorEffect e) ops => MonadError e (AST ops) where
 -- >   throwError err = astInject (ThrowError err)
 -- >   catchError acts handler = astInject (CatchError acts handler)
 --
@@ -70,11 +70,11 @@ makeReification ::
   -- | the operation type
   Q Type ->
   Q [Dec]
-makeReification qConstraint qClass qOperation = do
+makeReification qConstraint qClass qEffect = do
   opsName <- newName "ops"
   let ops = VarT opsName
   classType <- qClass
-  operationType <- qOperation
+  operationType <- qEffect
   constraintType <- qConstraint opsName
   DatatypeInfo {datatypeCons = constructors} <- reifyDatatype (findTypeConstructorName operationType)
   methodImplementations <- mapM matchAndHandleConstructor constructors
@@ -115,19 +115,19 @@ makeReification qConstraint qClass qOperation = do
 --
 -- For example, given the operation type
 --
--- > data ErrorOperation e m a where
--- >   ThrowError :: e -> ErrorOperation e m a
--- >   CatchError :: m a -> (e -> m a) -> ErrorOperation e m a
+-- > data ErrorEffect e m a where
+-- >   ThrowError :: e -> ErrorEffect e m a
+-- >   CatchError :: m a -> (e -> m a) -> ErrorEffect e m a
 --
 -- the TH splice
 --
--- > makeInterpretation (\mName -> [t|MonadError $(varT (mkName "e")) $(varT m)|]) [t|ErrorOperation $(varT (mkName "e"))|]
+-- > makeInterpretation (\mName -> [t|MonadError $(varT (mkName "e")) $(varT m)|]) [t|ErrorEffect $(varT (mkName "e"))|]
 --
 -- will expand into an instance like
 --
--- > instance (MonadError e m) => InterpretOperation m (ErrorOperation e) where
--- >   interpretOperation _ (ThrowError err) = throwError err
--- >   interpretOperation evalAST (CatchError acts handler) = catchError (evalAST acts) (evalAST . handler)
+-- > instance (MonadError e m) => InterpretEffect m (ErrorEffect e) where
+-- >   interpretEffect _ (ThrowError err) = throwError err
+-- >   interpretEffect evalAST (CatchError acts handler) = catchError (evalAST acts) (evalAST . handler)
 --
 -- (up to alpha-eta-equality).
 --
@@ -159,10 +159,10 @@ makeInterpretation ::
   -- | the operation type
   Q Type ->
   Q [Dec]
-makeInterpretation qConstraints qOperation = do
+makeInterpretation qConstraints qEffect = do
   mName <- newName "m"
   let m = VarT mName
-  operationType <- qOperation
+  operationType <- qEffect
   constraintsType <- qConstraints mName
   DatatypeInfo
     { datatypeInstTypes = intstTypes, -- we expect at least two types here, namely the "nesting" monad, and the return value
@@ -175,12 +175,12 @@ makeInterpretation qConstraints qOperation = do
         VarT _ : (SigT (VarT x) _) : _ -> x
         (SigT (VarT _) _) : (SigT (VarT x) _) : _ -> x
         _ -> error "expecting at least two type arguments in operation type"
-  implementation <- FunD 'interpretOperation <$> mapM (matchAndHandleConstructor nestVarName) constructors
+  implementation <- FunD 'interpretEffect <$> mapM (matchAndHandleConstructor nestVarName) constructors
   return
     [ InstanceD
         Nothing
         [constraintsType]
-        (AppT (AppT (ConT ''InterpretOperation) m) operationType)
+        (AppT (AppT (ConT ''InterpretEffect) m) operationType)
         [implementation]
     ]
   where
@@ -227,8 +227,8 @@ makeInterpretation qConstraints qOperation = do
 -- of complexity we might encounter.) Then, the "interpretation" instance takes
 -- the form
 --
--- > instance SomeConstraint m => InterpretOperation m Quux where
--- >   interpretOperation evalAST (Quux arg) = quux arg'
+-- > instance SomeConstraint m => InterpretEffect m Quux where
+-- >   interpretEffect evalAST (Quux arg) = quux arg'
 --
 -- where @arg@ will be of type
 --
@@ -338,7 +338,7 @@ handleConstructorArg _ _ _ (ConT _) expr = return (expr, False)
 --
 -- catchall for all types that we can't handle at the moment.
 --
-handleConstructorArg _ _ _ t _ = error $ "Operation argument type of this shape is not (yet) supported: " ++ show t
+handleConstructorArg _ _ _ t _ = error $ "Effect argument type of this shape is not (yet) supported: " ++ show t
 
 -- * Helper functions
 

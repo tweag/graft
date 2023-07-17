@@ -12,8 +12,8 @@ import Control.Monad.Except
 import Effect.TH
 import Language.Haskell.TH
 
-data ErrorOperation e m a where
-  ThrowError :: e -> ErrorOperation e m a
-  CatchError :: m a -> (e -> m a) -> ErrorOperation e m a
+data ErrorEffect e m a where
+  ThrowError :: e -> ErrorEffect e m a
+  CatchError :: m a -> (e -> m a) -> ErrorEffect e m a
 
-makeOperation [t|MonadError $(varT (mkName "e"))|] [t|ErrorOperation $(varT (mkName "e"))|]
+makeEffect [t|MonadError $(varT (mkName "e"))|] [t|ErrorEffect $(varT (mkName "e"))|]

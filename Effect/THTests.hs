@@ -21,9 +21,9 @@ data Foo (m :: Type -> Type) a where
 class (Monad m) => MonadFoo m where
   foo :: ((m a -> b) -> m c) -> m c
 
-makeOperation [t|MonadFoo|] [t|Foo|]
+makeEffect [t|MonadFoo|] [t|Foo|]
 
--- fooReified :: (OperationInject Foo ops) => ((AST ops a -> b) -> AST ops c) -> AST ops c
+-- fooReified :: (EffectInject Foo ops) => ((AST ops a -> b) -> AST ops c) -> AST ops c
 -- fooReified x = astInject (Foo x)
 --
 -- inspect $ mkObligation 'foo CoreOf
@@ -38,7 +38,7 @@ data Bar m a where
 class (Monad m) => MonadBar m where
   bar :: (((a -> m b) -> c) -> d) -> m c
 
-makeOperation [t|MonadBar|] [t|Bar|]
+makeEffect [t|MonadBar|] [t|Bar|]
 
 data Baz m a where
   Baz :: ((m a -> b) -> m c) -> Baz m c
@@ -46,7 +46,7 @@ data Baz m a where
 class (Monad m) => MonadBaz m where
   baz :: ((m a -> b) -> m c) -> m c
 
-makeOperation [t|MonadBaz|] [t|Baz|]
+makeEffect [t|MonadBaz|] [t|Baz|]
 
 -- -- negative position. this will fail.
 -- data Quux m a where
@@ -55,7 +55,7 @@ makeOperation [t|MonadBaz|] [t|Baz|]
 -- class (Monad m) => MonadQuux m where
 --   quux :: (m a -> b) -> m c
 --
--- makeOperation [t|MonadQuux|] [t|Quux|]
+-- makeEffect [t|MonadQuux|] [t|Quux|]
 
 data Quux m a where
   Quux :: Either (IO x, (m a, Bool)) [b -> m a] -> Quux m a
@@ -63,4 +63,4 @@ data Quux m a where
 class (Monad m) => MonadQuux m where
   quux :: Either (IO x, (m a, Bool)) [b -> m a] -> m a
 
-makeOperation [t|MonadQuux|] [t|Quux|]
+makeEffect [t|MonadQuux|] [t|Quux|]
