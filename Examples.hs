@@ -10,8 +10,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
--- | Small usage example for "Fixpoint.Api"
-module Fixpoint.Examples where
+module Examples where
 
 import Control.Applicative
 import Control.Monad

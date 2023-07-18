@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -21,12 +22,16 @@ module Logic.Ltl
   ( Ltl (..),
     somewhere,
     everywhere,
-    MonadLtl (..),
+    modifyLtl,
     InterpretLtl (..),
     Functor2 (..),
+    LtlInterp (..),
     InterpretLtlHigherOrder (..),
+    LtlAST,
     interpretLtlAST,
     interpretLtlASTWithInitialFormulas,
+    InterpretEffectsLtl,
+    nowLaterList,
   )
 where
 
@@ -113,7 +118,7 @@ nowLater LtlFalsity = []
 nowLater (LtlAtom g) = [(Just g, LtlTruth)]
 nowLater (a `LtlOr` b) = nowLater a ++ nowLater b
 nowLater (a `LtlAnd` b) =
-  [ ( f <> g, -- the semigroup operation of @Maybe a@ does the right thing
+  [ ( f <> g,
       ltlSimpl $ c `LtlAnd` d
     )
     | (f, c) <- nowLater a,
@@ -129,7 +134,7 @@ nowLater (a `LtlRelease` b) =
 -- formula: Are we finished, i.e. was the initial formula satisfied by now?
 finished :: Ltl a -> Bool
 finished LtlTruth = True
-finished LtlFalsity = False --  we want falsity to fail always, even on the empty computation
+finished LtlFalsity = False
 finished (LtlAtom _) = False
 finished (a `LtlAnd` b) = finished a && finished b
 finished (a `LtlOr` b) = finished a || finished b
@@ -213,17 +218,14 @@ ltlSimpl expr =
 
 -- ** The 'MonadLtl' class
 
--- The idea is to pass from time step to time step a list of 'Ltl' formulas,
--- using 'nowLaterList'. The function 'modifyLtl' adds a new formula to the head
--- of the list.
-
-class (Monad m) => MonadLtl mod m where
-  modifyLtl :: Ltl mod -> m a -> m a
-
 data LtlOperation mod (m :: Type -> Type) a where
   ModifyLtl :: Ltl mod -> m a -> LtlOperation mod m a
 
-instance {-# OVERLAPPING #-} (MonadPlus m) => InterpretEffectStateful (Const [Ltl mod]) m (LtlOperation mod) where
+instance
+  {-# OVERLAPPING #-}
+  (MonadPlus m) =>
+  InterpretEffectStateful (Const [Ltl mod]) m (LtlOperation mod)
+  where
   interpretEffectStateful evalActs ltls (ModifyLtl ltl acts) = do
     (a, Const ltls') <- evalActs (Const $ ltl : getConst ltls) acts
     if finished . head $ ltls'
@@ -232,32 +234,39 @@ instance {-# OVERLAPPING #-} (MonadPlus m) => InterpretEffectStateful (Const [Lt
 
 type LtlAST mod ops = AST (LtlOperation mod ': ops)
 
-instance MonadLtl mod (LtlAST mod ops) where
-  modifyLtl ltl acts = astInject $ ModifyLtl ltl acts
+modifyLtl :: Ltl mod -> LtlAST mod ops -> LtlAST mod ops
+modifyLtl = astInject . ModifyLtl
 
 -- ** Obtaining instances of 'MonadLtl'
 
 class Functor2 t where
   fmap2 :: (forall a. f a -> g a) -> t f -> t g
 
-data LTLInterp (mod :: Type) (m :: Type -> Type) (ops :: [(Type -> Type) -> Type -> Type]) (a :: Type) where
-  Direct :: (mod -> m (Maybe a)) -> LTLInterp mod m ops a
+data LtlInterp (mod :: Type) (m :: Type -> Type) (ops :: [(Type -> Type) -> Type -> Type]) (a :: Type) where
+  Direct :: (mod -> m (Maybe a)) -> LtlInterp mod m ops a
   Nested ::
     (Functor2 nestty) =>
     ([Ltl mod] -> nestty (AST ops)) ->
     (nestty (WriterT [Ltl mod] m) -> m (a, [Ltl mod])) ->
-    LTLInterp mod m ops a
+    LtlInterp mod m ops a
 
 class InterpretLtlHigherOrder mod m op where
-  interpretLtlHigherOrder :: op (AST ops) a -> LTLInterp mod m ops a
+  interpretLtlHigherOrder :: op (AST ops) a -> LtlInterp mod m ops a
 
 class InterpretLtl mod m op where
-  interpretLtl :: op (AST ops) a -> mod -> m (Maybe a)
+  interpretLtl :: op dummy a -> mod -> m (Maybe a)
 
 instance (InterpretLtl mod m op) => InterpretLtlHigherOrder mod m op where
-  interpretLtlHigherOrder op = Direct $ interpretLtl op
+  interpretLtlHigherOrder = Direct . interpretLtl
 
-instance (Semigroup mod, MonadPlus m, InterpretEffect m op, InterpretLtlHigherOrder mod m op) => InterpretEffectStateful (Const [Ltl mod]) m op where
+instance
+  ( Semigroup mod,
+    MonadPlus m,
+    InterpretEffect m op,
+    InterpretLtlHigherOrder mod m op
+  ) =>
+  InterpretEffectStateful (Const [Ltl mod]) m op
+  where
   interpretEffectStateful evalActs (Const ltls) op =
     case interpretLtlHigherOrder op of
       Nested subASTs unnest ->
@@ -285,10 +294,12 @@ instance (Semigroup mod, MonadPlus m, InterpretEffect m op, InterpretLtlHigherOr
 
 -- ** Interpreting 'AST's with 'Ltl' formulas
 
+type InterpretEffectsLtl mod m ops = InterpretEffectsStateful (Const [Ltl mod]) m ops
+
 -- | interpret a list of 'Ltl' formulas and an 'AST' into a 'MonadPlus' domain,
 -- and prune all branches where the formulas are not all 'finished' after the
 -- complete evaluation of the 'AST'.
-interpretLtlASTWithInitialFormulas :: (MonadPlus m, InterpretEffectsStateful (Const [Ltl mod]) m ops) => [Ltl mod] -> LtlAST mod ops a -> m a
+interpretLtlASTWithInitialFormulas :: (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m ops) => [Ltl mod] -> LtlAST mod ops a -> m a
 interpretLtlASTWithInitialFormulas ltls acts = do
   (a, finals) <- interpretASTStateful (Const ltls) acts
   if all finished finals
@@ -299,5 +310,5 @@ interpretLtlASTWithInitialFormulas ltls acts = do
 -- composite modification. This function has an ambiguous type, and you'll have
 -- to type-apply it to tye type of the atomic modifications to avoid
 -- "Overlapping instances" errors.
-interpretLtlAST :: forall mod m ops a. (MonadPlus m, InterpretEffectsStateful (Const [Ltl mod]) m ops) => LtlAST mod ops a -> m a
+interpretLtlAST :: forall mod m ops a. (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m ops) => LtlAST mod ops a -> m a
 interpretLtlAST = interpretLtlASTWithInitialFormulas ([] @(Ltl mod))

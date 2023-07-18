@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
 
@@ -17,21 +18,21 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 
 -- | Automatically write "reification" and "interpretation" instances for an
--- operation type. See the documentation for 'makeReification' and
+-- effect type. See the documentation for 'makeReification' and
 -- 'makeInterpretation', since this function is merely a wrapper around these
 -- two. You must also use these two macros if you want to add extra constraints
 -- to the instances.
-makeEffect :: Q Type -> Q Type -> Q [Dec]
-makeEffect qClass qEffect = do
-  d1 <- makeReification (\ops -> [t|EffectInject $qEffect $(varT ops)|]) qClass qEffect
-  d2 <- makeInterpretation (\m -> [t|$qClass $(varT m)|]) qEffect
+makeEffect :: Name -> Name -> Q [Dec]
+makeEffect className effectName = do
+  d1 <- makeReification (\_ _ -> [t|()|]) className effectName
+  d2 <- makeInterpretation (\_ _ -> [t|()|]) className effectName
   return $ d1 ++ d2
 
--- | Write a "reification" instance for an operation type. Such an instance
--- allows writing 'AST's containing operations of that type using the syntax of
+-- | Write a "reification" instance for an effect type. Such an instance
+-- allows writing 'AST's containing effects of that type using the syntax of
 -- a class like 'MonadError', 'MonadState'...
 --
--- For example, given the operation type
+-- For example, given the effect type
 --
 -- > data ErrorEffect e m a where
 -- >   ThrowError :: e -> ErrorEffect e m a
@@ -40,13 +41,13 @@ makeEffect qClass qEffect = do
 -- the TH splice
 --
 -- > makeReification
--- >   (\ops -> [t|EffectInject (ErrorEffect $(varT (mkName "e"))) $(varT ops)|])
--- >   [t|MonadError $(varT (mkName "e"))|]
--- >   [t|ErrorEffect $(varT (mkName "e"))|]
+-- >   (\[e] ops -> [t|SomeConstraint $(varT e) $(varT ops)|])
+-- >   ''MonadError
+-- >   ''ErrorEffect
 --
 -- will expand into an instance like
 --
--- > instance EffectInject (ErrorEffect e) ops => MonadError e (AST ops) where
+-- > instance (SomeConstraint e ops, EffectInject (ErrorEffect e) ops) => MonadError e (AST ops) where
 -- >   throwError err = astInject (ThrowError err)
 -- >   catchError acts handler = astInject (CatchError acts handler)
 --
@@ -57,38 +58,71 @@ makeEffect qClass qEffect = do
 -- - The second quoted type passed to the splice is the class that you want to
 --   use for your syntax. Its kind should be @(* -> *) -> Constraint@
 --
--- - The second quoted type is the operation type.
+-- - The second quoted type is the effect type.
 --   Its kind should be @(* -> *) -> * -> *@.
 --
--- - The constructor names of the operation type are exactly the method names
+-- - The constructor names of the effect type are exactly the method names
 --   of the class, just beginning with an upper case letter.
 makeReification ::
-  -- | constraints for the instance head, depending on the name of @ops@
-  (Name -> Q Type) ->
-  -- | the class of monads to use for syntax
-  Q Type ->
-  -- | the operation type
-  Q Type ->
+  -- | additional constraints for the instance head, depending on the names of
+  -- extra type variables belonging to the effect type, and of @ops@
+  ([Name] -> Name -> Q Type) ->
+  -- | class name
+  Name ->
+  -- | the effect type
+  Name ->
   Q [Dec]
-makeReification qConstraint qClass qEffect = do
+makeReification qExtraConstraints className effectName = do
   opsName <- newName "ops"
   let ops = VarT opsName
-  classType <- qClass
-  operationType <- qEffect
-  constraintType <- qConstraint opsName
-  DatatypeInfo {datatypeCons = constructors} <- reifyDatatype (findTypeConstructorName operationType)
+  DatatypeInfo
+    { datatypeInstTypes = instTypes, -- we expect at least two types here, namely the "nesting" monad, and the return value
+      datatypeCons = constructors
+    } <-
+    reifyDatatype effectName
+  let tyVarNames =
+        -- all type variables that the type constructor is applied to
+        map
+          ( \case
+              VarT name -> name
+              SigT (VarT name) _ -> name
+              _ -> error "effect datatype declaration must only have type variables"
+          )
+          instTypes
+  let extraTyVarNames = case reverse tyVarNames of
+        _ : _ : l -> reverse l
+        _ -> error "expecting at least two type arguments in effect type"
+  extraConstraints <- qExtraConstraints extraTyVarNames opsName
   methodImplementations <- mapM matchAndHandleConstructor constructors
   return
     [ InstanceD
         Nothing
-        [constraintType]
-        (AppT classType (AppT (ConT ''AST) ops))
+        [ extraConstraints,
+          AppT
+            ( AppT
+                (ConT ''EffectInject)
+                ( foldl
+                    (\t n -> AppT t (VarT n))
+                    (ConT effectName)
+                    extraTyVarNames
+                )
+            )
+            ops
+        ]
+        ( AppT
+            ( foldl
+                (\t n -> AppT t (VarT n))
+                (ConT className)
+                extraTyVarNames
+            )
+            (AppT (ConT ''AST) ops)
+        )
         methodImplementations
     ]
   where
     matchAndHandleConstructor :: ConstructorInfo -> Q Dec
     matchAndHandleConstructor ConstructorInfo {constructorVariant = InfixConstructor} =
-      error "infix constructors for operations not (yet) supported"
+      error "infix constructors for effects not (yet) supported"
     matchAndHandleConstructor ConstructorInfo {constructorName = name, constructorFields = argTypes} =
       handleConstructor name (length argTypes)
 
@@ -110,10 +144,10 @@ makeReification qConstraint qClass qEffect = do
               []
           ]
 
--- | Write an "interpretation" instance for an operation type. Such an instance
--- allows one to evaluate 'AST's using the operation type. (For example, using 'interpretAST')
+-- | Write an "interpretation" instance for an effect type. Such an instance
+-- allows one to evaluate 'AST's using the effect type. (For example, using 'interpretAST')
 --
--- For example, given the operation type
+-- For example, given the effect type
 --
 -- > data ErrorEffect e m a where
 -- >   ThrowError :: e -> ErrorEffect e m a
@@ -126,25 +160,25 @@ makeReification qConstraint qClass qEffect = do
 -- will expand into an instance like
 --
 -- > instance (MonadError e m) => InterpretEffect m (ErrorEffect e) where
--- >   interpretEffect _ (ThrowError err) = throwError err
--- >   interpretEffect evalAST (CatchError acts handler) = catchError (evalAST acts) (evalAST . handler)
+-- >   interpretEffect _ (ThrowError err) = throwError @e err
+-- >   interpretEffect evalAST (CatchError acts handler) = catchError @e (evalAST acts) (evalAST . handler)
 --
 -- (up to alpha-eta-equality).
 --
 -- For this to work, it is expected that:
 --
--- - The second quoted type is the operation type.
+-- - The second quoted type is the effect type.
 --   Its kind should be @(* -> *) -> * -> *@.
 --
--- - The constructor names of the operation type are exactly the method names
+-- - The constructor names of the effect type are exactly the method names
 --   of the class, just beginning with an upper case letter.
 --
--- - The arguments of constructors of the operation type only use @m@ in
+-- - The arguments of constructors of the effect type only use @m@ in
 --   positive positions. This is not a restriction of the TemplateHaskell, but a
 --   restriction of the library. You can only "nest" 'AST's in positive position.
 --
 -- - For now, the TemplateHaskell works only if the arguments of constructors
---   of the operation type only use the following type constructors:
+--   of the effect type only use the following type constructors:
 --     - The name of the "nesting" monad (here, that's @m@) applied to some type
 --     - Function Types (i.e. @->@, or 'ArrowT' in TH)
 --     - List Types (i.e. 'ListT' in TH)
@@ -154,44 +188,63 @@ makeReification qConstraint qClass qEffect = do
 --     - Type Variables (i.e. 'VarT' in TH)
 --     - Type Constructors of types of kind @*@
 makeInterpretation ::
-  -- | constraints for the instance head, depending on the name of @m@
-  (Name -> Q Type) ->
-  -- | the operation type
-  Q Type ->
+  -- | additional constraints for the instance head, depending on the names of
+  -- extra type variables belonging to the effect type, and of @m@
+  ([Name] -> Name -> Q Type) ->
+  -- | class name
+  Name ->
+  -- | effect type name
+  Name ->
   Q [Dec]
-makeInterpretation qConstraints qEffect = do
+makeInterpretation qExtraConstraints className effectName = do
   mName <- newName "m"
   let m = VarT mName
-  operationType <- qEffect
-  constraintsType <- qConstraints mName
   DatatypeInfo
-    { datatypeInstTypes = intstTypes, -- we expect at least two types here, namely the "nesting" monad, and the return value
+    { datatypeInstTypes = instTypes, -- we expect at least two types here, namely the "nesting" monad, and the return value
       datatypeCons = constructors
     } <-
-    reifyDatatype (findTypeConstructorName operationType)
-  let nestVarName = case reverse intstTypes of
-        VarT _ : VarT x : _ -> x
-        (SigT (VarT _) _) : VarT x : _ -> x
-        VarT _ : (SigT (VarT x) _) : _ -> x
-        (SigT (VarT _) _) : (SigT (VarT x) _) : _ -> x
-        _ -> error "expecting at least two type arguments in operation type"
-  implementation <- FunD 'interpretEffect <$> mapM (matchAndHandleConstructor nestVarName) constructors
+    reifyDatatype effectName
+  let tyVarNames =
+        -- all type variables that the type constructor is applied to
+        map
+          ( \case
+              VarT name -> name
+              SigT (VarT name) _ -> name
+              _ -> error "effect datatype declaration must only have type variables"
+          )
+          instTypes
+  let (nestVarName, extraTyVarNames) = case reverse tyVarNames of
+        _ : x : l -> (x, reverse l)
+        _ -> error "expecting at least two type arguments in effect type"
+  extraConstraints <- qExtraConstraints extraTyVarNames mName
+  implementation <- FunD 'interpretEffect <$> mapM (matchAndHandleConstructor extraTyVarNames nestVarName) constructors
   return
     [ InstanceD
         Nothing
-        [constraintsType]
-        (AppT (AppT (ConT ''InterpretEffect) m) operationType)
+        [ extraConstraints,
+          foldl
+            (\t n -> AppT t (VarT n))
+            (ConT className)
+            (extraTyVarNames ++ [mName])
+        ]
+        ( AppT
+            (AppT (ConT ''InterpretEffect) m)
+            (foldl (\t n -> AppT t (VarT n)) (ConT effectName) extraTyVarNames)
+        )
         [implementation]
     ]
   where
-    matchAndHandleConstructor :: Name -> ConstructorInfo -> Q Clause
-    matchAndHandleConstructor _ ConstructorInfo {constructorVariant = InfixConstructor} =
-      error "infix constructors for operations not (yet) supported"
-    matchAndHandleConstructor nestVarName ConstructorInfo {constructorName = name, constructorFields = argTypes} =
-      handleConstructor nestVarName name argTypes
+    matchAndHandleConstructor :: [Name] -> Name -> ConstructorInfo -> Q Clause
+    matchAndHandleConstructor _ _ ConstructorInfo {constructorVariant = InfixConstructor} =
+      error "infix constructors for effects not (yet) supported"
+    matchAndHandleConstructor
+      extraTyVarNames
+      nestVarName
+      ConstructorInfo {constructorName = name, constructorFields = argTypes} =
+        handleConstructor extraTyVarNames nestVarName name argTypes
 
-    handleConstructor :: Name -> Name -> [Type] -> Q Clause
-    handleConstructor nestVarName cName argTypes = do
+    handleConstructor :: [Name] -> Name -> Name -> [Type] -> Q Clause
+    handleConstructor extraTyVarNames nestVarName cName argTypes = do
       varNames <- replicateM (length argTypes) (newName "x")
       evalASTName <- newName "evalAST"
       handledArguments <-
@@ -210,7 +263,7 @@ makeInterpretation qConstraints qEffect = do
           ( NormalB $
               foldl
                 (\f (x, _) -> AppE f x)
-                (VarE . lowerFirst $ cName)
+                (foldl (\e v -> AppTypeE e (VarT v)) (VarE . lowerFirst $ cName) extraTyVarNames)
                 handledArguments
           )
           []
@@ -218,7 +271,7 @@ makeInterpretation qConstraints qEffect = do
 -- | Helper function for 'makeInterpretation'. This is a hairy one, so let me
 -- explain:
 --
--- Assume your operation type is defined by something like
+-- Assume your effect type is defined by something like
 --
 -- > data Quux m a where
 -- >   Quux :: Either (m a, IO x) [b -> m a] -> Quux m a
@@ -251,10 +304,10 @@ makeInterpretation qConstraints qEffect = do
 handleConstructorArg ::
   -- | Are we in a positive position at the moment?
   Bool ->
-  -- | 'Name' of the "nesting" monad in the operation type definition (this is
-  -- the penultimate argument of the operation type, the one of kind @* -> *@).
+  -- | 'Name' of the "nesting" monad in the effect type definition (this is
+  -- the penultimate argument of the effect type, the one of kind @* -> *@).
   Name ->
-  -- | 'Name' of the function @evalAST@ that evaluates "nested" 'AST's in operations
+  -- | 'Name' of the function @evalAST@ that evaluates "nested" 'AST's in effects
   Name ->
   -- | Type of the constructor argument we're currently handling
   Type ->
@@ -271,7 +324,7 @@ handleConstructorArg polarity nestName evalASTName (AppT (VarT x) _) expr
   | x == nestName =
       if polarity
         then (,True) <$> [e|$(varE evalASTName) $(return expr)|]
-        else error "operation nesting in negative position"
+        else error "effect nesting in negative position"
 --
 -- If the type of the constructor argument of the form @l -> r@, we'll have to
 -- pre- and post-compose with the correct functions in order to turn all @AST
