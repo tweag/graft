@@ -124,21 +124,21 @@ initialShopState =
 
 -- (Map.fromList [(Customer "Alice", Coupons 0), (Customer "Bob", Coupons 0)])
 
-data ShopOperation (m :: Type -> Type) (a :: Type) where
-  Buy :: Customer -> Coupons -> Coins -> Bananas -> ShopOperation m ()
+data ShopEffect (m :: Type -> Type) (a :: Type) where
+  Buy :: Customer -> Coupons -> Coins -> Bananas -> ShopEffect m ()
 
-makeInterpretation (\m -> [t|MonadShop $(varT m)|]) [t|ShopOperation|]
+makeInterpretation (\_ _ -> [t|()|]) ''MonadShop ''ShopEffect
 
 makeReification
-  (\opsInAST -> [t|(OperationInject ShopOperation $(varT opsInAST), OperationInject (ErrorOperation ShopError) $(varT opsInAST))|])
-  [t|MonadShop|]
-  [t|ShopOperation|]
+  (\_ ops -> [t|EffectInject (ErrorEffect ShopError) $(varT ops)|])
+  ''MonadShop
+  ''ShopEffect
 
 data Tweak a where
   AskForCoupons :: Tweak Coupons
   UseCoupons :: Coupons -> Tweak ()
 
-instance (MonadShop m) => InterpretNextBind Tweak m ShopOperation where
+instance (MonadShop m) => InterpretNextBind Tweak m ShopEffect where
   interpretNextBind (Buy customer coupons coins bananas) = Direct $
     \case
       AskForCoupons ->
@@ -152,20 +152,20 @@ instance (MonadShop m) => InterpretNextBind Tweak m ShopOperation where
         buy customer (coupons + n) coins bananas
         return (Just ((), ()))
 
-instance (Monad m) => InterpretNextBind Tweak m (ErrorOperation e) where
+instance (Monad m) => InterpretNextBind Tweak m (ErrorEffect e) where
   interpretNextBind _ = Direct $ const $ return Nothing
 
 interpretAndRun ::
   NextBind Tweak x ->
   ShopState ->
-  AST '[ShopOperation, ErrorOperation ShopError] a ->
+  AST '[ShopEffect, ErrorEffect ShopError] a ->
   [(Either ShopError (a, NextBind Tweak x), ShopState)]
-interpretAndRun modification start = runShopT start . interpretASTState modification
+interpretAndRun modification start = runShopT start . interpretASTStateful modification
 
 interpretRunPrune ::
   NextBind Tweak x ->
   ShopState ->
-  AST '[ShopOperation, ErrorOperation ShopError] a ->
+  AST '[ShopEffect, ErrorEffect ShopError] a ->
   [(Either ShopError a, ShopState)]
 interpretRunPrune m s =
   mapMaybe

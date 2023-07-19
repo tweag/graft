@@ -7,8 +7,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
-{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 module Examples where
 
@@ -58,12 +56,12 @@ instance (Monoid w, Monad m) => MonadWriter w (DomainT s w m) where
 
 -- * reifying and interpreting the operations of the example domain
 
-type ExampleOperations s w = '[WriterOperation w, StateOperation s]
+type ExampleEffects s w = '[WriterEffect w, StateEffect s]
 
 interpretAndRun ::
   (Monoid w) =>
   s ->
-  AST (ExampleOperations s w) a ->
+  AST (ExampleEffects s w) a ->
   (a, w)
 interpretAndRun start = runIdentity . runDomainT start . interpretAST
 
@@ -80,9 +78,9 @@ instance Semigroup Modification where
   ModB <> ModB = ModB
   _ <> _ = ModAB
 
-instance (MonadWriter String m, Show s, MonadState s m, MonadPlus m) => InterpretLtl Modification m (StateOperation s) where
-  interpretLtl op mod =
-    case (mod, op) of
+instance (MonadWriter String m, Show s, MonadState s m, MonadPlus m) => InterpretLtl Modification m (StateEffect s) where
+  interpretLtl op x =
+    case (x, op) of
       (ModA, Put s) -> do
         sOld <- get
         tell ("[" ++ show sOld ++ "-->" ++ show s ++ "]") -- tell the modification of the state
@@ -91,30 +89,17 @@ instance (MonadWriter String m, Show s, MonadState s m, MonadPlus m) => Interpre
       (ModB, Put _) -> return $ Just () -- don't change the state
       _ -> return Nothing
 
--- | TODO types like these (and their 'Functor2' instances) should be automatically defined
-data Identity2 a f where
-  Identity2 :: f a -> Identity2 a f
-
-instance Functor2 (Identity2 a) where
-  fmap2 f (Identity2 x) = Identity2 $ f x
-
-instance {-# OVERLAPPING #-} (MonadWriter w m, MonadPlus m) => InterpretLtlHigherOrder Modification m (WriterOperation w) where
+instance {-# OVERLAPPING #-} (MonadWriter w m, MonadPlus m) => InterpretLtlHigherOrder Modification m (WriterEffect w) where
   interpretLtlHigherOrder (Tell _) = Direct $ const $ return Nothing
   interpretLtlHigherOrder (Listen acts) =
-    Nested
-      (const $ Identity2 acts)
-      ( \(Identity2 (WriterT evaluatedActs)) -> do
-          ((a, ltls'), w) <- listen evaluatedActs
-          return ((a, w), ltls')
-      )
+    Nested $ \evalAST ltls -> do
+      ((a, ltls'), w) <- listen $ evalAST ltls acts
+      return ((a, w), ltls')
   interpretLtlHigherOrder (Pass acts) =
-    Nested
-      (const $ Identity2 acts)
-      ( \(Identity2 (WriterT evaluatedActs)) ->
-          pass $ do
-            ((a, f), ltls') <- evaluatedActs
-            return ((a, ltls'), f)
-      )
+    Nested $ \evalAST ltls ->
+      pass $ do
+        ((a, f), ltls') <- evalAST ltls acts
+        return ((a, ltls'), f)
 
 -- * Example traces
 
@@ -132,9 +117,9 @@ trace4 = listen (put 1 >> get >>= tell . show >> put 2 >> get >>= tell . show)
 
 interpretAndRunLtl ::
   Integer ->
-  AST (LtlOperation Modification ': ExampleOperations Integer String) a ->
+  LtlAST Modification (ExampleEffects Integer String) a ->
   [(a, String)]
-interpretAndRunLtl start acts = runDomainT start $ (interpretASTLtl @Modification) acts
+interpretAndRunLtl start acts = runDomainT start $ (interpretLtlAST @Modification) acts
 
 example1a, example1b :: [((), String)]
 example1a = interpretAndRunLtl (-1) $ modifyLtl (somewhere ModA) trace1

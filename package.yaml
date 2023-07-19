@@ -10,6 +10,8 @@ dependencies:
   - parallel
   - random
   - template-haskell
+  - tasty
+  - tasty-hunit
   - th-abstraction
 
 library:
