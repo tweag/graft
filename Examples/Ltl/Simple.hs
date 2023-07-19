@@ -11,30 +11,28 @@
 {-# LANGUAGE TypeApplications #-}
 
 -- | A simple, but complete, tutorial for  how to use "Logic.Ltl". This does
--- not cover using higher-order effects in the LTL setting.
+-- not cover
+--
+-- - using higher-order effects in the LTL setting, and
+--
+-- - combining several different effects in one test scenario.
 module Examples.Ltl.Simple where
 
 import Control.Monad.State
--- the effect system that the testing framework is based on
--- Template Haskell helpers for the effect system
--- The "LTL" testing module
-
-import Data.Kind (Type)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Effect
 import Effect.TH
-import GHC.ExecutionStack (Location (functionName))
-import GHC.IO.Handle (isEOF)
-import GHC.Num (integerComplement)
-import GHC.RTS.Flags (CCFlags (doCostCentres))
 import Logic.Ltl
+import qualified Test.Tasty as Tasty
+import Test.Tasty.HUnit ((@=?))
+import qualified Test.Tasty.HUnit as Tasty
 
 -- * Example domain and implementation
 
 -- $doc
 -- It's easiest to use this library if you have a type class of monads that
--- captures the behaviour you want to test. For the sake of this example, let's
+-- captures the behaviour you want to test. For the sake of this tutorial, let's
 -- take a key-value-store.
 
 class (Monad m) => MonadKeyValue k v m where
@@ -43,10 +41,9 @@ class (Monad m) => MonadKeyValue k v m where
   deleteValue :: k -> m ()
 
 -- $doc
--- What we'll test is the implementation of 'MonadKeyValue'. We'll implement it
--- very simply, but note that the implementation of 'deleteValue' is wrong:it
--- never deletes anything from the map. We'll try to "find" this mistake later
--- on.
+-- What we'll test is an implementation of 'MonadKeyValue'. We'll implement it
+-- very simply, but note that the implementation of 'deleteValue' is wrong: we
+-- never delete anything from the store. We'll "find" this mistake later on.
 
 type KeyValueT k v = StateT (Map k v)
 
@@ -61,14 +58,11 @@ instance (Ord k, Monad m) => MonadKeyValue k v (KeyValueT k v m) where
 -- * Using the effect system
 
 -- $doc
--- This library based on a higher-order effect system. The central type is
---
--- > AST ops a
---
--- It describes abstract syntax trees of monadic computations which use
--- operations from the type-level list @ops@ of /effect types/, and return an
--- @a@. Such 'AST's will be /interpreted/ in various ways to obtain interesting
--- test cases.
+-- This library based on a custom effect system. The central type is @'AST' ops
+-- a@. It describes abstract syntax trees of monadic computations which use
+-- operations from the list @ops@ of /effect types/, and return an @a@. Such
+-- 'AST's will be /interpreted/ in various ways to obtain interesting test
+-- cases.
 --
 -- So, we'll have to write an effect type for the key-value store. The
 -- constructors of that effect type will correspond to the methods of the
@@ -91,15 +85,10 @@ data KeyValueEffect k v :: Effect where
 makeEffect ''MonadKeyValue ''KeyValueEffect
 
 -- $doc
--- If
---
--- - the constructor names of 'KeyValueEffect' are precisely the method names
---   of 'MonadKeyValue', just starting with an upper case letter, and
---
--- - the types of the constructor's arguments match the types of the method's
---   arguments,
---
--- the Template Haskell macro above will expand into two instance definitions:
+-- If the constructor names of 'KeyValueEffect' are the method names of
+-- 'MonadKeyValue' (starting with an upper case letter) and the types match,
+-- the Template Haskell macro 'makeEffect' can be used to generate two instance
+-- definitions:
 --
 -- The "reification" instance
 --
@@ -117,20 +106,28 @@ makeEffect ''MonadKeyValue ''KeyValueEffect
 -- says that the @KeyValueEffect k v@ can be interpreted into any
 -- @MonadKeyValue k v@.
 --
+-- If you have to add extra constraints to the instances, you can use the more
+-- flexible macros 'makeReification' and 'makeInterpretation'.
+--
 -- If all effects in an 'AST' have a suitable 'InterpretEffect' instance,
 -- you'll be able to interpret the complete 'AST' with functions like
--- 'interpretAST'.
+-- 'interpretAST'. So, what we've accomplished up to now is just as in any
+-- other effect system: we have a single monad 'AST' that is parametrised on
+-- the effect(s) you want to use, and an "interpetation" function that turns
+-- the "staged" computations in 'AST's into actual computations in your domain
+-- of interest.
 
 -- * Defining a type of single-step modifications
 
 -- $doc
--- The module "Logic.Ltl" turns the effect system into a testing tool. Its
--- idea is to apply single-step  modifications to actions in an 'AST' while
--- interpreting it. A formula in an LTL-like language determines when to apply
--- the single-step modifications.
+-- The module "Logic.Ltl" implements one way to turn the effect system into a
+-- testing tool. Its idea is to change the interpretaion of an 'AST' by
+-- applying single-step modifications the actions it contains. A formula in an
+-- LTL-like language determines when to apply the single-step modifications.
 --
 -- So, we first need a type of single-step modifications. These have no
--- intrinsic meaning, but are only explained by the 'InterpretLtl' instance.
+-- intrinsic meaning, but will only be explained by the 'InterpretLtl'
+-- instance.
 
 data SingleStepMod = ConcatIfReplace
 
@@ -146,7 +143,7 @@ instance Semigroup SingleStepMod where
 -- $doc
 -- The 'InterpretLtl' instance is the heart of this while operation, since it
 -- describes how we to apply 'SingleStepMod's to 'KeyValueEffect's. We
--- have to implement a function
+-- have to write a function
 --
 -- > interpretLtl :: KeyValueEffect k v dummy a -> SingleStepMod -> m (Maybe a)
 --
@@ -159,6 +156,13 @@ instance Semigroup SingleStepMod where
 -- you see a @'StoreValue' key value@ and there's already some @oldValue@ for
 -- that @key@ in the store, don't just store @value@, store @oldValue <>
 -- newValue@."
+--
+-- Note that this meaning of 'ConcatIfReplace' depends on the state of the
+-- store. Herein lies a strength of this framework: what we're doing is really
+-- more general than generating a list of 'AST's and evaluating them in a
+-- second step. The parameters and applicability of the modification we apply
+-- at the @n@-th step may depend on information we know only after having run
+-- (and modified) the first @n-1@ steps.
 
 instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (KeyValueEffect k v) where
   interpretLtl (StoreValue key val) ConcatIfReplace = do
@@ -170,19 +174,37 @@ instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (Key
       Nothing -> return Nothing
   interpretLtl _ _ = return Nothing
 
--- * Running a few examples
+-- * Interpreting modified 'AST's
 
 -- $doc
 --
--- As a convenience wrapper, "Logic.Ltl" provides the type @'LtlAST' mod ops@,
--- which is like @'AST' mod ops@, only that in it, you'll have access to the
--- function
+-- The module "Logic.Ltl" provides the wrapper type @'LtlAST' mod ops@, which
+-- is an 'AST' in which you'll have access to the function
 --
--- > modifyLtl :: Ltl mod -> LtlAST mod ops -> LtlAST mod ops
+-- > modifyLtl :: Ltl mod -> LtlAST mod ops a -> LtlAST mod ops a
 --
--- which is what makes it possible to deploy composite 'Ltl' modifications:
--- simply wrap the computation you want to modify in 'modifyLtl' with the 'Ltl'
+-- This is what makes it possible to deploy composite 'Ltl' modifications: wrap
+-- the part of the computation you want to modify in 'modifyLtl' with the 'Ltl'
 -- formula of your choice.
+--
+-- The module also provides
+--
+-- > interpretLtlAST :: forall mod m ops a. (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m ops) => LtlAST mod ops a -> m a
+--
+-- which interprets the @'LtlAST' mod ops@ into any suitable monad @m@. Here,
+-- "suitable" means:
+--
+-- - All of the effects in @ops@ have an 'InterpretLtl mod m' instance (this is
+--   the 'InterpretEffectsLtl' constraint).
+--
+-- - @m@ is a 'MonadPlus'. This is necessary because there might be several
+--   ways to satisfy an 'Ltl' formula. The whole point of using 'Ltl' do describe
+--   modifications of a single trace is to try /all/ of the possible ways to
+--   apply the formula.
+--
+-- Using 'interpretLtlAST', we can write a convenience function that will
+-- interpret an 'LtlAST' of 'KeyValueEffect's and return the final return value
+-- and state of the store:
 
 interpretAndRun ::
   (Monoid v, Ord k) =>
@@ -191,8 +213,52 @@ interpretAndRun ::
   [(a, Map k v)]
 interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST acts
 
-example1 :: [((), Map Int String)]
-example1 =
+-- * A few example traces
+
+-- ** 'somewhere' and 'everywhere'
+
+-- $doc
+-- By for the most commonly used 'Ltl' formula is 'somewhere'. The 'LtlAST'
+--
+-- > somewhere x (act1 >> act2 >> act3)
+--
+-- describes the three traces you get by applying @x@ to @act1@, @act2@, and
+-- @act3@, while leaving the other actions unmodified. Only traces where @x@
+-- was /successfully/ will be returned by 'interpretLTLAST', though. This means
+-- that our first example will return an empty list, since 'ConcatIfReplace'
+-- never applies (as we never 'storeValue' for a key that's already present).
+--
+-- >>> exampleSomewhere1
+-- []
+
+exampleSomewhere1 :: [((), Map Int String)]
+exampleSomewhere1 =
+  interpretAndRun mempty $
+    modifyLtl (somewhere ConcatIfReplace) $
+      do
+        storeValue 1 "Hello "
+        storeValue 2 "my "
+        storeValue 3 "friend"
+
+-- $doc
+-- In the next example, we'll expect two results, because there are two
+-- positions in which 'ConcatIfReplace' applies, namely the second and third
+-- 'storeValue'. Let's explain the two results:
+--
+-- - If we apply 'ConcatIfReplace' to the second 'storeValue', the store will
+--   hold @\"Hello\"@ for key @1@, so we'll store @\"Hello my\"@. However, this is
+--   invisible in the result, because the third 'storeValue' will overwrite this
+--   with "friend".
+--
+-- - If we apply 'ConcatIfReplace' to the third 'storeValue', the store will hold
+--   @\"my\"@ at key @1@, so we'll store @\"my friend\"@. Since there are no more
+--   'storeValue' operations after that, that's also what we see in the result.
+--
+-- >>> exampleSomewhere2
+-- [((),fromList [(1,"friend")]),((),fromList [(1,"my friend")])]
+
+exampleSomewhere2 :: [((), Map Int String)]
+exampleSomewhere2 =
   interpretAndRun mempty $
     modifyLtl (somewhere ConcatIfReplace) $
       do
@@ -200,8 +266,18 @@ example1 =
         storeValue 1 "my "
         storeValue 1 "friend"
 
-example2 :: [((), Map Int String)]
-example2 =
+-- $doc
+-- Another very commonly used 'Ltl' formula is 'everywhere'. It applies the
+-- given single-step modification to every action in the 'AST'.
+--
+-- This means that our next example will again return the empty list, since
+-- 'ConcatIfReplace' isn't applicable on the first 'storeValue'.
+--
+-- >>> exampleEverywhere1
+-- []
+
+exampleEverywhere1 :: [((), Map Int String)]
+exampleEverywhere1 =
   interpretAndRun mempty $
     modifyLtl (everywhere ConcatIfReplace) $
       do
@@ -209,20 +285,86 @@ example2 =
         storeValue 1 "my "
         storeValue 1 "friend"
 
-example3 :: [((), Map Int String)]
-example3 =
+-- $doc
+-- Note that, unlike 'somewhere', 'everywhere' doesn't imply that any
+-- modification is applied. Applying 'everywhere' to an empty trace is
+-- successful, and returns one result:
+--
+-- >>> exampleEverywhere2
+-- [((),fromList [])]
+
+exampleEverywhere2 :: [((), Map Int String)]
+exampleEverywhere2 =
   interpretAndRun mempty $
-    modifyLtl (LtlNext $ everywhere ConcatIfReplace) $
+    modifyLtl (everywhere ConcatIfReplace) $
+      return ()
+
+-- $doc
+-- We can make the modification applicable, and return the expected @"Hello my
+-- friend"@  at key @1@, if we only apply 'everywhere' after the first action:
+--
+-- >>> exampleEverywhere3
+-- [((),fromList [(1,"Hello my friend")])]
+
+exampleEverywhere3 :: [((), Map Int String)]
+exampleEverywhere3 =
+  interpretAndRun mempty $
+    do
+      storeValue 1 "Hello "
+      modifyLtl (everywhere ConcatIfReplace) $ do
+        storeValue 1 "my "
+        storeValue 1 "friend"
+
+-- ** Custom 'Ltl' formulas
+
+-- $doc
+-- Another way to make the 'everywhere' example work is by using a custom 'Ltl'
+-- formula: instead of applying 'ConcatIfReplace' on every action, let's only
+-- start applying at the second action using @'LtlNext' . 'everywhere'@.
+--
+-- >>> exampleCustom1
+-- [((),fromList [(1,"Hello my friend")])]
+
+exampleCustom1 :: [((), Map Int String)]
+exampleCustom1 =
+  interpretAndRun mempty $
+    modifyLtl (LtlNext . everywhere $ ConcatIfReplace) $
       do
         storeValue 1 "Hello "
         storeValue 1 "my "
         storeValue 1 "friend"
 
-example4 :: [((), Map Int String)]
-example4 =
-  interpretAndRun mempty $
-    modifyLtl (LtlNext $ everywhere ConcatIfReplace) $
-      do
-        storeValue 1 "Hello "
-        storeValue 2 "my "
-        storeValue 3 "friend"
+-- $doc
+-- There are many possibilities for custom formulas. Please refer to the
+-- documentation
+-- of 'Ltl'.
+
+-- * \"Finding\" a bug
+
+-- $doc
+-- Remember the mistake we introduced in the implementation of 'MonadKeyValue'
+-- for 'KeyValueT'? We "accidentally" implemented 'deleteValue' as a no-op.
+-- This means that, by using 'deleteValue' before re-storing a value, we
+-- /should/ make 'ConcatIfReplace' inapplicable. The following simple test
+-- finds this bug.
+--
+-- >>> Tasty.defaultMain exampleBug
+-- deleteValue before re-store: FAIL
+--   ./Examples/Ltl/Simple.hs:353:
+--   expected: []
+--    but got: [((),fromList [(1,"ab")])]
+-- 1 out of 1 tests failed (0.00s)
+-- *** Exception: ExitFailure 1
+
+exampleBug :: Tasty.TestTree
+exampleBug =
+  Tasty.testCase "deleteValue before re-store" $
+    []
+      @=? interpretAndRun
+        mempty
+        ( modifyLtl (somewhere ConcatIfReplace) $
+            do
+              storeValue 1 "a"
+              deleteValue 1
+              storeValue 1 "b"
+        )
