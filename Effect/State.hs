@@ -4,7 +4,9 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Effect.State where
@@ -12,10 +14,9 @@ module Effect.State where
 import Control.Monad.State
 import Data.Kind
 import Effect.TH
-import Language.Haskell.TH hiding (Type)
 
 data StateEffect s (m :: Type -> Type) a where
   Put :: s -> StateEffect s m ()
   Get :: StateEffect s m s
 
-makeEffect [t|MonadState $(varT (mkName "s"))|] [t|StateEffect $(varT (mkName "s"))|]
+makeEffect ''MonadState ''StateEffect

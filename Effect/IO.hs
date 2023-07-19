@@ -15,4 +15,4 @@ import Effect.TH
 data IOEffect (m :: Type -> Type) a where
   LiftIO :: IO a -> IOEffect m a
 
-makeEffect [t|MonadIO|] [t|IOEffect|]
+makeEffect ''MonadIO ''IOEffect

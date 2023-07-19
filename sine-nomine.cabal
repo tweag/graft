@@ -11,9 +11,21 @@ build-type:     Simple
 library
   exposed-modules:
       Effect
+      Effect.Error
+      Effect.Error.Passthrough
+      Effect.Internal
+      Effect.IO
+      Effect.IO.Passthrough
+      Effect.State
       Effect.TH
+      Effect.THTests
+      Effect.Writer
+      Effect.Writer.Passthrough
+      Examples
       Examples.Ltl.Simple
       Logic.Ltl
+      Logic.NextBind
+      ShopExample
   other-modules:
       Paths_sine_nomine
   hs-source-dirs:
