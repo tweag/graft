@@ -109,6 +109,7 @@ makeEffect ''MonadKeyValue ''KeyValueEffect
 -- If you have to add extra constraints to the instances, you can use the more
 -- flexible macros 'makeReification' and 'makeInterpretation'.
 --
+--
 -- If all effects in an 'AST' have a suitable 'InterpretEffect' instance,
 -- you'll be able to interpret the complete 'AST' with functions like
 -- 'interpretAST'. So, what we've accomplished up to now is just as in any
@@ -116,6 +117,25 @@ makeEffect ''MonadKeyValue ''KeyValueEffect
 -- the effect(s) you want to use, and an "interpetation" function that turns
 -- the "staged" computations in 'AST's into actual computations in your domain
 -- of interest.
+--
+-- At the very least, 'makeEffect' and friends will need the following language
+-- extensions:
+--
+-- > {-# LANGUAGE ConstraintKinds #-}
+-- > {-# LANGUAGE FlexibleContexts #-}
+-- > {-# LANGUAGE FlexibleInstances #-}
+-- > {-# LANGUAGE KindSignatures #-}
+-- > {-# LANGUAGE MultiParamTypeClasses #-}
+-- > {-# LANGUAGE TemplateHaskell #-}
+--
+-- For effect types with parameters (like @k@ and @v@ in 'KeyValueEffect',
+-- you'll also need
+--
+-- > {-# LANGUAGE ScopedTypeVariables #-}
+-- > {-# LANGUAGE TypeApplications #-}
+--
+-- There are scenarios where you might also need 'UndecidableInstances' but
+-- we'll not discuss these here.
 
 -- * Defining a type of single-step modifications
 
