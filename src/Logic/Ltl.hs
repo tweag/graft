@@ -160,7 +160,7 @@ instance
   interpretEffectStateful evalActs ltls (ModifyLtl ltl acts) = do
     (a, Const ltls') <- evalActs (Const $ ltl : getConst ltls) acts
     if finished . head $ ltls'
-      then return (a, Const ltls')
+      then return (a, Const $ tail ltls')
       else mzero
 
 -- | Explain how to interpret an atomic modification, applied an operation of a

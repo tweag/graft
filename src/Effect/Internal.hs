@@ -48,7 +48,7 @@ instance (forall h. Monad (f h)) => Monad (Fixpoint f g) where
 class InterpretOneLayer f g m where
   interpretOneLayer :: (forall b. Fixpoint g f b -> m b) -> f (Fixpoint g f) a -> m a
 
-instance Monad m => InterpretOneLayer Freer h m where
+instance (Monad m) => InterpretOneLayer Freer h m where
   interpretOneLayer _ (Pure a) = return a
   interpretOneLayer interpretNextLayer (Impure op cont) = do
     a <- interpretNextLayer op
@@ -81,7 +81,7 @@ class InterpretOneLayerState x f g m where
     f (Fixpoint g f) a ->
     m (a, x)
 
-instance Monad m => InterpretOneLayerState x Freer h m where
+instance (Monad m) => InterpretOneLayerState x Freer h m where
   interpretOneLayerState _ x (Pure a) = return (a, x)
   interpretOneLayerState interpretNextLayer x (Impure op cont) = do
     (a, x') <- interpretNextLayer x op

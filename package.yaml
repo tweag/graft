@@ -15,9 +15,15 @@ dependencies:
   - th-abstraction
 
 library:
-  source-dirs: .
+  source-dirs: ./src
   ghc-options:
     -Wall
     -threaded
     -rtsopts
     -with-rtsopts=-N8
+
+tests:
+  spec:
+    main: Main.hs
+    source-dirs: ./tests
+    dependencies: sine-nomine
