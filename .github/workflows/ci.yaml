@@ -12,6 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v22
+      - name: cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cabal/packages
+            ~/.cabal/store
+            dist-newstyle
+          key: ${{ runner.os }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze', 'flake.nix', 'flake.lock') }}-build-and-test
       - name: run the test suite
         run: |
           nix develop .#ci --command bash -c '
@@ -23,6 +31,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v22
+      - name: cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cabal/packages
+            ~/.cabal/store
+            dist-newstyle
+          key: ${{ runner.os }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze', 'flake.nix', 'flake.lock') }}-documentation
       - name: build the docs
         run: |
           nix develop .#ci --command bash -c '
