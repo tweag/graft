@@ -55,6 +55,9 @@
             buildInputs = with hpkgs; [ghc hpack cabal-install haskell-language-server];
             inherit (pre-commit) shellHook;
           };
+          ci = pkgs.mkShell {
+            buildInputs = with hpkgs; [ghc cabal-install];
+          };
         };
       });
 }

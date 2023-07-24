@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v22
+      - name: run the test suite
+        run: nix develop .#ci --command cabal test
+  documentation:
+    runs-on: ubuntu-latest
+    steps
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v22
+      - name: build the docs
+        run: |
+          nix develop .#ci --command bash -c '
+            cabal haddock \
+              --haddock-hyperlink-source \
+              --haddock-quickjump \
+              --haddock-html-location="https://hackage.haskell.org/package/$pkg-$version/docs" \
+              sine-nomine
+            mkdir -p docs
+            cp -rf dist-newstyle/build/*/ghc-*/doc/html/sine-nomine-*/doc/html/sine-nomine/* docs
+          '
+      - name: upload docs as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docs
+          path: ./docs
+      - name: deploy docs to GitHub pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+
