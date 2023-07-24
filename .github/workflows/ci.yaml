@@ -12,6 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v22
+      - uses: DeterminateSystems/magic-nix-cache-action@main
       - name: cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
         uses: actions/cache@v3
         with:
@@ -31,6 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v22
+      - uses: DeterminateSystems/magic-nix-cache-action@main
       - name: cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
         uses: actions/cache@v3
         with:
