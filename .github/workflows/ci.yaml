@@ -13,7 +13,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v22
       - name: run the test suite
-        run: nix develop .#ci --command cabal test
+        run: | nix develop .#ci --command bash -c '
+          cabal update
+          cabal test
+        '
   documentation:
     runs-on: ubuntu-latest
     steps:
@@ -22,6 +25,7 @@ jobs:
       - name: build the docs
         run: |
           nix develop .#ci --command bash -c '
+            cabal update
             cabal haddock \
               --haddock-hyperlink-source \
               --haddock-quickjump \
