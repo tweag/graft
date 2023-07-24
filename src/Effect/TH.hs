@@ -93,7 +93,7 @@ makeReification qExtraConstraints className effectName = do
         _ : _ : l -> reverse l
         _ -> error "expecting at least two type arguments in effect type"
   extraConstraints <- qExtraConstraints extraTyVarNames opsName
-  methodImplementations <- mapM matchAndHandleConstructor constructors
+  methodImplementations <- mapM (matchAndHandleConstructor opsName extraTyVarNames) constructors
   return
     [ InstanceD
         Nothing
@@ -120,26 +120,40 @@ makeReification qExtraConstraints className effectName = do
         methodImplementations
     ]
   where
-    matchAndHandleConstructor :: ConstructorInfo -> Q Dec
-    matchAndHandleConstructor ConstructorInfo {constructorVariant = InfixConstructor} =
+    matchAndHandleConstructor :: Name -> [Name] -> ConstructorInfo -> Q Dec
+    matchAndHandleConstructor _ _ ConstructorInfo {constructorVariant = InfixConstructor} =
       error "infix constructors for effects not (yet) supported"
-    matchAndHandleConstructor ConstructorInfo {constructorName = name, constructorFields = argTypes} =
-      handleConstructor name (length argTypes)
+    matchAndHandleConstructor
+      opsName
+      extraTyVarNames
+      ConstructorInfo {constructorName = name, constructorFields = argTypes} =
+        handleConstructor opsName extraTyVarNames name (length argTypes)
 
-    handleConstructor :: Name -> Int -> Q Dec
-    handleConstructor cName argc = do
+    handleConstructor :: Name -> [Name] -> Name -> Int -> Q Dec
+    handleConstructor opsName extraTyVarNames cName argc = do
       varNames <- replicateM argc (newName "x")
       return $
         FunD
           (lowerFirst cName)
           [ Clause
               (map VarP varNames)
-              ( NormalB $
-                  AppE (VarE 'astInject) $
-                    foldl
-                      (\expr argName -> AppE expr (VarE argName))
-                      (ConE cName)
-                      varNames
+              ( NormalB
+                  $ AppE
+                    ( AppTypeE
+                        ( AppTypeE
+                            (VarE 'astInject)
+                            ( foldl
+                                (\t n -> AppT t (VarT n))
+                                (ConT effectName)
+                                extraTyVarNames
+                            )
+                        )
+                        (VarT opsName)
+                    )
+                  $ foldl
+                    (\expr argName -> AppE expr (VarE argName))
+                    (ConE cName)
+                    varNames
               )
               []
           ]
@@ -394,13 +408,6 @@ handleConstructorArg _ _ _ (ConT _) expr = return (expr, False)
 handleConstructorArg _ _ _ t _ = error $ "Effect argument type of this shape is not (yet) supported: " ++ show t
 
 -- * Helper functions
-
--- | From an application of a type constructor to some arguments, retrieve the
--- name of the constructor.
-findTypeConstructorName :: Type -> Name
-findTypeConstructorName (AppT x _) = findTypeConstructorName x
-findTypeConstructorName (ConT name) = name
-findTypeConstructorName _ = error "expecting type constructor applied to zero or more arguments"
 
 -- | Transform a name so that the first letter is lower case.
 lowerFirst :: Name -> Name
