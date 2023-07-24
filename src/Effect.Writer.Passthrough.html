@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE GADTs #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE TupleSections #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wno-orphans #-}</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Effect.Writer.Passthrough</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Writer</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.html"><span class="hs-identifier">Effect</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.Writer.html"><span class="hs-identifier">Effect.Writer</span></a></span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- | A &quot;passthough&quot; instance for 'WriterEffect's: Modifications are applied</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- in all nested positions of 'Listen' and 'Pass', but don't actually change the</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- semantics of any 'WriterEffect'.</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679158556"><span id="local-6989586621679158557"><span id="local-6989586621679158558"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadWriter</span></span><span> </span><span class="annot"><a href="#local-6989586621679158556"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679158557"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Effect.html#InterpretEffectStateful"><span class="hs-identifier hs-type">InterpretEffectStateful</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679158558"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679158557"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Effect.Writer.html#WriterEffect"><span class="hs-identifier hs-type">WriterEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679158556"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-17"></span><span>  </span><span id="local-6989586621679158594"><span class="annot"><span class="annottext">interpretEffectStateful :: forall (ops :: [Effect]) x a.
+(forall b y. x y -&gt; AST ops b -&gt; m (b, x y))
+-&gt; x x -&gt; WriterEffect e (AST ops) a -&gt; m (a, x x)
+</span><a href="#local-6989586621679158594"><span class="hs-identifier hs-var hs-var hs-var hs-var">interpretEffectStateful</span></a></span></span><span> </span><span id="local-6989586621679158596"><span class="annot"><span class="annottext">forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
+</span><a href="#local-6989586621679158596"><span class="hs-identifier hs-var">interpret</span></a></span></span><span> </span><span id="local-6989586621679158597"><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679158597"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Effect.Writer.html#Listen"><span class="hs-identifier hs-type">Listen</span></a></span><span> </span><span id="local-6989586621679158602"><span class="annot"><span class="annottext">AST ops a1
+</span><a href="#local-6989586621679158602"><span class="hs-identifier hs-var">acts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621679158603"><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679158603"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679158604"><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679158604"><span class="hs-identifier hs-var">x'</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679158605"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679158605"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">m (a1, x x) -&gt; m ((a1, x x), e)
+forall a. m a -&gt; m (a, e)
+forall w (m :: * -&gt; *) a. MonadWriter w m =&gt; m a -&gt; m (a, w)
+</span><span class="hs-identifier hs-var">listen</span></span><span> </span><span class="annot"><span class="annottext">(m (a1, x x) -&gt; m ((a1, x x), e))
+-&gt; (AST ops a1 -&gt; m (a1, x x)) -&gt; AST ops a1 -&gt; m ((a1, x x), e)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">x x -&gt; AST ops a1 -&gt; m (a1, x x)
+forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
+</span><a href="#local-6989586621679158596"><span class="hs-identifier hs-var">interpret</span></a></span><span> </span><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679158597"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">(AST ops a1 -&gt; m ((a1, x x), e)) -&gt; AST ops a1 -&gt; m ((a1, x x), e)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">AST ops a1
+</span><a href="#local-6989586621679158602"><span class="hs-identifier hs-var">acts</span></a></span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><span class="annottext">(a, x x) -&gt; m (a, x x)
+forall a. a -&gt; m a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">a1
+</span><a href="#local-6989586621679158603"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679158605"><span class="hs-identifier hs-var">w</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679158604"><span class="hs-identifier hs-var">x'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>  </span><span class="annot"><a href="Effect.html#interpretEffectStateful"><span class="hs-identifier hs-var">interpretEffectStateful</span></a></span><span> </span><span id="local-6989586621679158608"><span class="annot"><span class="annottext">forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
+</span><a href="#local-6989586621679158608"><span class="hs-identifier hs-var">interpret</span></a></span></span><span> </span><span id="local-6989586621679158609"><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679158609"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Effect.Writer.html#Pass"><span class="hs-identifier hs-type">Pass</span></a></span><span> </span><span id="local-6989586621679158610"><span class="annot"><span class="annottext">AST ops (a, e -&gt; e)
+</span><a href="#local-6989586621679158610"><span class="hs-identifier hs-var">acts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="annottext">m ((a, x x), e -&gt; e) -&gt; m (a, x x)
+forall a. m (a, e -&gt; e) -&gt; m a
+forall w (m :: * -&gt; *) a. MonadWriter w m =&gt; m (a, w -&gt; w) -&gt; m a
+</span><span class="hs-identifier hs-var">pass</span></span><span> </span><span class="annot"><span class="annottext">(m ((a, x x), e -&gt; e) -&gt; m (a, x x))
+-&gt; m ((a, x x), e -&gt; e) -&gt; m (a, x x)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-22"></span><span>      </span><span class="hs-special">(</span><span class="hs-special">(</span><span id="local-6989586621679158612"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679158612"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679158613"><span class="annot"><span class="annottext">e -&gt; e
+</span><a href="#local-6989586621679158613"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679158614"><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679158614"><span class="hs-identifier hs-var">x'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">x x -&gt; AST ops (a, e -&gt; e) -&gt; m ((a, e -&gt; e), x x)
+forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
+</span><a href="#local-6989586621679158608"><span class="hs-identifier hs-var">interpret</span></a></span><span> </span><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679158609"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">AST ops (a, e -&gt; e)
+</span><a href="#local-6989586621679158610"><span class="hs-identifier hs-var">acts</span></a></span><span>
+</span><span id="line-23"></span><span>      </span><span class="annot"><span class="annottext">((a, x x), e -&gt; e) -&gt; m ((a, x x), e -&gt; e)
+forall a. a -&gt; m a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679158612"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679158614"><span class="hs-identifier hs-var">x'</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">e -&gt; e
+</span><a href="#local-6989586621679158613"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span>  </span><span class="annot"><a href="Effect.html#interpretEffectStateful"><span class="hs-identifier hs-var">interpretEffectStateful</span></a></span><span> </span><span class="annot"><span class="annottext">forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679158615"><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679158615"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Effect.Writer.html#Tell"><span class="hs-identifier hs-type">Tell</span></a></span><span> </span><span id="local-6989586621679158620"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679158620"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">,</span><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679158615"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, x x)) -&gt; m a -&gt; m (a, x x)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; m ()
+forall w (m :: * -&gt; *). MonadWriter w m =&gt; w -&gt; m ()
+</span><span class="hs-identifier hs-var">tell</span></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679158620"><span class="hs-identifier hs-var">w</span></a></span><span>
+</span><span id="line-25"></span></pre></body></html>

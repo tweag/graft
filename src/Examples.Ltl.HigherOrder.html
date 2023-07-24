@@ -1,0 +1,472 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE AllowAmbiguousTypes #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE ConstraintKinds #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE GADTs #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE KindSignatures #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Examples.Ltl.HigherOrder</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Except</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Identity</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Identity</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">runIdentity</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.html"><span class="hs-identifier">Effect</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.Error.html"><span class="hs-identifier">Effect.Error</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.TH.html"><span class="hs-identifier">Effect.TH</span></a></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html"><span class="hs-identifier">Examples.Ltl.Simple</span></a></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">varT</span></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Logic.Ltl.html"><span class="hs-identifier">Logic.Ltl</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">class</span><span> </span><span id="Truthy"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#Truthy"><span class="hs-identifier hs-var">Truthy</span></a></span></span><span> </span><span id="local-6989586621679159632"><span class="annot"><a href="#local-6989586621679159632"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-26"></span><span>  </span><span id="truthy"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#truthy"><span class="hs-identifier hs-type">truthy</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679159632"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#Truthy"><span class="hs-identifier hs-type">Truthy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159561"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#MonadKeyValue"><span class="hs-identifier hs-type">MonadKeyValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159560"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159561"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159562"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="#local-6989586621679159559"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159562"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MonadMiniLang"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MonadMiniLang"><span class="hs-identifier hs-var">MonadMiniLang</span></a></span></span><span> </span><span id="local-6989586621679159559"><span class="annot"><a href="#local-6989586621679159559"><span class="hs-identifier hs-type">e</span></a></span></span><span> </span><span id="local-6989586621679159560"><span class="annot"><a href="#local-6989586621679159560"><span class="hs-identifier hs-type">k</span></a></span></span><span> </span><span id="local-6989586621679159561"><span class="annot"><a href="#local-6989586621679159561"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span id="local-6989586621679159562"><span class="annot"><a href="#local-6989586621679159562"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-29"></span><span>  </span><span id="ifThenElse"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#ifThenElse"><span class="hs-identifier hs-type">ifThenElse</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span id="local-6989586621679159626"><span class="annot"><a href="#local-6989586621679159560"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159562"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159626"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159562"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159626"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159562"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159626"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-30"></span><span>  </span><span id="while"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#while"><span class="hs-identifier hs-type">while</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679159560"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159562"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159562"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">type</span><span> </span><span id="MiniLangT"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangT"><span class="hs-identifier hs-var">MiniLangT</span></a></span></span><span> </span><span id="local-6989586621679159733"><span class="annot"><a href="#local-6989586621679159733"><span class="hs-identifier hs-type">e</span></a></span></span><span> </span><span id="local-6989586621679159734"><span class="annot"><a href="#local-6989586621679159734"><span class="hs-identifier hs-type">k</span></a></span></span><span> </span><span id="local-6989586621679159735"><span class="annot"><a href="#local-6989586621679159735"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span id="local-6989586621679159736"><span class="annot"><a href="#local-6989586621679159736"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="annot"><a href="#local-6989586621679159733"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueT"><span class="hs-identifier hs-type">KeyValueT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159734"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159735"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159736"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">type</span><span> </span><span id="MiniLang"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLang"><span class="hs-identifier hs-var">MiniLang</span></a></span></span><span> </span><span id="local-6989586621679159737"><span class="annot"><a href="#local-6989586621679159737"><span class="hs-identifier hs-type">e</span></a></span></span><span> </span><span id="local-6989586621679159738"><span class="annot"><a href="#local-6989586621679159738"><span class="hs-identifier hs-type">k</span></a></span></span><span> </span><span id="local-6989586621679159739"><span class="annot"><a href="#local-6989586621679159739"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangT"><span class="hs-identifier hs-type">MiniLangT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159737"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159738"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159739"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Identity</span></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span id="local-6989586621679159565"><span id="local-6989586621679159566"><span id="local-6989586621679159568"><span id="local-6989586621679159569"><span id="local-6989586621679159570"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#runMiniLangT"><span class="hs-identifier hs-type">runMiniLangT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679159565"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159566"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangT"><span class="hs-identifier hs-type">MiniLangT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159568"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159565"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159566"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159569"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159570"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159569"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="#local-6989586621679159568"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159570"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679159565"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159566"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span>
+</span><span id="line-37"></span><span id="runMiniLangT"><span class="annot"><span class="annottext">runMiniLangT :: forall k v e (m :: * -&gt; *) a.
+Map k v -&gt; MiniLangT e k v m a -&gt; m (Either e a, Map k v)
+</span><a href="Examples.Ltl.HigherOrder.html#runMiniLangT"><span class="hs-identifier hs-var hs-var">runMiniLangT</span></a></span></span><span> </span><span id="local-6989586621679159741"><span class="annot"><span class="annottext">Map k v
+</span><a href="#local-6989586621679159741"><span class="hs-identifier hs-var">initState</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map k v -&gt; KeyValueT k v m (Either e a) -&gt; m (Either e a, Map k v)
+forall k v (m :: * -&gt; *) a.
+Map k v -&gt; KeyValueT k v m a -&gt; m (a, Map k v)
+</span><a href="Examples.Ltl.Simple.html#runKeyValueT"><span class="hs-identifier hs-var">runKeyValueT</span></a></span><span> </span><span class="annot"><span class="annottext">Map k v
+</span><a href="#local-6989586621679159741"><span class="hs-identifier hs-var">initState</span></a></span><span> </span><span class="annot"><span class="annottext">(KeyValueT k v m (Either e a) -&gt; m (Either e a, Map k v))
+-&gt; (MiniLangT e k v m a -&gt; KeyValueT k v m (Either e a))
+-&gt; MiniLangT e k v m a
+-&gt; m (Either e a, Map k v)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">MiniLangT e k v m a -&gt; KeyValueT k v m (Either e a)
+forall e (m :: * -&gt; *) a. ExceptT e m a -&gt; m (Either e a)
+</span><span class="hs-identifier hs-var">runExceptT</span></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span id="local-6989586621679159586"><span id="local-6989586621679159587"><span id="local-6989586621679159588"><span id="local-6989586621679159589"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#runMiniLang"><span class="hs-identifier hs-type">runMiniLang</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679159586"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159587"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLang"><span class="hs-identifier hs-type">MiniLang</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159588"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159586"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159587"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159589"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="#local-6989586621679159588"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159589"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679159586"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159587"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-40"></span><span id="runMiniLang"><span class="annot"><span class="annottext">runMiniLang :: forall k v e a.
+Map k v -&gt; MiniLang e k v a -&gt; (Either e a, Map k v)
+</span><a href="Examples.Ltl.HigherOrder.html#runMiniLang"><span class="hs-identifier hs-var hs-var">runMiniLang</span></a></span></span><span> </span><span id="local-6989586621679159746"><span class="annot"><span class="annottext">Map k v
+</span><a href="#local-6989586621679159746"><span class="hs-identifier hs-var">initState</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identity (Either e a, Map k v) -&gt; (Either e a, Map k v)
+forall a. Identity a -&gt; a
+</span><span class="hs-identifier hs-var">runIdentity</span></span><span> </span><span class="annot"><span class="annottext">(Identity (Either e a, Map k v) -&gt; (Either e a, Map k v))
+-&gt; (MiniLang e k v a -&gt; Identity (Either e a, Map k v))
+-&gt; MiniLang e k v a
+-&gt; (Either e a, Map k v)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Map k v -&gt; MiniLang e k v a -&gt; Identity (Either e a, Map k v)
+forall k v e (m :: * -&gt; *) a.
+Map k v -&gt; MiniLangT e k v m a -&gt; m (Either e a, Map k v)
+</span><a href="Examples.Ltl.HigherOrder.html#runMiniLangT"><span class="hs-identifier hs-var">runMiniLangT</span></a></span><span> </span><span class="annot"><span class="annottext">Map k v
+</span><a href="#local-6989586621679159746"><span class="hs-identifier hs-var">initState</span></a></span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679159608"><span id="local-6989586621679159609"><span id="local-6989586621679159610"><span id="local-6989586621679159611"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679159608"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679159609"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#MonadKeyValue"><span class="hs-identifier hs-type">MonadKeyValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159608"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159610"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangT"><span class="hs-identifier hs-type">MiniLangT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159611"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159608"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159610"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159609"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-43"></span><span>  </span><span id="local-6989586621679159764"><span class="annot"><span class="annottext">storeValue :: k -&gt; v -&gt; MiniLangT e k v m ()
+</span><a href="#local-6989586621679159764"><span class="hs-identifier hs-var hs-var hs-var hs-var">storeValue</span></a></span></span><span> </span><span id="local-6989586621679159766"><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621679159766"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span id="local-6989586621679159767"><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679159767"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KeyValueT k v m () -&gt; MiniLangT e k v m ()
+forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; ExceptT e m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+(MonadTrans t, Monad m) =&gt;
+m a -&gt; t m a
+</span><span class="hs-identifier hs-var">lift</span></span><span> </span><span class="annot"><span class="annottext">(KeyValueT k v m () -&gt; MiniLangT e k v m ())
+-&gt; KeyValueT k v m () -&gt; MiniLangT e k v m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">k -&gt; v -&gt; KeyValueT k v m ()
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
+</span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621679159766"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679159767"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-44"></span><span>  </span><span id="local-6989586621679159772"><span class="annot"><span class="annottext">getValue :: k -&gt; MiniLangT e k v m (Maybe v)
+</span><a href="#local-6989586621679159772"><span class="hs-identifier hs-var hs-var hs-var hs-var">getValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KeyValueT k v m (Maybe v) -&gt; MiniLangT e k v m (Maybe v)
+forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; ExceptT e m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+(MonadTrans t, Monad m) =&gt;
+m a -&gt; t m a
+</span><span class="hs-identifier hs-var">lift</span></span><span> </span><span class="annot"><span class="annottext">(KeyValueT k v m (Maybe v) -&gt; MiniLangT e k v m (Maybe v))
+-&gt; (k -&gt; KeyValueT k v m (Maybe v))
+-&gt; k
+-&gt; MiniLangT e k v m (Maybe v)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">k -&gt; KeyValueT k v m (Maybe v)
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; m (Maybe v)
+</span><a href="Examples.Ltl.Simple.html#getValue"><span class="hs-identifier hs-var">getValue</span></a></span><span>
+</span><span id="line-45"></span><span>  </span><span id="local-6989586621679159777"><span class="annot"><span class="annottext">deleteValue :: k -&gt; MiniLangT e k v m ()
+</span><a href="#local-6989586621679159777"><span class="hs-identifier hs-var hs-var hs-var hs-var">deleteValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">KeyValueT k v m () -&gt; MiniLangT e k v m ()
+forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; ExceptT e m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+(MonadTrans t, Monad m) =&gt;
+m a -&gt; t m a
+</span><span class="hs-identifier hs-var">lift</span></span><span> </span><span class="annot"><span class="annottext">(KeyValueT k v m () -&gt; MiniLangT e k v m ())
+-&gt; (k -&gt; KeyValueT k v m ()) -&gt; k -&gt; MiniLangT e k v m ()
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; m ()
+</span><a href="Examples.Ltl.Simple.html#deleteValue"><span class="hs-identifier hs-var">deleteValue</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679159608"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679159610"><span class="hs-identifier hs-type">v</span></a></span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-48"></span><span>  </span><span id="local-6989586621679159555"><span id="local-6989586621679159556"><span id="local-6989586621679159557"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679159555"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="#local-6989586621679159555"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#Truthy"><span class="hs-identifier hs-type">Truthy</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159556"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679159557"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-49"></span><span>  </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MonadMiniLang"><span class="hs-identifier hs-type">MonadMiniLang</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="#local-6989586621679159555"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159556"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangT"><span class="hs-identifier hs-type">MiniLangT</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="#local-6989586621679159555"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159556"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159557"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-51"></span><span>  </span><span id="local-6989586621679159802"><span class="annot"><span class="annottext">ifThenElse :: forall a.
+k
+-&gt; MiniLangT String k v m a
+-&gt; MiniLangT String k v m a
+-&gt; MiniLangT String k v m a
+</span><a href="Examples.Ltl.HigherOrder.html#ifThenElse"><span class="hs-identifier hs-var hs-var hs-var hs-var">ifThenElse</span></a></span></span><span> </span><span id="local-6989586621679159803"><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621679159803"><span class="hs-identifier hs-var">cond</span></a></span></span><span> </span><span id="local-6989586621679159804"><span class="annot"><span class="annottext">MiniLangT String k v m a
+</span><a href="#local-6989586621679159804"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679159805"><span class="annot"><span class="annottext">MiniLangT String k v m a
+</span><a href="#local-6989586621679159805"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-52"></span><span>    </span><span id="local-6989586621679159806"><span class="annot"><span class="annottext">Maybe v
+</span><a href="#local-6989586621679159806"><span class="hs-identifier hs-var">mTest</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">k -&gt; ExceptT String (StateT (Map k v) m) (Maybe v)
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; m (Maybe v)
+</span><a href="Examples.Ltl.Simple.html#getValue"><span class="hs-identifier hs-var">getValue</span></a></span><span> </span><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621679159803"><span class="hs-identifier hs-var">cond</span></a></span><span>
+</span><span id="line-53"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe v
+</span><a href="#local-6989586621679159806"><span class="hs-identifier hs-var">mTest</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-54"></span><span>      </span><span class="annot"><span class="annottext">Maybe v
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">MiniLangT String k v m a
+</span><a href="#local-6989586621679159805"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="hs-comment">-- throwError $ &quot;ifThenElse: unbound variable: &quot; ++ show cond</span><span>
+</span><span id="line-55"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679159807"><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679159807"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">forall v. Truthy v =&gt; v -&gt; Bool
+</span><a href="Examples.Ltl.HigherOrder.html#truthy"><span class="hs-identifier hs-var">truthy</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679159556"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679159807"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">MiniLangT String k v m a
+</span><a href="#local-6989586621679159804"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">MiniLangT String k v m a
+</span><a href="#local-6989586621679159805"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-56"></span><span>  </span><span id="local-6989586621679159819"><span class="annot"><span class="annottext">while :: k -&gt; MiniLangT String k v m () -&gt; MiniLangT String k v m ()
+</span><a href="Examples.Ltl.HigherOrder.html#while"><span class="hs-identifier hs-var hs-var hs-var hs-var">while</span></a></span></span><span> </span><span id="local-6989586621679159820"><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621679159820"><span class="hs-identifier hs-var">test</span></a></span></span><span> </span><span id="local-6989586621679159821"><span class="annot"><span class="annottext">MiniLangT String k v m ()
+</span><a href="#local-6989586621679159821"><span class="hs-identifier hs-var">acts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-57"></span><span>    </span><span id="local-6989586621679159822"><span class="annot"><span class="annottext">Maybe v
+</span><a href="#local-6989586621679159822"><span class="hs-identifier hs-var">mTest</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">k -&gt; ExceptT String (StateT (Map k v) m) (Maybe v)
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; m (Maybe v)
+</span><a href="Examples.Ltl.Simple.html#getValue"><span class="hs-identifier hs-var">getValue</span></a></span><span> </span><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621679159820"><span class="hs-identifier hs-var">test</span></a></span><span>
+</span><span id="line-58"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe v
+</span><a href="#local-6989586621679159822"><span class="hs-identifier hs-var">mTest</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-59"></span><span>      </span><span class="annot"><span class="annottext">Maybe v
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; MiniLangT String k v m ()
+forall a. a -&gt; ExceptT String (StateT (Map k v) m) a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-comment">--  throwError $ &quot;while: unbound variable: &quot; ++ show test</span><span>
+</span><span id="line-60"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679159823"><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679159823"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-61"></span><span>        </span><span class="annot"><span class="annottext">Bool -&gt; MiniLangT String k v m () -&gt; MiniLangT String k v m ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall v. Truthy v =&gt; v -&gt; Bool
+</span><a href="Examples.Ltl.HigherOrder.html#truthy"><span class="hs-identifier hs-var">truthy</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679159556"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679159823"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(MiniLangT String k v m () -&gt; MiniLangT String k v m ())
+-&gt; MiniLangT String k v m () -&gt; MiniLangT String k v m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">MiniLangT String k v m ()
+</span><a href="#local-6989586621679159821"><span class="hs-identifier hs-var">acts</span></a></span><span> </span><span class="annot"><span class="annottext">MiniLangT String k v m ()
+-&gt; MiniLangT String k v m () -&gt; MiniLangT String k v m ()
+forall a b.
+ExceptT String (StateT (Map k v) m) a
+-&gt; ExceptT String (StateT (Map k v) m) b
+-&gt; ExceptT String (StateT (Map k v) m) b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">forall e k v (m :: * -&gt; *).
+MonadMiniLang e k v m =&gt;
+k -&gt; m () -&gt; m ()
+</span><a href="Examples.Ltl.HigherOrder.html#while"><span class="hs-identifier hs-var">while</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679159555"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679159556"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621679159820"><span class="hs-identifier hs-var">test</span></a></span><span> </span><span class="annot"><span class="annottext">MiniLangT String k v m ()
+</span><a href="#local-6989586621679159821"><span class="hs-identifier hs-var">acts</span></a></span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">data</span><span> </span><span id="MiniLangEffect"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangEffect"><span class="hs-identifier hs-var">MiniLangEffect</span></a></span></span><span> </span><span id="local-6989586621679159659"><span class="annot"><a href="#local-6989586621679159659"><span class="hs-identifier hs-type">e</span></a></span></span><span> </span><span id="local-6989586621679159661"><span class="annot"><a href="#local-6989586621679159661"><span class="hs-identifier hs-type">k</span></a></span></span><span> </span><span id="local-6989586621679159658"><span class="annot"><a href="#local-6989586621679159658"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Effect.html#Effect"><span class="hs-identifier hs-type">Effect</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-64"></span><span>  </span><span id="local-6989586621679159667"><span id="local-6989586621679159668"><span id="local-6989586621679159669"><span id="local-6989586621679159670"><span id="local-6989586621679159671"><span id="IfThenElse"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#IfThenElse"><span class="hs-identifier hs-var">IfThenElse</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679159667"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159668"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159669"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159668"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159669"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangEffect"><span class="hs-identifier hs-type">MiniLangEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159670"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159667"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159671"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159668"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159669"><span class="hs-identifier hs-type">a</span></a></span></span></span></span></span></span><span>
+</span><span id="line-65"></span><span>  </span><span id="local-6989586621679159663"><span id="local-6989586621679159664"><span id="local-6989586621679159665"><span id="local-6989586621679159666"><span id="While"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#While"><span class="hs-identifier hs-var">While</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679159663"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159664"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangEffect"><span class="hs-identifier hs-type">MiniLangEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159665"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159663"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159666"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159664"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-66"></span><span>
+</span><span id="line-67"></span><span class="hs-comment">-- TODO make the error message nicer when we forget constraints on ops</span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span id="local-6989586621679159658"><span id="local-6989586621679159659"><span id="local-6989586621679159660"><span id="local-6989586621679159661"><span id="local-6989586621679159844"><span id="local-6989586621679159847"><span class="hs-identifier">makeReification</span><span>
+</span><span id="line-70"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-special">[</span><span class="hs-identifier">e</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">k</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">v</span><span class="hs-special">]</span><span> </span><span class="hs-identifier">ops</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-71"></span><span>      </span><span class="hs-special">[t|</span><span>
+</span><span id="line-72"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="hs-identifier">Truthy</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="hs-identifier">varT</span><span> </span><span class="hs-identifier">v</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-73"></span><span>          </span><span class="hs-identifier">EffectInject</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">ErrorEffect</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="hs-identifier">varT</span><span> </span><span class="hs-identifier">e</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="hs-identifier">varT</span><span> </span><span class="hs-identifier">ops</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-74"></span><span>          </span><span class="hs-identifier">EffectInject</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">KeyValueEffect</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="hs-identifier">varT</span><span> </span><span class="hs-identifier">k</span><span class="hs-special">)</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="hs-identifier">varT</span><span> </span><span class="hs-identifier">v</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="hs-identifier">varT</span><span> </span><span class="hs-identifier">ops</span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>        </span><span class="hs-special">|]</span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-78"></span><span>  </span><span class="hs-special">''</span><span class="hs-identifier">MonadMiniLang</span><span>
+</span><span id="line-79"></span><span>  </span><span class="hs-special">''</span><span class="hs-identifier">MiniLangEffect</span></span></span></span></span></span></span><span>
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span id="local-6989586621679159658"><span id="local-6989586621679159659"><span id="local-6989586621679159661"><span id="local-6989586621679159685"><span id="local-6989586621679159859"><span class="hs-identifier">makeInterpretation</span><span>
+</span><span id="line-82"></span><span>  </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[t|</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">|]</span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>  </span><span class="hs-special">''</span><span class="hs-identifier">MonadMiniLang</span><span>
+</span><span id="line-84"></span><span>  </span><span class="hs-special">''</span><span class="hs-identifier">MiniLangEffect</span></span></span></span></span></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="hs-keyword">data</span><span> </span><span id="MiniLangValue"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangValue"><span class="hs-identifier hs-var">MiniLangValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MLBool"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MLBool"><span class="hs-identifier hs-var">MLBool</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="MLInteger"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MLInteger"><span class="hs-identifier hs-var">MLInteger</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679159876"><span id="local-6989586621679159885"><span id="local-6989586621679159889"><span class="annot"><span class="annottext">Int -&gt; MiniLangValue -&gt; ShowS
+[MiniLangValue] -&gt; ShowS
+MiniLangValue -&gt; String
+(Int -&gt; MiniLangValue -&gt; ShowS)
+-&gt; (MiniLangValue -&gt; String)
+-&gt; ([MiniLangValue] -&gt; ShowS)
+-&gt; Show MiniLangValue
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; MiniLangValue -&gt; ShowS
+showsPrec :: Int -&gt; MiniLangValue -&gt; ShowS
+$cshow :: MiniLangValue -&gt; String
+show :: MiniLangValue -&gt; String
+$cshowList :: [MiniLangValue] -&gt; ShowS
+showList :: [MiniLangValue] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#Truthy"><span class="hs-identifier hs-type">Truthy</span></a></span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangValue"><span class="hs-identifier hs-type">MiniLangValue</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-89"></span><span>  </span><span id="local-6989586621679159898"><span class="annot"><span class="annottext">truthy :: MiniLangValue -&gt; Bool
+</span><a href="Examples.Ltl.HigherOrder.html#truthy"><span class="hs-identifier hs-var hs-var hs-var hs-var">truthy</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MLBool"><span class="hs-identifier hs-type">MLBool</span></a></span><span> </span><span id="local-6989586621679159899"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679159899"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679159899"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-90"></span><span>  </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#truthy"><span class="hs-identifier hs-var">truthy</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MLInteger"><span class="hs-identifier hs-type">MLInteger</span></a></span><span> </span><span id="local-6989586621679159900"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159900"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159900"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- instance (MonadMiniLang String String MiniLangValue m) =&gt; InterpretLtlHigherOrder x m (MiniLangEffect String String MiniLangValue) where</span><span>
+</span><span id="line-93"></span><span class="hs-comment">--  interpretLtlHigherOrder (IfThenElse cond l r) = Nested $</span><span>
+</span><span id="line-94"></span><span class="hs-comment">--    \evalAST ltls -&gt; do</span><span>
+</span><span id="line-95"></span><span class="hs-comment">--      ifThenElse @String @String @MiniLangValue</span><span>
+</span><span id="line-96"></span><span class="hs-comment">--        cond</span><span>
+</span><span id="line-97"></span><span class="hs-comment">--        (evalAST ltls l)</span><span>
+</span><span id="line-98"></span><span class="hs-comment">--        (evalAST ltls r)</span><span>
+</span><span id="line-99"></span><span class="hs-comment">--  interpretLtlHigherOrder (While cond body) = Nested $</span><span>
+</span><span id="line-100"></span><span class="hs-comment">--    \evalAST ltls -&gt; whileWithLtls evalAST ltls cond body</span><span>
+</span><span id="line-101"></span><span class="hs-comment">--    where</span><span>
+</span><span id="line-102"></span><span class="hs-comment">--      whileWithLtls evalAST ltls test acts = do</span><span>
+</span><span id="line-103"></span><span class="hs-comment">--        mTest &lt;- getValue test</span><span>
+</span><span id="line-104"></span><span class="hs-comment">--        case truthy &lt;$&gt; mTest of</span><span>
+</span><span id="line-105"></span><span class="hs-comment">--          Nothing -&gt; throwError $ &quot;while: unbound variable: &quot; ++ test</span><span>
+</span><span id="line-106"></span><span class="hs-comment">--          Just b -&gt; do</span><span>
+</span><span id="line-107"></span><span class="hs-comment">--            if b</span><span>
+</span><span id="line-108"></span><span class="hs-comment">--              then do</span><span>
+</span><span id="line-109"></span><span class="hs-comment">--                (_, ltls') &lt;- evalAST ltls acts</span><span>
+</span><span id="line-110"></span><span class="hs-comment">--                whileWithLtls evalAST ltls' test acts</span><span>
+</span><span id="line-111"></span><span class="hs-comment">--              else return ((), ltls)</span><span>
+</span><span id="line-112"></span><span class="hs-comment">--</span><span>
+</span><span id="line-113"></span><span class="hs-comment">--</span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span id="local-6989586621679159691"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#getInteger"><span class="hs-identifier hs-type">getInteger</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MonadMiniLang"><span class="hs-identifier hs-type">MonadMiniLang</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangValue"><span class="hs-identifier hs-type">MiniLangValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159691"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159691"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span></span><span>
+</span><span id="line-116"></span><span id="getInteger"><span class="annot"><span class="annottext">getInteger :: forall (m :: * -&gt; *).
+MonadMiniLang String String MiniLangValue m =&gt;
+String -&gt; m Integer
+</span><a href="Examples.Ltl.HigherOrder.html#getInteger"><span class="hs-identifier hs-var hs-var">getInteger</span></a></span></span><span> </span><span id="local-6989586621679159913"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679159913"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-117"></span><span>  </span><span id="local-6989586621679159914"><span class="annot"><span class="annottext">Maybe MiniLangValue
+</span><a href="#local-6989586621679159914"><span class="hs-identifier hs-var">mi</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; m (Maybe MiniLangValue)
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; m (Maybe v)
+</span><a href="Examples.Ltl.Simple.html#getValue"><span class="hs-identifier hs-var">getValue</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679159913"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-118"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe MiniLangValue
+</span><a href="#local-6989586621679159914"><span class="hs-identifier hs-var">mi</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-119"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MLInteger"><span class="hs-identifier hs-type">MLInteger</span></a></span><span> </span><span id="local-6989586621679159915"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159915"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; m Integer
+forall a. a -&gt; m a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159915"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-120"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">MiniLangValue
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Integer
+forall a. String -&gt; m a
+forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m Integer) -&gt; String -&gt; m Integer
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;not an Integer: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679159913"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-121"></span><span>    </span><span class="annot"><span class="annottext">Maybe MiniLangValue
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Integer
+forall a. String -&gt; m a
+forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m Integer) -&gt; String -&gt; m Integer
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;unbond variable: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679159913"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span id="local-6989586621679159697"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#fibonacciTest"><span class="hs-identifier hs-type">fibonacciTest</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MonadMiniLang"><span class="hs-identifier hs-type">MonadMiniLang</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangValue"><span class="hs-identifier hs-type">MiniLangValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159697"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159697"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span></span><span>
+</span><span id="line-124"></span><span id="fibonacciTest"><span class="annot"><span class="annottext">fibonacciTest :: forall (m :: * -&gt; *).
+MonadMiniLang String String MiniLangValue m =&gt;
+Integer -&gt; m Integer
+</span><a href="Examples.Ltl.HigherOrder.html#fibonacciTest"><span class="hs-identifier hs-var hs-var">fibonacciTest</span></a></span></span><span> </span><span id="local-6989586621679159957"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159957"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-125"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; MiniLangValue -&gt; m ()
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
+</span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;n&quot;</span></span><span> </span><span class="annot"><span class="annottext">(MiniLangValue -&gt; m ()) -&gt; MiniLangValue -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; MiniLangValue
+</span><a href="Examples.Ltl.HigherOrder.html#MLInteger"><span class="hs-identifier hs-var">MLInteger</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159957"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-126"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; MiniLangValue -&gt; m ()
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
+</span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;a&quot;</span></span><span> </span><span class="annot"><span class="annottext">(MiniLangValue -&gt; m ()) -&gt; MiniLangValue -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; MiniLangValue
+</span><a href="Examples.Ltl.HigherOrder.html#MLInteger"><span class="hs-identifier hs-var">MLInteger</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-127"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; MiniLangValue -&gt; m ()
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
+</span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;b&quot;</span></span><span> </span><span class="annot"><span class="annottext">(MiniLangValue -&gt; m ()) -&gt; MiniLangValue -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; MiniLangValue
+</span><a href="Examples.Ltl.HigherOrder.html#MLInteger"><span class="hs-identifier hs-var">MLInteger</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-128"></span><span>  </span><span class="annot"><span class="annottext">forall e k v (m :: * -&gt; *).
+MonadMiniLang e k v m =&gt;
+k -&gt; m () -&gt; m ()
+</span><a href="Examples.Ltl.HigherOrder.html#while"><span class="hs-identifier hs-var">while</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangValue"><span class="hs-identifier hs-type">MiniLangValue</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;n&quot;</span></span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-129"></span><span>    </span><span id="local-6989586621679159958"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159958"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Integer
+forall (m :: * -&gt; *).
+MonadMiniLang String String MiniLangValue m =&gt;
+String -&gt; m Integer
+</span><a href="Examples.Ltl.HigherOrder.html#getInteger"><span class="hs-identifier hs-var">getInteger</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;n&quot;</span></span><span>
+</span><span id="line-130"></span><span>    </span><span id="local-6989586621679159959"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159959"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Integer
+forall (m :: * -&gt; *).
+MonadMiniLang String String MiniLangValue m =&gt;
+String -&gt; m Integer
+</span><a href="Examples.Ltl.HigherOrder.html#getInteger"><span class="hs-identifier hs-var">getInteger</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;a&quot;</span></span><span>
+</span><span id="line-131"></span><span>    </span><span id="local-6989586621679159960"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159960"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Integer
+forall (m :: * -&gt; *).
+MonadMiniLang String String MiniLangValue m =&gt;
+String -&gt; m Integer
+</span><a href="Examples.Ltl.HigherOrder.html#getInteger"><span class="hs-identifier hs-var">getInteger</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;b&quot;</span></span><span>
+</span><span id="line-132"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; MiniLangValue -&gt; m ()
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
+</span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;b&quot;</span></span><span> </span><span class="annot"><span class="annottext">(MiniLangValue -&gt; m ()) -&gt; MiniLangValue -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; MiniLangValue
+</span><a href="Examples.Ltl.HigherOrder.html#MLInteger"><span class="hs-identifier hs-var">MLInteger</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159959"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159960"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-133"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; MiniLangValue -&gt; m ()
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
+</span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;a&quot;</span></span><span> </span><span class="annot"><span class="annottext">(MiniLangValue -&gt; m ()) -&gt; MiniLangValue -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; MiniLangValue
+</span><a href="Examples.Ltl.HigherOrder.html#MLInteger"><span class="hs-identifier hs-var">MLInteger</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159960"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-134"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; MiniLangValue -&gt; m ()
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
+</span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;n&quot;</span></span><span> </span><span class="annot"><span class="annottext">(MiniLangValue -&gt; m ()) -&gt; MiniLangValue -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; MiniLangValue
+</span><a href="Examples.Ltl.HigherOrder.html#MLInteger"><span class="hs-identifier hs-var">MLInteger</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159958"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-135"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; m Integer
+forall (m :: * -&gt; *).
+MonadMiniLang String String MiniLangValue m =&gt;
+String -&gt; m Integer
+</span><a href="Examples.Ltl.HigherOrder.html#getInteger"><span class="hs-identifier hs-var">getInteger</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;a&quot;</span></span><span>
+</span><span id="line-136"></span><span>
+</span><span id="line-137"></span><span id="local-6989586621679159962"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#branchTest"><span class="hs-identifier hs-type">branchTest</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MonadMiniLang"><span class="hs-identifier hs-type">MonadMiniLang</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangValue"><span class="hs-identifier hs-type">MiniLangValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159962"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679159962"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span></span><span>
+</span><span id="line-138"></span><span id="branchTest"><span class="annot"><span class="annottext">branchTest :: forall (m :: * -&gt; *).
+MonadMiniLang String String MiniLangValue m =&gt;
+Integer -&gt; m Integer
+</span><a href="Examples.Ltl.HigherOrder.html#branchTest"><span class="hs-identifier hs-var hs-var">branchTest</span></a></span></span><span> </span><span id="local-6989586621679159987"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159987"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-139"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; MiniLangValue -&gt; m ()
+forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
+</span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;n&quot;</span></span><span> </span><span class="annot"><span class="annottext">(MiniLangValue -&gt; m ()) -&gt; MiniLangValue -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; MiniLangValue
+</span><a href="Examples.Ltl.HigherOrder.html#MLInteger"><span class="hs-identifier hs-var">MLInteger</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679159987"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-140"></span><span>  </span><span class="annot"><span class="annottext">forall e k v (m :: * -&gt; *) a.
+MonadMiniLang e k v m =&gt;
+k -&gt; m a -&gt; m a -&gt; m a
+</span><a href="Examples.Ltl.HigherOrder.html#ifThenElse"><span class="hs-identifier hs-var">ifThenElse</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangValue"><span class="hs-identifier hs-type">MiniLangValue</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;n&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; m Integer
+forall a. a -&gt; m a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">3</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; m Integer
+forall a. a -&gt; m a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">4</span></span><span class="hs-special">)</span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span id="local-6989586621679159701"><span id="local-6989586621679159702"><span id="local-6989586621679159703"><span class="annot"><a href="Examples.Ltl.HigherOrder.html#simpleRun"><span class="hs-identifier hs-type">simpleRun</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679159701"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangT"><span class="hs-identifier hs-type">MiniLangT</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="#local-6989586621679159701"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159702"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Identity</span></span><span> </span><span class="annot"><a href="#local-6989586621679159703"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="#local-6989586621679159703"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679159701"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679159702"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-143"></span><span id="simpleRun"><span class="annot"><span class="annottext">simpleRun :: forall k v a.
+Ord k =&gt;
+MiniLangT String k v Identity a -&gt; (Either String a, Map k v)
+</span><a href="Examples.Ltl.HigherOrder.html#simpleRun"><span class="hs-identifier hs-var hs-var">simpleRun</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map k v -&gt; MiniLang String k v a -&gt; (Either String a, Map k v)
+forall k v e a.
+Map k v -&gt; MiniLang e k v a -&gt; (Either e a, Map k v)
+</span><a href="Examples.Ltl.HigherOrder.html#runMiniLang"><span class="hs-identifier hs-var">runMiniLang</span></a></span><span> </span><span class="annot"><span class="annottext">Map k v
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-144"></span><span>
+</span><span id="line-145"></span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#foo"><span class="hs-identifier hs-type">foo</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangValue"><span class="hs-identifier hs-type">MiniLangValue</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-146"></span><span id="foo"><span class="annot"><span class="annottext">foo :: Integer -&gt; (Either String Integer, Map String MiniLangValue)
+</span><a href="Examples.Ltl.HigherOrder.html#foo"><span class="hs-identifier hs-var hs-var">foo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MiniLangT String String MiniLangValue Identity Integer
+-&gt; (Either String Integer, Map String MiniLangValue)
+forall k v a.
+Ord k =&gt;
+MiniLangT String k v Identity a -&gt; (Either String a, Map k v)
+</span><a href="Examples.Ltl.HigherOrder.html#simpleRun"><span class="hs-identifier hs-var">simpleRun</span></a></span><span> </span><span class="annot"><span class="annottext">(MiniLangT String String MiniLangValue Identity Integer
+ -&gt; (Either String Integer, Map String MiniLangValue))
+-&gt; (Integer
+    -&gt; MiniLangT String String MiniLangValue Identity Integer)
+-&gt; Integer
+-&gt; (Either String Integer, Map String MiniLangValue)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; MiniLangT String String MiniLangValue Identity Integer
+forall (m :: * -&gt; *).
+MonadMiniLang String String MiniLangValue m =&gt;
+Integer -&gt; m Integer
+</span><a href="Examples.Ltl.HigherOrder.html#fibonacciTest"><span class="hs-identifier hs-var">fibonacciTest</span></a></span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#bar"><span class="hs-identifier hs-type">bar</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Examples.Ltl.HigherOrder.html#MiniLangValue"><span class="hs-identifier hs-type">MiniLangValue</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-149"></span><span id="bar"><span class="annot"><span class="annottext">bar :: Integer -&gt; (Either String Integer, Map String MiniLangValue)
+</span><a href="Examples.Ltl.HigherOrder.html#bar"><span class="hs-identifier hs-var hs-var">bar</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MiniLangT String String MiniLangValue Identity Integer
+-&gt; (Either String Integer, Map String MiniLangValue)
+forall k v a.
+Ord k =&gt;
+MiniLangT String k v Identity a -&gt; (Either String a, Map k v)
+</span><a href="Examples.Ltl.HigherOrder.html#simpleRun"><span class="hs-identifier hs-var">simpleRun</span></a></span><span> </span><span class="annot"><span class="annottext">(MiniLangT String String MiniLangValue Identity Integer
+ -&gt; (Either String Integer, Map String MiniLangValue))
+-&gt; (Integer
+    -&gt; MiniLangT String String MiniLangValue Identity Integer)
+-&gt; Integer
+-&gt; (Either String Integer, Map String MiniLangValue)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; MiniLangT String String MiniLangValue Identity Integer
+forall (m :: * -&gt; *).
+MonadMiniLang String String MiniLangValue m =&gt;
+Integer -&gt; m Integer
+</span><a href="Examples.Ltl.HigherOrder.html#branchTest"><span class="hs-identifier hs-var">branchTest</span></a></span><span>
+</span><span id="line-150"></span></pre></body></html>
