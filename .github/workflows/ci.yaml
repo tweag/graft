@@ -32,7 +32,7 @@ jobs:
               --haddock-html-location="https://hackage.haskell.org/package/$pkg-$version/docs" \
               sine-nomine
             mkdir -p docs
-            cp -rf dist-newstyle/build/*/ghc-*/doc/html/sine-nomine-*/doc/html/sine-nomine/* docs
+            cp -rf dist-newstyle/build/*/ghc-*/sine-nomine-*/doc/html/sine-nomine/* docs
           '
       - name: upload docs as an artifact
         uses: actions/upload-artifact@v3
