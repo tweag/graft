@@ -79,7 +79,7 @@ instance Semigroup Modification where
   _ <> _ = ModAB
 
 instance (MonadWriter String m, Show s, MonadState s m, MonadPlus m) => InterpretLtl Modification m (StateEffect s) where
-  interpretLtl op x =
+  interpretLtl op = Apply $ \x ->
     case (x, op) of
       (ModA, Put s) -> do
         sOld <- get
@@ -90,7 +90,7 @@ instance (MonadWriter String m, Show s, MonadState s m, MonadPlus m) => Interpre
       _ -> return Nothing
 
 instance {-# OVERLAPPING #-} (MonadWriter w m, MonadPlus m) => InterpretLtlHigherOrder Modification m (WriterEffect w) where
-  interpretLtlHigherOrder (Tell _) = Direct $ const $ return Nothing
+  interpretLtlHigherOrder (Tell _) = Direct $ Apply $ const $ return Nothing
   interpretLtlHigherOrder (Listen acts) =
     Nested $ \evalAST ltls -> do
       ((a, ltls'), w) <- listen $ evalAST ltls acts

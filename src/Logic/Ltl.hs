@@ -53,10 +53,11 @@ module Logic.Ltl
 
     -- * Simple effects
     InterpretLtl (..),
+    LtlInterp (..),
 
     -- * Higher-order effects
     InterpretLtlHigherOrder (..),
-    LtlInterp (..),
+    LtlInterpHigherOrder (..),
 
     -- * Interpreting 'Ltl' modifications
     interpretLtlAST,
@@ -173,24 +174,39 @@ instance
 --
 -- - @op@ is the effect type.
 class InterpretLtl (mod :: Type) (m :: Type -> Type) (op :: Effect) where
-  -- | Given an operation of type @op a@, and an atomic modification: If the
-  -- modification applies, return 'Just'. If the modification does /not/
-  -- apply, return 'Nothing'.
+  -- | Given an operation of type @op a@, and an atomic modification, there are
+  -- three possibilities, corresponding to the constructors of
+  -- 'LtlInterp':
   --
-  -- Note that the return type @m (Maybe a)@ (and not @Maybe (m a)@!) means
-  -- that the interpretation and applicability of the modification can depend
-  -- on the state in @m@.
+  -- - If the modification of the operation should be ignored, and the
+  --   operation should just be interpreted without modification, return
+  --   'Ignore'.
+  --
+  -- - If you want to try applying the modification, use return 'Apply':
+  --
+  --   - If the modification applies, return some computation that returns
+  --     'Just'.
+  --
+  --   - If the modification does /not/ apply, return 'Nothing'.
+  --
+  --
+  -- Note that the type @m (Maybe a)@ (and not @Maybe (m a)@!) in the 'Apply'
+  -- constructor means that the interpretation and applicability of the
+  -- modification can depend on the state in @m@.
   --
   -- The @dummy@ type variable signifies that the "nesting" monad of the effect
   -- type is irrelevant, since we're not dealing with higher-order effects.
-  interpretLtl :: op dummy a -> mod -> m (Maybe a)
+  interpretLtl :: op dummy a -> LtlInterp mod m a
+
+-- | Codomain of 'interpretLtl'. See the explanation there.
+data LtlInterp mod m a = Ignore | Apply (mod -> m (Maybe a))
 
 -- | Explain how to interpret an 'Ltl' modification, in the presence of
 -- higher-order effects. The type parameters have the same meaning as for
 -- 'InterpretLtl'.
 class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) where
   -- | Given an operation of type @op a@, there are two possibilities,
-  -- corresponding the two constructors of 'LtlInterp'.
+  -- corresponding the two constructors of 'LtlInterpHigherOrder'.
   --
   -- For simple operations that don't \"nest\" other 'AST's, use the
   -- 'Direct' constructor. Its meaning corresponds precisely to the
@@ -205,7 +221,7 @@ class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) w
   --
   -- Composite modifications in the current setting are list of 'Ltl' formulas.
   -- Each 'modifyLtl' adds another formula to the head of that list, and all
-  -- formulas are evaluated in parallel to the intepretation of the 'AST'.
+  -- formulas are evaluated in parallel to the interpretation of the 'AST'.
   -- (That is: if you don't nest 'modifyLtl's, the list will only ever contain
   -- one element. If you nest 'modifyLtl's, the head of the list will be the
   -- formula that was introduced by the innermost 'modifyLtl')
@@ -238,22 +254,23 @@ class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) w
   -- implement this nesting behaviour, depending on your use case, and the
   -- 'Nested' constructor should hopefully be general enough to accommodate
   -- most of them.
-  interpretLtlHigherOrder :: op (AST ops) a -> LtlInterp mod m ops a
+  interpretLtlHigherOrder :: op (AST ops) a -> LtlInterpHigherOrder mod m ops a
 
 -- | codomain of 'interpretLtlHigherOrder'. See the explanation there.
-data LtlInterp (mod :: Type) (m :: Type -> Type) (ops :: [Effect]) (a :: Type) where
-  Direct :: (mod -> m (Maybe a)) -> LtlInterp mod m ops a
+data LtlInterpHigherOrder (mod :: Type) (m :: Type -> Type) (ops :: [Effect]) (a :: Type) where
+  Direct :: LtlInterp mod m a -> LtlInterpHigherOrder mod m ops a
   Nested ::
     ( (forall b. [Ltl mod] -> AST ops b -> m (b, [Ltl mod])) ->
       [Ltl mod] ->
       m (a, [Ltl mod])
     ) ->
-    LtlInterp mod m ops a
+    LtlInterpHigherOrder mod m ops a
 
 instance (InterpretLtl mod m op) => InterpretLtlHigherOrder mod m op where
   interpretLtlHigherOrder = Direct . interpretLtl
 
--- | Internal:
+-- | Internal: The magic happens here. We use 'nowLaterList' to evaluate the
+-- 'Ltl' formulas from step to step.
 instance
   ( Semigroup mod,
     MonadPlus m,
@@ -273,19 +290,23 @@ instance
         msum $
           map
             ( \(now, later) ->
-                case now of
-                  Nothing ->
-                    (,Const later)
-                      <$> interpretEffect
-                        (fmap fst . evalActs (Const []))
-                        op
-                  Just x -> do
-                    mA <- direct x
-                    case mA of
-                      Nothing -> mzero
-                      Just a -> return (a, Const later)
+                case direct of
+                  Ignore -> interpretUnmodified ltls op
+                  Apply apply -> case now of
+                    Nothing -> interpretUnmodified later op
+                    Just x -> do
+                      mA <- apply x
+                      case mA of
+                        Just a -> return (a, Const later)
+                        Nothing -> mzero
             )
             (nowLaterList ltls)
+    where
+      interpretUnmodified later x =
+        (,Const later)
+          <$> interpretEffect
+            (fmap fst . evalActs (Const []))
+            x
 
 -- | The constraint that all effect types in @ops@ have an @'InterpretLtl' mod m@
 -- or an @'InterpretLtlHigherOrder' mod m@ instance

@@ -185,14 +185,14 @@ instance Semigroup SingleStepMod where
 -- (and modified) the first @n-1@ steps.
 
 instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (KeyValueEffect k v) where
-  interpretLtl (StoreValue key val) ConcatIfReplace = do
+  interpretLtl (StoreValue key val) = Apply $ \ConcatIfReplace -> do
     -- the type application is needed here to get around the otherwise
     -- ambiguous type @v@:
     mv <- getValue @k @v key
     case mv of
       Just oldVal -> storeValue key (oldVal <> val) >> return (Just ())
       Nothing -> return Nothing
-  interpretLtl _ _ = return Nothing
+  interpretLtl _ = Ignore
 
 -- * Interpreting modified 'AST's
 

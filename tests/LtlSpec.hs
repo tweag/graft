@@ -42,8 +42,8 @@ instance {-# OVERLAPPING #-} Semigroup TestModification where
   a <> b = a . b
 
 instance (MonadTest m) => InterpretLtl TestModification m TestEffect where
-  interpretLtl GetInteger _ = return Nothing
-  interpretLtl (EmitInteger i) f = emitInteger (f i) >> return (Just ())
+  interpretLtl GetInteger = Ignore
+  interpretLtl (EmitInteger i) = Apply $ \f -> emitInteger (f i) >> return (Just ())
 
 go :: LtlAST TestModification '[TestEffect] a -> [[Integer]]
 go = execWriterT . interpretLtlAST
@@ -106,16 +106,20 @@ tests =
       Tasty.testGroup
         "unit tests"
         [ Tasty.testCase "LtlNext changes the second step" $
-            assertAll
-              (uncurry assertEqualSets)
-              ( zip
-                  (map (go . modifyLtl (LtlNext $ LtlAtom (3 +))) testTraces)
-                  [ [[45]],
-                    [[1, 5]],
-                    [],
-                    []
-                  ]
-              ),
+            let n = 3
+
+                incSeconds :: [[Integer]] -> [[Integer]]
+                incSeconds = filter (/= []) . map incSecond
+                  where
+                    incSecond (a : b : cs) = a : b + n : cs
+                    incSecond _ = []
+             in assertAll
+                  ( \tr ->
+                      assertEqualSets
+                        (go $ modifyLtl (LtlNext $ LtlAtom (n +)) tr)
+                        (incSeconds $ go tr)
+                  )
+                  testTraces,
           Tasty.testCase
             "everywhere changes everything"
             $ let n = 3
@@ -123,15 +127,8 @@ tests =
                   incAll :: [[Integer]] -> [[Integer]]
                   incAll = map (map (+ n))
                in assertAll
-                    (uncurry assertEqualSets)
-                    ( zip
-                        (map (go . modifyLtl (everywhere (3 +))) testTraces)
-                        [ [],
-                          [[4, 5]],
-                          [],
-                          [[]]
-                        ]
-                    ),
+                    (\tr -> assertEqualSets (go . modifyLtl (everywhere (n +)) $ tr) (incAll $ go tr))
+                    testTraces,
           Tasty.testCase "somewhere case-splits" $
             let n = 3
 
@@ -141,7 +138,7 @@ tests =
                     alternatives [] = []
                     alternatives (x : xs) = (x + n : xs) : map (x :) (alternatives xs)
              in assertAll
-                  (\tr -> assertEqualSets (go $ modifyLtl (somewhere (n +)) tr) (caseSplit $ go tr))
+                  (\tr -> assertEqualSets (go . modifyLtl (somewhere (n +)) $ tr) (caseSplit $ go tr))
                   testTraces,
           Tasty.testCase "somewhere is exponential in branch number" $
             -- If we have @tr = a >> b@, we expect
