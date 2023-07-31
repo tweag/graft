@@ -63,6 +63,9 @@ module Logic.Ltl
     interpretLtlAST,
     interpretLtlASTWithInitialFormulas,
     InterpretEffectsLtl,
+
+    -- * internal
+    interpretEffectStatefulFromLtlHigherOrder,
   )
 where
 
@@ -266,47 +269,50 @@ data LtlInterpHigherOrder (mod :: Type) (m :: Type -> Type) (ops :: [Effect]) (a
     ) ->
     LtlInterpHigherOrder mod m ops a
 
-instance (InterpretLtl mod m op) => InterpretLtlHigherOrder mod m op where
-  interpretLtlHigherOrder = Direct . interpretLtl
-
--- | Internal: The magic happens here. We use 'nowLaterList' to evaluate the
--- 'Ltl' formulas from step to step.
-instance
+-- | Internal: transform a function of the type needed for
+-- 'interpretLtlHigherOrder' into a function of the correct type for the
+-- corersponding 'InterpretEffectStateful' instance. Used in the "Ltl.TH"
+-- module to define the latter instances.
+--
+-- TODO: Maybe it's time for an "Ltl.Internal" module.
+interpretEffectStatefulFromLtlHigherOrder ::
   ( Semigroup mod,
     MonadPlus m,
     InterpretEffect m op,
     InterpretLtlHigherOrder mod m op
   ) =>
-  InterpretEffectStateful (Const [Ltl mod]) m op
+  (forall b y. Const [Ltl mod] y -> AST ops b -> m (b, Const [Ltl mod] y)) ->
+  Const [Ltl mod] x ->
+  op (AST ops) a ->
+  m (a, Const [Ltl mod] x)
+interpretEffectStatefulFromLtlHigherOrder evalActs (Const ltls) op =
+  case interpretLtlHigherOrder op of
+    Nested nestFun ->
+      second Const
+        <$> nestFun
+          (\x ast -> second getConst <$> evalActs (Const x) ast)
+          ltls
+    Direct direct ->
+      msum $
+        map
+          ( \(now, later) ->
+              case direct of
+                Ignore -> interpretUnmodified ltls op
+                Apply apply -> case now of
+                  Nothing -> interpretUnmodified later op
+                  Just x -> do
+                    mA <- apply x
+                    case mA of
+                      Just a -> return (a, Const later)
+                      Nothing -> mzero
+          )
+          (nowLaterList ltls)
   where
-  interpretEffectStateful evalActs (Const ltls) op =
-    case interpretLtlHigherOrder op of
-      Nested nestFun ->
-        second Const
-          <$> nestFun
-            (\x ast -> second getConst <$> evalActs (Const x) ast)
-            ltls
-      Direct direct ->
-        msum $
-          map
-            ( \(now, later) ->
-                case direct of
-                  Ignore -> interpretUnmodified ltls op
-                  Apply apply -> case now of
-                    Nothing -> interpretUnmodified later op
-                    Just x -> do
-                      mA <- apply x
-                      case mA of
-                        Just a -> return (a, Const later)
-                        Nothing -> mzero
-            )
-            (nowLaterList ltls)
-    where
-      interpretUnmodified later x =
-        (,Const later)
-          <$> interpretEffect
-            (fmap fst . evalActs (Const []))
-            x
+    interpretUnmodified later x =
+      (,Const later)
+        <$> interpretEffect
+          (fmap fst . evalActs (Const []))
+          x
 
 -- | The constraint that all effect types in @ops@ have an @'InterpretLtl' mod m@
 -- or an @'InterpretLtlHigherOrder' mod m@ instance

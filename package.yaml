@@ -13,6 +13,7 @@ dependencies:
   - tasty
   - tasty-hunit
   - th-abstraction
+  - unification-fd
 
 library:
   source-dirs: ./src
