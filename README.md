@@ -2,22 +2,35 @@
 
 Copyright Tweag I/O 2023
 
-With `sine-nomine` you can generate variations of sequences monadic actions.
-The main application is generating test cases for stateful systems. 
+With `sine-nomine` you can generate variations of sequences of -- possibly nested -- monadic actions.
+The main application is deriving test cases for stateful systems by tampering with regular scenarios.
 
 You are free to copy, modify, and distribute `sine-nomine` under the terms of
 the MIT license. See [LICENSE](./LICENSE) for details.
 
-## Main use case: Testing stateful systems
+## Testing stateful monadic systems
 
-Testing stateful systems is hard, because the admissible actions at each step
-are constrained by the actions taken previously. One approach (taken by
+Testing stateful monadic systems is hard, because the admissible actions at each step
+might be constrained by the current state resulting from previous actions. One approach (taken by
 [quickchek-state-machine](https://hackage.haskell.org/package/quickcheck-state-machine)
-and similar libraries) is to explicitly model all state transitions that can
-happen and somehow use this representation to generate test cases. We think
-that this often means duplicating the work (and bugs) of the system that's
-being tested. Therefore, this library takes a different approach based on
-modifying existing traces. The most common workflow will be this:
+and similar libraries) is to explicitly model all actions that can
+happen and use this representation to generate test cases from scratch. While this bears results in practice,
+we think that this often means duplicated work from the system and the testing engine, as both
+will somehow need to keep track of relevant state information.
+This library proposes a different approach by interfacting with the system directly to
+use its state while tampering about existing actions. In practice, this revolves around
+modifying existing traces -- sequences of actions -- of the system's execution throughout their execution.
+
+## Most common workflow
+
+The most common workflow will be this:
+
+- Capture the behavior of your system through a type class of monads. This should exhibit the various action that will be possible to interact with the system. Here is an example of actions expected to interact with a key-value-store.
+
+`class (Monad m) => MonadKeyValue k v m where
+  storeValue :: k -> v -> m ()
+  getValue :: k -> m (Maybe v)
+  deleteValue :: k -> m ()`
 
 - Manually write (or generate by some other means) a number of base test
   cases. These will likely correspond to "normal" uses of the system you're
