@@ -1,0 +1,1064 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DeriveAnyClass #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DeriveGeneric #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE DeriveTraversable #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# HLINT ignore &quot;Eta reduce&quot; #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- | experimental module to derive instances of the relevant classes for the</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- LTL interface. Not intended for use (yet).</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Logic.Ltl.TH</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Logic.Ltl.TH.html#makeLtl"><span class="hs-identifier">makeLtl</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Applicative</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Except</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">runExceptT</span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Identity</span></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Unification</span></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Unification.IntVar</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">evalIntBindingT</span></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Unification.Ranked</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">UFailure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">MismatchFailure</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">OccursFailure</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Unification.Ranked.IntVar</span></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.html"><span class="hs-identifier">Effect</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Generics</span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH</span></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH.Datatype</span></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Logic.Ltl.html"><span class="hs-identifier">Logic.Ltl</span></a></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- | There are three type classes that are relevant for the API in &quot;Logic.Ltl&quot;:</span><span>
+</span><span id="line-31"></span><span class="hs-comment">--</span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- 1. @InterpretLtl mod m op@</span><span>
+</span><span id="line-33"></span><span class="hs-comment">--</span><span>
+</span><span id="line-34"></span><span class="hs-comment">-- 2. @InterpretLtlHigherOrder mod m op@</span><span>
+</span><span id="line-35"></span><span class="hs-comment">--</span><span>
+</span><span id="line-36"></span><span class="hs-comment">-- 3. @InterpretEffectStateful (Const [Ltl mod]) m op@</span><span>
+</span><span id="line-37"></span><span class="hs-comment">--</span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- For each of these classes, if you have an instance, there is a standard way</span><span>
+</span><span id="line-39"></span><span class="hs-comment">-- to define instance(s) for the class(es) further down on the list. That is,</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- in principle we could define</span><span>
+</span><span id="line-41"></span><span class="hs-comment">--</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- &gt; instance InterpretLtl mod m op =&gt; InterpretLtlHigherOrder mod m op</span><span>
+</span><span id="line-43"></span><span class="hs-comment">--</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- and</span><span>
+</span><span id="line-45"></span><span class="hs-comment">--</span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- &gt; instance InterpretLtlHigherOrder mod m op =&gt; InterpretEffectStateful (Const [Ltl mod]) m op</span><span>
+</span><span id="line-47"></span><span class="hs-comment">--</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- However, we chose not do do this, and provide this macro instead, which</span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- defines the &quot;missing&quot; instances on a case-by-case basis. This is because</span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- sometimes you want to implement one of the classes further down the list,</span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- and do so generally, so that GHC won't be able to pick a most specific</span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- instance.</span><span>
+</span><span id="line-53"></span><span class="hs-comment">--</span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- The macro relies on unification of instance heads: It will only generate</span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- instances which are strictly more specific than any pre-existing instance in</span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- current scope.</span><span>
+</span><span id="line-57"></span><span class="annot"><a href="Logic.Ltl.TH.html#makeLtl"><span class="hs-identifier hs-type">makeLtl</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Dec</span></span><span class="hs-special">]</span><span>
+</span><span id="line-58"></span><span id="makeLtl"><span class="annot"><span class="annottext">makeLtl :: Q [Dec]
+</span><a href="Logic.Ltl.TH.html#makeLtl"><span class="hs-identifier hs-var hs-var">makeLtl</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-59"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">ClassI</span></span><span> </span><span class="annot"><span class="annottext">Dec
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679193475"><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193475"><span class="hs-identifier hs-var">firstInstances</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Name -&gt; Q Info
+</span><span class="hs-identifier hs-var">reify</span></span><span> </span><span class="hs-special">''</span><span class="hs-identifier">InterpretLtl</span><span>
+</span><span id="line-60"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">ClassI</span></span><span> </span><span class="annot"><span class="annottext">Dec
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679193477"><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193477"><span class="hs-identifier hs-var">higherInstances</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Name -&gt; Q Info
+</span><span class="hs-identifier hs-var">reify</span></span><span> </span><span class="hs-special">''</span><span class="hs-identifier">InterpretLtlHigherOrder</span><span>
+</span><span id="line-61"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">ClassI</span></span><span> </span><span class="annot"><span class="annottext">Dec
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679193478"><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193478"><span class="hs-identifier hs-var">effectInstances</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Name -&gt; Q Info
+</span><span class="hs-identifier hs-var">reify</span></span><span> </span><span class="hs-special">''</span><span class="hs-identifier">InterpretEffectStateful</span><span>
+</span><span id="line-62"></span><span>  </span><span id="local-6989586621679193479"><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193479"><span class="hs-identifier hs-var">newHigherInstances</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><span class="annottext">[Dec] -&gt; [Dec] -&gt; (Cxt -&gt; Type -&gt; Q Dec) -&gt; Q [Dec]
+</span><a href="#local-6989586621679193480"><span class="hs-identifier hs-var">makeInstances</span></a></span><span>
+</span><span id="line-64"></span><span>      </span><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193475"><span class="hs-identifier hs-var">firstInstances</span></a></span><span>
+</span><span id="line-65"></span><span>      </span><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193477"><span class="hs-identifier hs-var">higherInstances</span></a></span><span>
+</span><span id="line-66"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679193481"><span class="annot"><span class="annottext">Cxt
+</span><a href="#local-6989586621679193481"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span id="local-6989586621679193482"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193482"><span class="hs-identifier hs-var">firstInstanceHead</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-67"></span><span>          </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193482"><span class="hs-identifier hs-var">firstInstanceHead</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-68"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">AppT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">AppT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">AppT</span></span><span> </span><span id="local-6989586621679193485"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193485"><span class="hs-identifier hs-var">_InterpretLtl</span></a></span></span><span> </span><span id="local-6989586621679193486"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193486"><span class="hs-identifier hs-var">modType</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679193487"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193487"><span class="hs-identifier hs-var">domainType</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679193488"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193488"><span class="hs-identifier hs-var">effectType</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-69"></span><span>              </span><span class="annot"><span class="annottext">Maybe Overlap -&gt; Cxt -&gt; Type -&gt; [Dec] -&gt; Dec
+</span><span class="hs-identifier hs-var">InstanceD</span></span><span>
+</span><span id="line-70"></span><span>                </span><span class="annot"><span class="annottext">Maybe Overlap
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-71"></span><span>                </span><span class="annot"><span class="annottext">Cxt
+</span><a href="#local-6989586621679193481"><span class="hs-identifier hs-var">ctx</span></a></span><span>
+</span><span id="line-72"></span><span>                </span><span class="annot"><span class="annottext">(Type -&gt; [Dec] -&gt; Dec) -&gt; Q Type -&gt; Q ([Dec] -&gt; Dec)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">[t|</span><span class="hs-identifier">InterpretLtlHigherOrder</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Q Type
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193486"><span class="hs-identifier hs-var">modType</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Q Type
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193487"><span class="hs-identifier hs-var">domainType</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Q Type
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193488"><span class="hs-identifier hs-var">effectType</span></a></span><span class="hs-special">)</span><span class="hs-special">|]</span><span>
+</span><span id="line-73"></span><span>                </span><span class="annot"><span class="annottext">Q ([Dec] -&gt; Dec) -&gt; Q [Dec] -&gt; Q Dec
+forall a b. Q (a -&gt; b) -&gt; Q a -&gt; Q b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Dec -&gt; [Dec] -&gt; [Dec]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Dec -&gt; [Dec]) -&gt; Q Dec -&gt; Q [Dec]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Name -&gt; [Q Clause] -&gt; Q Dec
+forall (m :: * -&gt; *). Quote m =&gt; Name -&gt; [m Clause] -&gt; m Dec
+</span><span class="hs-identifier hs-var">funD</span></span><span> </span><span class="hs-special">'</span><span class="hs-identifier">interpretLtlHigherOrder</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">[Q Pat] -&gt; Q Body -&gt; [Q Dec] -&gt; Q Clause
+forall (m :: * -&gt; *).
+Quote m =&gt;
+[m Pat] -&gt; m Body -&gt; [m Dec] -&gt; m Clause
+</span><span class="hs-identifier hs-var">clause</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Exp -&gt; Body
+</span><span class="hs-identifier hs-var">NormalB</span></span><span> </span><span class="annot"><span class="annottext">(Exp -&gt; Body) -&gt; Q Exp -&gt; Q Body
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">[e|</span><span class="hs-identifier">Direct</span><span> </span><span class="hs-operator">.</span><span> </span><span class="hs-identifier">interpretLtl</span><span class="hs-special">|]</span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>            </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Q Dec
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;malformed 'InterpretLtl' instance head&quot;</span></span><span>
+</span><span id="line-75"></span><span>      </span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>  </span><span id="local-6989586621679193493"><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193493"><span class="hs-identifier hs-var">newEffectInstances</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-77"></span><span>    </span><span class="annot"><span class="annottext">[Dec] -&gt; [Dec] -&gt; (Cxt -&gt; Type -&gt; Q Dec) -&gt; Q [Dec]
+</span><a href="#local-6989586621679193480"><span class="hs-identifier hs-var">makeInstances</span></a></span><span>
+</span><span id="line-78"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193477"><span class="hs-identifier hs-var">higherInstances</span></a></span><span> </span><span class="annot"><span class="annottext">[Dec] -&gt; [Dec] -&gt; [Dec]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193479"><span class="hs-identifier hs-var">newHigherInstances</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-79"></span><span>      </span><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193478"><span class="hs-identifier hs-var">effectInstances</span></a></span><span>
+</span><span id="line-80"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679193494"><span class="annot"><span class="annottext">Cxt
+</span><a href="#local-6989586621679193494"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span id="local-6989586621679193495"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193495"><span class="hs-identifier hs-var">higherInstanceHead</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-81"></span><span>          </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193495"><span class="hs-identifier hs-var">higherInstanceHead</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-82"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">AppT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">AppT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">AppT</span></span><span> </span><span id="local-6989586621679193496"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193496"><span class="hs-identifier hs-var">_InterpretLtlHigherOrder</span></a></span></span><span> </span><span id="local-6989586621679193497"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193497"><span class="hs-identifier hs-var">modType</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679193498"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193498"><span class="hs-identifier hs-var">domainType</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679193499"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193499"><span class="hs-identifier hs-var">effectType</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-83"></span><span>              </span><span class="annot"><span class="annottext">Maybe Overlap -&gt; Cxt -&gt; Type -&gt; [Dec] -&gt; Dec
+</span><span class="hs-identifier hs-var">InstanceD</span></span><span>
+</span><span id="line-84"></span><span>                </span><span class="annot"><span class="annottext">Maybe Overlap
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-85"></span><span>                </span><span class="annot"><span class="annottext">(Cxt -&gt; Type -&gt; [Dec] -&gt; Dec) -&gt; Q Cxt -&gt; Q (Type -&gt; [Dec] -&gt; Dec)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Cxt -&gt; Cxt -&gt; Cxt
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Cxt
+</span><a href="#local-6989586621679193494"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span>                        </span><span class="annot"><span class="annottext">(Cxt -&gt; Cxt) -&gt; Q Cxt -&gt; Q Cxt
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Q Type] -&gt; Q Cxt
+forall (t :: * -&gt; *) (m :: * -&gt; *) a.
+(Traversable t, Monad m) =&gt;
+t (m a) -&gt; m (t a)
+forall (m :: * -&gt; *) a. Monad m =&gt; [m a] -&gt; m [a]
+</span><span class="hs-identifier hs-var">sequence</span></span><span>
+</span><span id="line-87"></span><span>                          </span><span class="hs-special">[</span><span> </span><span class="hs-special">[t|</span><span class="hs-identifier">Semigroup</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Q Type
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193497"><span class="hs-identifier hs-var">modType</span></a></span><span class="hs-special">)</span><span class="hs-special">|]</span><span class="hs-special">,</span><span>
+</span><span id="line-88"></span><span>                            </span><span class="hs-special">[t|</span><span class="hs-identifier">MonadPlus</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Q Type
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193498"><span class="hs-identifier hs-var">domainType</span></a></span><span class="hs-special">)</span><span class="hs-special">|]</span><span class="hs-special">,</span><span>
+</span><span id="line-89"></span><span>                            </span><span class="hs-special">[t|</span><span class="hs-identifier">InterpretEffect</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Q Type
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193498"><span class="hs-identifier hs-var">domainType</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Q Type
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193499"><span class="hs-identifier hs-var">effectType</span></a></span><span class="hs-special">)</span><span class="hs-special">|]</span><span>
+</span><span id="line-90"></span><span>                          </span><span class="hs-special">]</span><span>
+</span><span id="line-91"></span><span>                    </span><span class="hs-special">)</span><span>
+</span><span id="line-92"></span><span>                </span><span class="annot"><span class="annottext">Q (Type -&gt; [Dec] -&gt; Dec) -&gt; Q Type -&gt; Q ([Dec] -&gt; Dec)
+forall a b. Q (a -&gt; b) -&gt; Q a -&gt; Q b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="hs-special">[t|</span><span class="hs-identifier">InterpretEffectStateful</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">Const</span><span> </span><span class="hs-special">[</span><span class="hs-identifier">Ltl</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Q Type
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193497"><span class="hs-identifier hs-var">modType</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Q Type
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193498"><span class="hs-identifier hs-var">domainType</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Q Type
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193499"><span class="hs-identifier hs-var">effectType</span></a></span><span class="hs-special">)</span><span class="hs-special">|]</span><span>
+</span><span id="line-93"></span><span>                </span><span class="annot"><span class="annottext">Q ([Dec] -&gt; Dec) -&gt; Q [Dec] -&gt; Q Dec
+forall a b. Q (a -&gt; b) -&gt; Q a -&gt; Q b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="hs-special">(</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Dec -&gt; [Dec] -&gt; [Dec]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-94"></span><span>                        </span><span class="annot"><span class="annottext">(Dec -&gt; [Dec]) -&gt; Q Dec -&gt; Q [Dec]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Name -&gt; [Q Clause] -&gt; Q Dec
+forall (m :: * -&gt; *). Quote m =&gt; Name -&gt; [m Clause] -&gt; m Dec
+</span><span class="hs-identifier hs-var">funD</span></span><span>
+</span><span id="line-95"></span><span>                          </span><span class="hs-special">'</span><span class="hs-identifier">interpretEffectStateful</span><span>
+</span><span id="line-96"></span><span>                          </span><span class="hs-special">[</span><span class="annot"><span class="annottext">[Q Pat] -&gt; Q Body -&gt; [Q Dec] -&gt; Q Clause
+forall (m :: * -&gt; *).
+Quote m =&gt;
+[m Pat] -&gt; m Body -&gt; [m Dec] -&gt; m Clause
+</span><span class="hs-identifier hs-var">clause</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Exp -&gt; Body
+</span><span class="hs-identifier hs-var">NormalB</span></span><span> </span><span class="annot"><span class="annottext">(Exp -&gt; Body) -&gt; Q Exp -&gt; Q Body
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">[e|</span><span class="hs-identifier">interpretEffectStatefulFromLtlHigherOrder</span><span class="hs-special">|]</span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-97"></span><span>                    </span><span class="hs-special">)</span><span>
+</span><span id="line-98"></span><span>            </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Q Dec
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;malformed 'InterpretLtlHigherOrder' instance head&quot;</span></span><span>
+</span><span id="line-99"></span><span>      </span><span class="hs-special">)</span><span>
+</span><span id="line-100"></span><span>  </span><span class="annot"><span class="annottext">[Dec] -&gt; Q [Dec]
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">([Dec] -&gt; Q [Dec]) -&gt; [Dec] -&gt; Q [Dec]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193479"><span class="hs-identifier hs-var">newHigherInstances</span></a></span><span> </span><span class="annot"><span class="annottext">[Dec] -&gt; [Dec] -&gt; [Dec]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193493"><span class="hs-identifier hs-var">newEffectInstances</span></a></span><span>
+</span><span id="line-101"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-102"></span><span>    </span><span class="annot"><a href="#local-6989586621679193480"><span class="hs-identifier hs-type">makeInstances</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-103"></span><span>      </span><span class="hs-comment">-- instances of the lower class</span><span>
+</span><span id="line-104"></span><span>      </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">InstanceDec</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-105"></span><span>      </span><span class="hs-comment">-- instances of the higher class</span><span>
+</span><span id="line-106"></span><span>      </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">InstanceDec</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-107"></span><span>      </span><span class="hs-comment">-- how to transform the constraints and instance head of the lower class</span><span>
+</span><span id="line-108"></span><span>      </span><span class="hs-comment">-- into an instance of the higher class</span><span>
+</span><span id="line-109"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Cxt</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">InstanceDec</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-110"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">InstanceDec</span></span><span class="hs-special">]</span><span>
+</span><span id="line-111"></span><span>    </span><span id="local-6989586621679193480"><span class="annot"><span class="annottext">makeInstances :: [Dec] -&gt; [Dec] -&gt; (Cxt -&gt; Type -&gt; Q Dec) -&gt; Q [Dec]
+</span><a href="#local-6989586621679193480"><span class="hs-identifier hs-var hs-var">makeInstances</span></a></span></span><span> </span><span id="local-6989586621679193502"><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193502"><span class="hs-identifier hs-var">lowerInstances</span></a></span></span><span> </span><span id="local-6989586621679193503"><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193503"><span class="hs-identifier hs-var">higherInstances</span></a></span></span><span> </span><span id="local-6989586621679193504"><span class="annot"><span class="annottext">Cxt -&gt; Type -&gt; Q Dec
+</span><a href="#local-6989586621679193504"><span class="hs-identifier hs-var">mkHigherInstance</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-112"></span><span>      </span><span class="annot"><span class="annottext">(Dec -&gt; Q (Maybe Dec)) -&gt; [Dec] -&gt; Q [Dec]
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m (Maybe b)) -&gt; [a] -&gt; m [b]
+</span><a href="#local-6989586621679193505"><span class="hs-identifier hs-var">mapMaybeM</span></a></span><span>
+</span><span id="line-113"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-114"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">InstanceD</span></span><span> </span><span class="annot"><span class="annottext">Maybe Overlap
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679193506"><span class="annot"><span class="annottext">Cxt
+</span><a href="#local-6989586621679193506"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span id="local-6989586621679193507"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193507"><span class="hs-identifier hs-var">lowerHead</span></a></span></span><span> </span><span class="annot"><span class="annottext">[Dec]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-115"></span><span>              </span><span id="local-6989586621679193508"><span class="annot"><span class="annottext">Dec
+</span><a href="#local-6989586621679193508"><span class="hs-identifier hs-var">candidateInstance</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Cxt -&gt; Type -&gt; Q Dec
+</span><a href="#local-6989586621679193504"><span class="hs-identifier hs-var">mkHigherInstance</span></a></span><span> </span><span class="annot"><span class="annottext">Cxt
+</span><a href="#local-6989586621679193506"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193507"><span class="hs-identifier hs-var">lowerHead</span></a></span><span>
+</span><span id="line-116"></span><span>              </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Dec
+</span><a href="#local-6989586621679193508"><span class="hs-identifier hs-var">candidateInstance</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-117"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">InstanceD</span></span><span> </span><span class="annot"><span class="annottext">Maybe Overlap
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Cxt
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679193509"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193509"><span class="hs-identifier hs-var">candidateHead</span></a></span></span><span> </span><span class="annot"><span class="annottext">[Dec]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-118"></span><span>                  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">(Dec -&gt; Bool) -&gt; [Dec] -&gt; Bool
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
+</span><span class="hs-identifier hs-var">any</span></span><span>
+</span><span id="line-119"></span><span>                    </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-120"></span><span>                        </span><span class="annot"><span class="hs-identifier hs-type">InstanceD</span></span><span> </span><span class="annot"><span class="annottext">Maybe Overlap
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Cxt
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679193511"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193511"><span class="hs-identifier hs-var">higherHead</span></a></span></span><span> </span><span class="annot"><span class="annottext">[Dec]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-121"></span><span>                          </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193511"><span class="hs-identifier hs-var">higherHead</span></a></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Bool
+</span><a href="Logic.Ltl.TH.html#subsumesType"><span class="hs-operator hs-var">`subsumesType`</span></a></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193509"><span class="hs-identifier hs-var">candidateHead</span></a></span><span>
+</span><span id="line-122"></span><span>                        </span><span class="annot"><span class="annottext">Dec
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Bool
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;expected list of instance declarations&quot;</span></span><span>
+</span><span id="line-123"></span><span>                    </span><span class="hs-special">)</span><span>
+</span><span id="line-124"></span><span>                    </span><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193503"><span class="hs-identifier hs-var">higherInstances</span></a></span><span>
+</span><span id="line-125"></span><span>                    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Maybe Dec -&gt; Q (Maybe Dec)
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Maybe Dec
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-126"></span><span>                    </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe Dec -&gt; Q (Maybe Dec)
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Maybe Dec -&gt; Q (Maybe Dec)) -&gt; Maybe Dec -&gt; Q (Maybe Dec)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Dec -&gt; Maybe Dec
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Dec
+</span><a href="#local-6989586621679193508"><span class="hs-identifier hs-var">candidateInstance</span></a></span><span>
+</span><span id="line-127"></span><span>                </span><span class="annot"><span class="annottext">Dec
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Q (Maybe Dec)
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;malformed instance declaration&quot;</span></span><span>
+</span><span id="line-128"></span><span>            </span><span class="annot"><span class="annottext">Dec
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Q (Maybe Dec)
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;expected a list of instance declarations&quot;</span></span><span>
+</span><span id="line-129"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-130"></span><span>        </span><span class="annot"><span class="annottext">[Dec]
+</span><a href="#local-6989586621679193502"><span class="hs-identifier hs-var">lowerInstances</span></a></span><span>
+</span><span id="line-131"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-132"></span><span>        </span><span id="local-6989586621679193265"><span id="local-6989586621679193266"><span id="local-6989586621679193267"><span class="annot"><a href="#local-6989586621679193505"><span class="hs-identifier hs-type">mapMaybeM</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679193265"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679193266"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679193265"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679193267"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679193266"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679193265"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679193267"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span></span></span></span><span>
+</span><span id="line-133"></span><span>        </span><span id="local-6989586621679193505"><span class="annot"><span class="annottext">mapMaybeM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m (Maybe b)) -&gt; [a] -&gt; m [b]
+</span><a href="#local-6989586621679193505"><span class="hs-identifier hs-var hs-var">mapMaybeM</span></a></span></span><span> </span><span class="annot"><span class="annottext">a -&gt; m (Maybe b)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[b] -&gt; m [b]
+forall a. a -&gt; m a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-134"></span><span>        </span><span class="annot"><a href="#local-6989586621679193505"><span class="hs-identifier hs-var">mapMaybeM</span></a></span><span> </span><span id="local-6989586621679193523"><span class="annot"><span class="annottext">a -&gt; m (Maybe b)
+</span><a href="#local-6989586621679193523"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679193524"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679193524"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679193525"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679193525"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-135"></span><span>          </span><span id="local-6989586621679193526"><span class="annot"><span class="annottext">Maybe b
+</span><a href="#local-6989586621679193526"><span class="hs-identifier hs-var">my</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">a -&gt; m (Maybe b)
+</span><a href="#local-6989586621679193523"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679193524"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-136"></span><span>          </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe b
+</span><a href="#local-6989586621679193526"><span class="hs-identifier hs-var">my</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-137"></span><span>            </span><span class="annot"><span class="annottext">Maybe b
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(a -&gt; m (Maybe b)) -&gt; [a] -&gt; m [b]
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m (Maybe b)) -&gt; [a] -&gt; m [b]
+</span><a href="#local-6989586621679193505"><span class="hs-identifier hs-var">mapMaybeM</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; m (Maybe b)
+</span><a href="#local-6989586621679193523"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679193525"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-138"></span><span>            </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679193527"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679193527"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679193527"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">b -&gt; [b] -&gt; [b]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([b] -&gt; [b]) -&gt; m [b] -&gt; m [b]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; m (Maybe b)) -&gt; [a] -&gt; m [b]
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m (Maybe b)) -&gt; [a] -&gt; m [b]
+</span><a href="#local-6989586621679193505"><span class="hs-identifier hs-var">mapMaybeM</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; m (Maybe b)
+</span><a href="#local-6989586621679193523"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679193525"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span>    </span><span class="hs-comment">-- Remove all occurrences of @SigT t ...@ and replace them with just @t@.</span><span>
+</span><span id="line-141"></span><span>    </span><span class="hs-comment">-- For type unification purposes, we're not interested in a kind</span><span>
+</span><span id="line-142"></span><span>    </span><span class="hs-comment">-- signatures' being there or not.</span><span>
+</span><span id="line-143"></span><span>    </span><span class="annot"><a href="#local-6989586621679193483"><span class="hs-identifier hs-type">dropSigT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span>
+</span><span id="line-144"></span><span>    </span><span id="local-6989586621679193483"><span class="annot"><span class="annottext">dropSigT :: Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var hs-var">dropSigT</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ForallT</span></span><span> </span><span id="local-6989586621679193529"><span class="annot"><span class="annottext">[TyVarBndr Specificity]
+</span><a href="#local-6989586621679193529"><span class="hs-identifier hs-var">bnd</span></a></span></span><span> </span><span id="local-6989586621679193530"><span class="annot"><span class="annottext">Cxt
+</span><a href="#local-6989586621679193530"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span id="local-6989586621679193531"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193531"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[TyVarBndr Specificity] -&gt; Cxt -&gt; Type -&gt; Type
+</span><span class="hs-identifier hs-var">ForallT</span></span><span> </span><span class="annot"><span class="annottext">[TyVarBndr Specificity]
+</span><a href="#local-6989586621679193529"><span class="hs-identifier hs-var">bnd</span></a></span><span> </span><span class="annot"><span class="annottext">Cxt
+</span><a href="#local-6989586621679193530"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193531"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-145"></span><span>    </span><span class="annot"><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ForallVisT</span></span><span> </span><span id="local-6989586621679193533"><span class="annot"><span class="annottext">[TyVarBndr ()]
+</span><a href="#local-6989586621679193533"><span class="hs-identifier hs-var">bnds</span></a></span></span><span> </span><span id="local-6989586621679193534"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193534"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[TyVarBndr ()] -&gt; Type -&gt; Type
+</span><span class="hs-identifier hs-var">ForallVisT</span></span><span> </span><span class="annot"><span class="annottext">[TyVarBndr ()]
+</span><a href="#local-6989586621679193533"><span class="hs-identifier hs-var">bnds</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193534"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-146"></span><span>    </span><span class="annot"><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">AppT</span></span><span> </span><span id="local-6989586621679193535"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193535"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679193536"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193536"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Type
+</span><span class="hs-identifier hs-var">AppT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193535"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193536"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-147"></span><span>    </span><span class="annot"><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">AppKindT</span></span><span> </span><span id="local-6989586621679193538"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193538"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679193539"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193539"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Type
+</span><span class="hs-identifier hs-var">AppKindT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193538"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193539"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><span id="line-148"></span><span>    </span><span class="annot"><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">SigT</span></span><span> </span><span id="local-6989586621679193541"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193541"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193541"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-149"></span><span>    </span><span class="annot"><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">InfixT</span></span><span> </span><span id="local-6989586621679193543"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193543"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679193544"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193544"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679193545"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193545"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Name -&gt; Type -&gt; Type
+</span><span class="hs-identifier hs-var">InfixT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193543"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193544"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193545"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-150"></span><span>    </span><span class="annot"><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UInfixT</span></span><span> </span><span id="local-6989586621679193547"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193547"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679193548"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193548"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679193549"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193549"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Name -&gt; Type -&gt; Type
+</span><span class="hs-identifier hs-var">UInfixT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193547"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193548"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193549"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-151"></span><span>    </span><span class="annot"><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ParensT</span></span><span> </span><span id="local-6989586621679193551"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193551"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><span class="hs-identifier hs-var">ParensT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193551"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-152"></span><span>    </span><span class="annot"><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ImplicitParamT</span></span><span> </span><span id="local-6989586621679193553"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679193553"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621679193554"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193554"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Type -&gt; Type
+</span><span class="hs-identifier hs-var">ImplicitParamT</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679193553"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193554"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-153"></span><span>    </span><span class="annot"><a href="#local-6989586621679193483"><span class="hs-identifier hs-var">dropSigT</span></a></span><span> </span><span id="local-6989586621679193555"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193555"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193555"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-154"></span><span>
+</span><span id="line-155"></span><span class="annot"><span class="hs-comment">-- * internal helpers</span></span><span>
+</span><span id="line-156"></span><span>
+</span><span id="line-157"></span><span class="annot"><span class="hs-comment">-- ** unifying 'Type's</span></span><span>
+</span><span id="line-158"></span><span>
+</span><span id="line-159"></span><span class="hs-keyword">data</span><span> </span><span id="TypeFunctor"><span class="annot"><a href="Logic.Ltl.TH.html#TypeFunctor"><span class="hs-identifier hs-var">TypeFunctor</span></a></span></span><span> </span><span id="local-6989586621679193351"><span class="annot"><a href="#local-6989586621679193351"><span class="hs-identifier hs-type">t</span></a></span></span><span>
+</span><span id="line-160"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="AppTF"><span class="annot"><a href="Logic.Ltl.TH.html#AppTF"><span class="hs-identifier hs-var">AppTF</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679193351"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679193351"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-161"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="SigTF"><span class="annot"><a href="Logic.Ltl.TH.html#SigTF"><span class="hs-identifier hs-var">SigTF</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679193351"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Kind</span></span><span>
+</span><span id="line-162"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="VarTF"><span class="annot"><a href="Logic.Ltl.TH.html#VarTF"><span class="hs-identifier hs-var">VarTF</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Name</span></span><span>
+</span><span id="line-163"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ConTF"><span class="annot"><a href="Logic.Ltl.TH.html#ConTF"><span class="hs-identifier hs-var">ConTF</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Name</span></span><span>
+</span><span id="line-164"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PromotedTF"><span class="annot"><a href="Logic.Ltl.TH.html#PromotedTF"><span class="hs-identifier hs-var">PromotedTF</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Name</span></span><span>
+</span><span id="line-165"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ParensTF"><span class="annot"><a href="Logic.Ltl.TH.html#ParensTF"><span class="hs-identifier hs-var">ParensTF</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679193351"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-166"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TupleTF"><span class="annot"><a href="Logic.Ltl.TH.html#TupleTF"><span class="hs-identifier hs-var">TupleTF</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-167"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ArrowTF"><span class="annot"><a href="Logic.Ltl.TH.html#ArrowTF"><span class="hs-identifier hs-var">ArrowTF</span></a></span></span><span>
+</span><span id="line-168"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ListTF"><span class="annot"><a href="Logic.Ltl.TH.html#ListTF"><span class="hs-identifier hs-var">ListTF</span></a></span></span><span>
+</span><span id="line-169"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PromotedTupleTF"><span class="annot"><a href="Logic.Ltl.TH.html#PromotedTupleTF"><span class="hs-identifier hs-var">PromotedTupleTF</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-170"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PromotedNilTF"><span class="annot"><a href="Logic.Ltl.TH.html#PromotedNilTF"><span class="hs-identifier hs-var">PromotedNilTF</span></a></span></span><span>
+</span><span id="line-171"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PromotedConsTF"><span class="annot"><a href="Logic.Ltl.TH.html#PromotedConsTF"><span class="hs-identifier hs-var">PromotedConsTF</span></a></span></span><span>
+</span><span id="line-172"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="StarTF"><span class="annot"><a href="Logic.Ltl.TH.html#StarTF"><span class="hs-identifier hs-var">StarTF</span></a></span></span><span>
+</span><span id="line-173"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ConstraintTF"><span class="annot"><a href="Logic.Ltl.TH.html#ConstraintTF"><span class="hs-identifier hs-var">ConstraintTF</span></a></span></span><span>
+</span><span id="line-174"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="LitTF"><span class="annot"><a href="Logic.Ltl.TH.html#LitTF"><span class="hs-identifier hs-var">LitTF</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">TyLit</span></span><span>
+</span><span id="line-175"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="WildCardTF"><span class="annot"><a href="Logic.Ltl.TH.html#WildCardTF"><span class="hs-identifier hs-var">WildCardTF</span></a></span></span><span>
+</span><span id="line-176"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ImplicitParamTF"><span class="annot"><a href="Logic.Ltl.TH.html#ImplicitParamTF"><span class="hs-identifier hs-var">ImplicitParamTF</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="#local-6989586621679193351"><span class="hs-identifier hs-type">t</span></a></span><span>
+</span><span id="line-177"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679193574"><span id="local-6989586621679193576"><span class="annot"><span class="annottext">(forall a b. (a -&gt; b) -&gt; TypeFunctor a -&gt; TypeFunctor b)
+-&gt; (forall a b. a -&gt; TypeFunctor b -&gt; TypeFunctor a)
+-&gt; Functor TypeFunctor
+forall a b. a -&gt; TypeFunctor b -&gt; TypeFunctor a
+forall a b. (a -&gt; b) -&gt; TypeFunctor a -&gt; TypeFunctor b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+$cfmap :: forall a b. (a -&gt; b) -&gt; TypeFunctor a -&gt; TypeFunctor b
+fmap :: forall a b. (a -&gt; b) -&gt; TypeFunctor a -&gt; TypeFunctor b
+$c&lt;$ :: forall a b. a -&gt; TypeFunctor b -&gt; TypeFunctor a
+&lt;$ :: forall a b. a -&gt; TypeFunctor b -&gt; TypeFunctor a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679193580"><span id="local-6989586621679193586"><span id="local-6989586621679193603"><span id="local-6989586621679193608"><span id="local-6989586621679193610"><span id="local-6989586621679193613"><span id="local-6989586621679193616"><span id="local-6989586621679193619"><span id="local-6989586621679193622"><span id="local-6989586621679193625"><span id="local-6989586621679193628"><span id="local-6989586621679193630"><span id="local-6989586621679193633"><span id="local-6989586621679193638"><span id="local-6989586621679193643"><span id="local-6989586621679193648"><span id="local-6989586621679193653"><span class="annot"><span class="annottext">(forall m. Monoid m =&gt; TypeFunctor m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TypeFunctor a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TypeFunctor a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; TypeFunctor a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; TypeFunctor a -&gt; a)
+-&gt; (forall a. TypeFunctor a -&gt; [a])
+-&gt; (forall a. TypeFunctor a -&gt; Bool)
+-&gt; (forall a. TypeFunctor a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; TypeFunctor a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; TypeFunctor a -&gt; a)
+-&gt; (forall a. Ord a =&gt; TypeFunctor a -&gt; a)
+-&gt; (forall a. Num a =&gt; TypeFunctor a -&gt; a)
+-&gt; (forall a. Num a =&gt; TypeFunctor a -&gt; a)
+-&gt; Foldable TypeFunctor
+forall a. Eq a =&gt; a -&gt; TypeFunctor a -&gt; Bool
+forall a. Num a =&gt; TypeFunctor a -&gt; a
+forall a. Ord a =&gt; TypeFunctor a -&gt; a
+forall m. Monoid m =&gt; TypeFunctor m -&gt; m
+forall a. TypeFunctor a -&gt; Bool
+forall a. TypeFunctor a -&gt; Int
+forall a. TypeFunctor a -&gt; [a]
+forall a. (a -&gt; a -&gt; a) -&gt; TypeFunctor a -&gt; a
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TypeFunctor a -&gt; m
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b
+forall (t :: * -&gt; *).
+(forall m. Monoid m =&gt; t m -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall m a. Monoid m =&gt; (a -&gt; m) -&gt; t a -&gt; m)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. (a -&gt; a -&gt; a) -&gt; t a -&gt; a)
+-&gt; (forall a. t a -&gt; [a])
+-&gt; (forall a. t a -&gt; Bool)
+-&gt; (forall a. t a -&gt; Int)
+-&gt; (forall a. Eq a =&gt; a -&gt; t a -&gt; Bool)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Ord a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; (forall a. Num a =&gt; t a -&gt; a)
+-&gt; Foldable t
+$cfold :: forall m. Monoid m =&gt; TypeFunctor m -&gt; m
+fold :: forall m. Monoid m =&gt; TypeFunctor m -&gt; m
+$cfoldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TypeFunctor a -&gt; m
+foldMap :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TypeFunctor a -&gt; m
+$cfoldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TypeFunctor a -&gt; m
+foldMap' :: forall m a. Monoid m =&gt; (a -&gt; m) -&gt; TypeFunctor a -&gt; m
+$cfoldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b
+foldr :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b
+$cfoldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b
+foldr' :: forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b
+$cfoldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b
+foldl :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b
+$cfoldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b
+foldl' :: forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; TypeFunctor a -&gt; b
+$cfoldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; TypeFunctor a -&gt; a
+foldr1 :: forall a. (a -&gt; a -&gt; a) -&gt; TypeFunctor a -&gt; a
+$cfoldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; TypeFunctor a -&gt; a
+foldl1 :: forall a. (a -&gt; a -&gt; a) -&gt; TypeFunctor a -&gt; a
+$ctoList :: forall a. TypeFunctor a -&gt; [a]
+toList :: forall a. TypeFunctor a -&gt; [a]
+$cnull :: forall a. TypeFunctor a -&gt; Bool
+null :: forall a. TypeFunctor a -&gt; Bool
+$clength :: forall a. TypeFunctor a -&gt; Int
+length :: forall a. TypeFunctor a -&gt; Int
+$celem :: forall a. Eq a =&gt; a -&gt; TypeFunctor a -&gt; Bool
+elem :: forall a. Eq a =&gt; a -&gt; TypeFunctor a -&gt; Bool
+$cmaximum :: forall a. Ord a =&gt; TypeFunctor a -&gt; a
+maximum :: forall a. Ord a =&gt; TypeFunctor a -&gt; a
+$cminimum :: forall a. Ord a =&gt; TypeFunctor a -&gt; a
+minimum :: forall a. Ord a =&gt; TypeFunctor a -&gt; a
+$csum :: forall a. Num a =&gt; TypeFunctor a -&gt; a
+sum :: forall a. Num a =&gt; TypeFunctor a -&gt; a
+$cproduct :: forall a. Num a =&gt; TypeFunctor a -&gt; a
+product :: forall a. Num a =&gt; TypeFunctor a -&gt; a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Foldable</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679193663"><span id="local-6989586621679193684"><span id="local-6989586621679193690"><span id="local-6989586621679193695"><span class="annot"><span class="annottext">Functor TypeFunctor
+Foldable TypeFunctor
+Functor TypeFunctor
+-&gt; Foldable TypeFunctor
+-&gt; (forall (f :: * -&gt; *) a b.
+    Applicative f =&gt;
+    (a -&gt; f b) -&gt; TypeFunctor a -&gt; f (TypeFunctor b))
+-&gt; (forall (f :: * -&gt; *) a.
+    Applicative f =&gt;
+    TypeFunctor (f a) -&gt; f (TypeFunctor a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; TypeFunctor a -&gt; m (TypeFunctor b))
+-&gt; (forall (m :: * -&gt; *) a.
+    Monad m =&gt;
+    TypeFunctor (m a) -&gt; m (TypeFunctor a))
+-&gt; Traversable TypeFunctor
+forall (t :: * -&gt; *).
+Functor t
+-&gt; Foldable t
+-&gt; (forall (f :: * -&gt; *) a b.
+    Applicative f =&gt;
+    (a -&gt; f b) -&gt; t a -&gt; f (t b))
+-&gt; (forall (f :: * -&gt; *) a. Applicative f =&gt; t (f a) -&gt; f (t a))
+-&gt; (forall (m :: * -&gt; *) a b.
+    Monad m =&gt;
+    (a -&gt; m b) -&gt; t a -&gt; m (t b))
+-&gt; (forall (m :: * -&gt; *) a. Monad m =&gt; t (m a) -&gt; m (t a))
+-&gt; Traversable t
+forall (m :: * -&gt; *) a.
+Monad m =&gt;
+TypeFunctor (m a) -&gt; m (TypeFunctor a)
+forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+TypeFunctor (f a) -&gt; f (TypeFunctor a)
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; TypeFunctor a -&gt; m (TypeFunctor b)
+forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TypeFunctor a -&gt; f (TypeFunctor b)
+$ctraverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TypeFunctor a -&gt; f (TypeFunctor b)
+traverse :: forall (f :: * -&gt; *) a b.
+Applicative f =&gt;
+(a -&gt; f b) -&gt; TypeFunctor a -&gt; f (TypeFunctor b)
+$csequenceA :: forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+TypeFunctor (f a) -&gt; f (TypeFunctor a)
+sequenceA :: forall (f :: * -&gt; *) a.
+Applicative f =&gt;
+TypeFunctor (f a) -&gt; f (TypeFunctor a)
+$cmapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; TypeFunctor a -&gt; m (TypeFunctor b)
+mapM :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+(a -&gt; m b) -&gt; TypeFunctor a -&gt; m (TypeFunctor b)
+$csequence :: forall (m :: * -&gt; *) a.
+Monad m =&gt;
+TypeFunctor (m a) -&gt; m (TypeFunctor a)
+sequence :: forall (m :: * -&gt; *) a.
+Monad m =&gt;
+TypeFunctor (m a) -&gt; m (TypeFunctor a)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Traversable</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679193701"><span id="local-6989586621679193703"><span class="annot"><span class="annottext">(forall a. TypeFunctor a -&gt; Rep1 TypeFunctor a)
+-&gt; (forall a. Rep1 TypeFunctor a -&gt; TypeFunctor a)
+-&gt; Generic1 TypeFunctor
+forall a. Rep1 TypeFunctor a -&gt; TypeFunctor a
+forall a. TypeFunctor a -&gt; Rep1 TypeFunctor a
+forall k (f :: k -&gt; *).
+(forall (a :: k). f a -&gt; Rep1 f a)
+-&gt; (forall (a :: k). Rep1 f a -&gt; f a) -&gt; Generic1 f
+$cfrom1 :: forall a. TypeFunctor a -&gt; Rep1 TypeFunctor a
+from1 :: forall a. TypeFunctor a -&gt; Rep1 TypeFunctor a
+$cto1 :: forall a. Rep1 TypeFunctor a -&gt; TypeFunctor a
+to1 :: forall a. Rep1 TypeFunctor a -&gt; TypeFunctor a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic1</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679193709"><span class="annot"><span class="annottext">Traversable TypeFunctor
+Traversable TypeFunctor
+-&gt; (forall a.
+    TypeFunctor a
+    -&gt; TypeFunctor a -&gt; Maybe (TypeFunctor (Either a (a, a))))
+-&gt; Unifiable TypeFunctor
+forall a.
+TypeFunctor a
+-&gt; TypeFunctor a -&gt; Maybe (TypeFunctor (Either a (a, a)))
+forall (t :: * -&gt; *).
+Traversable t
+-&gt; (forall a. t a -&gt; t a -&gt; Maybe (t (Either a (a, a))))
+-&gt; Unifiable t
+$czipMatch :: forall a.
+TypeFunctor a
+-&gt; TypeFunctor a -&gt; Maybe (TypeFunctor (Either a (a, a)))
+zipMatch :: forall a.
+TypeFunctor a
+-&gt; TypeFunctor a -&gt; Maybe (TypeFunctor (Either a (a, a)))
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">Unifiable</span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-178"></span><span>
+</span><span id="line-179"></span><span class="annot"><span class="hs-comment">-- | Is the second type a substitution instance of the first one?</span></span><span>
+</span><span id="line-180"></span><span class="annot"><a href="Logic.Ltl.TH.html#subsumesType"><span class="hs-identifier hs-type">subsumesType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-181"></span><span id="subsumesType"><span class="annot"><span class="annottext">subsumesType :: Type -&gt; Type -&gt; Bool
+</span><a href="Logic.Ltl.TH.html#subsumesType"><span class="hs-identifier hs-var hs-var">subsumesType</span></a></span></span><span> </span><span id="local-6989586621679193783"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193783"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679193784"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193784"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Identity (Either (UFailure TypeFunctor IntVar) Bool)
+-&gt; Either (UFailure TypeFunctor IntVar) Bool
+forall a. Identity a -&gt; a
+</span><span class="hs-identifier hs-var">runIdentity</span></span><span> </span><span class="annot"><span class="annottext">(Identity (Either (UFailure TypeFunctor IntVar) Bool)
+ -&gt; Either (UFailure TypeFunctor IntVar) Bool)
+-&gt; (ExceptT
+      (UFailure TypeFunctor IntVar)
+      (IntBindingT TypeFunctor Identity)
+      Bool
+    -&gt; Identity (Either (UFailure TypeFunctor IntVar) Bool))
+-&gt; ExceptT
+     (UFailure TypeFunctor IntVar)
+     (IntBindingT TypeFunctor Identity)
+     Bool
+-&gt; Either (UFailure TypeFunctor IntVar) Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">IntBindingT
+  TypeFunctor Identity (Either (UFailure TypeFunctor IntVar) Bool)
+-&gt; Identity (Either (UFailure TypeFunctor IntVar) Bool)
+forall (m :: * -&gt; *) (t :: * -&gt; *) a.
+Monad m =&gt;
+IntBindingT t m a -&gt; m a
+</span><span class="hs-identifier hs-var">evalIntBindingT</span></span><span> </span><span class="annot"><span class="annottext">(IntBindingT
+   TypeFunctor Identity (Either (UFailure TypeFunctor IntVar) Bool)
+ -&gt; Identity (Either (UFailure TypeFunctor IntVar) Bool))
+-&gt; (ExceptT
+      (UFailure TypeFunctor IntVar)
+      (IntBindingT TypeFunctor Identity)
+      Bool
+    -&gt; IntBindingT
+         TypeFunctor Identity (Either (UFailure TypeFunctor IntVar) Bool))
+-&gt; ExceptT
+     (UFailure TypeFunctor IntVar)
+     (IntBindingT TypeFunctor Identity)
+     Bool
+-&gt; Identity (Either (UFailure TypeFunctor IntVar) Bool)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">forall e (m :: * -&gt; *) a. ExceptT e m a -&gt; m (Either e a)
+</span><span class="hs-identifier hs-var">runExceptT</span></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">UFailure</span></span><span> </span><span class="annot"><a href="Logic.Ltl.TH.html#TypeFunctor"><span class="hs-identifier hs-type">TypeFunctor</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IntVar</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(ExceptT
+   (UFailure TypeFunctor IntVar)
+   (IntBindingT TypeFunctor Identity)
+   Bool
+ -&gt; Either (UFailure TypeFunctor IntVar) Bool)
+-&gt; ExceptT
+     (UFailure TypeFunctor IntVar)
+     (IntBindingT TypeFunctor Identity)
+     Bool
+-&gt; Either (UFailure TypeFunctor IntVar) Bool
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; UTerm TypeFunctor IntVar
+</span><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193783"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">UTerm TypeFunctor IntVar
+-&gt; UTerm TypeFunctor IntVar
+-&gt; ExceptT
+     (UFailure TypeFunctor IntVar)
+     (IntBindingT TypeFunctor Identity)
+     Bool
+forall (t :: * -&gt; *) v (m :: * -&gt; *) e (em :: (* -&gt; *) -&gt; * -&gt; *).
+(BindingMonad t v m, Fallible t v e, MonadTrans em, Functor (em m),
+ MonadError e (em m)) =&gt;
+UTerm t v -&gt; UTerm t v -&gt; em m Bool
+</span><span class="hs-operator hs-var">`subsumes`</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; UTerm TypeFunctor IntVar
+</span><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193784"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-182"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">OccursFailure</span></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-183"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MismatchFailure</span></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-184"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679193789"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679193789"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679193789"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-185"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-186"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-type">toUTerm</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UTerm</span></span><span> </span><span class="annot"><a href="Logic.Ltl.TH.html#TypeFunctor"><span class="hs-identifier hs-type">TypeFunctor</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IntVar</span></span><span>
+</span><span id="line-187"></span><span>    </span><span id="local-6989586621679193787"><span class="annot"><span class="annottext">toUTerm :: Type -&gt; UTerm TypeFunctor IntVar
+</span><a href="#local-6989586621679193787"><span class="hs-identifier hs-var hs-var">toUTerm</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">AppT</span></span><span> </span><span id="local-6989586621679193790"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193790"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679193791"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193791"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">(TypeFunctor (UTerm TypeFunctor IntVar)
+ -&gt; UTerm TypeFunctor IntVar)
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+-&gt; UTerm TypeFunctor IntVar
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">UTerm TypeFunctor IntVar
+-&gt; UTerm TypeFunctor IntVar
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. t -&gt; t -&gt; TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#AppTF"><span class="hs-identifier hs-var">AppTF</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; UTerm TypeFunctor IntVar
+</span><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193790"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; UTerm TypeFunctor IntVar
+</span><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193791"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-188"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">SigT</span></span><span> </span><span id="local-6989586621679193793"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193793"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679193794"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193794"><span class="hs-identifier hs-var">k</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">(TypeFunctor (UTerm TypeFunctor IntVar)
+ -&gt; UTerm TypeFunctor IntVar)
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+-&gt; UTerm TypeFunctor IntVar
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">UTerm TypeFunctor IntVar
+-&gt; Type -&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. t -&gt; Type -&gt; TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#SigTF"><span class="hs-identifier hs-var">SigTF</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; UTerm TypeFunctor IntVar
+</span><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193793"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193794"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><span id="line-189"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VarT</span></span><span> </span><span id="local-6989586621679193796"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193796"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IntVar -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. v -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UVar</span></span><span> </span><span class="annot"><span class="annottext">(IntVar -&gt; UTerm TypeFunctor IntVar)
+-&gt; (Name -&gt; IntVar) -&gt; Name -&gt; UTerm TypeFunctor IntVar
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; IntVar
+</span><span class="hs-identifier hs-var">IntVar</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; IntVar) -&gt; (Name -&gt; Int) -&gt; Name -&gt; IntVar
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Int
+</span><a href="#local-6989586621679193799"><span class="hs-identifier hs-var">hashString</span></a></span><span> </span><span class="annot"><span class="annottext">([Char] -&gt; Int) -&gt; (Name -&gt; [Char]) -&gt; Name -&gt; Int
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Name -&gt; [Char]
+</span><span class="hs-identifier hs-var">nameBase</span></span><span> </span><span class="annot"><span class="annottext">(Name -&gt; UTerm TypeFunctor IntVar)
+-&gt; Name -&gt; UTerm TypeFunctor IntVar
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193796"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-190"></span><span>      </span><span class="hs-keyword">where</span><span>
+</span><span id="line-191"></span><span>        </span><span class="hs-comment">-- See http://www.cse.yorku.ca/~oz/hash.html for an explanation of the magic numbers.</span><span>
+</span><span id="line-192"></span><span>        </span><span class="annot"><a href="#local-6989586621679193799"><span class="hs-identifier hs-type">hashString</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-193"></span><span>        </span><span id="local-6989586621679193799"><span class="annot"><span class="annottext">hashString :: [Char] -&gt; Int
+</span><a href="#local-6989586621679193799"><span class="hs-identifier hs-var hs-var">hashString</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Char -&gt; Int) -&gt; Int -&gt; [Char] -&gt; Int
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) b a.
+Foldable t =&gt;
+(b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldl'</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679193802"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679193802"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679193803"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679193803"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">33</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679193802"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">fromEnum</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679193803"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">5381</span></span><span>
+</span><span id="line-194"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ConT</span></span><span> </span><span id="local-6989586621679193808"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193808"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">(TypeFunctor (UTerm TypeFunctor IntVar)
+ -&gt; UTerm TypeFunctor IntVar)
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+-&gt; UTerm TypeFunctor IntVar
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Name -&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. Name -&gt; TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#ConTF"><span class="hs-identifier hs-var">ConTF</span></a></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193808"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-195"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PromotedT</span></span><span> </span><span id="local-6989586621679193810"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193810"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">(TypeFunctor (UTerm TypeFunctor IntVar)
+ -&gt; UTerm TypeFunctor IntVar)
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+-&gt; UTerm TypeFunctor IntVar
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Name -&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. Name -&gt; TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#PromotedTF"><span class="hs-identifier hs-var">PromotedTF</span></a></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193810"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-196"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ParensT</span></span><span> </span><span id="local-6989586621679193811"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193811"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">(TypeFunctor (UTerm TypeFunctor IntVar)
+ -&gt; UTerm TypeFunctor IntVar)
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+-&gt; UTerm TypeFunctor IntVar
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">UTerm TypeFunctor IntVar -&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. t -&gt; TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#ParensTF"><span class="hs-identifier hs-var">ParensTF</span></a></span><span> </span><span class="annot"><span class="annottext">(UTerm TypeFunctor IntVar
+ -&gt; TypeFunctor (UTerm TypeFunctor IntVar))
+-&gt; UTerm TypeFunctor IntVar
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; UTerm TypeFunctor IntVar
+</span><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193811"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-197"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">TupleT</span></span><span> </span><span id="local-6989586621679193813"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679193813"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">(TypeFunctor (UTerm TypeFunctor IntVar)
+ -&gt; UTerm TypeFunctor IntVar)
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+-&gt; UTerm TypeFunctor IntVar
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. Int -&gt; TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#TupleTF"><span class="hs-identifier hs-var">TupleTF</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679193813"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-198"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier hs-var">ArrowT</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#ArrowTF"><span class="hs-identifier hs-var">ArrowTF</span></a></span><span>
+</span><span id="line-199"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier hs-var">ListT</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#ListTF"><span class="hs-identifier hs-var">ListTF</span></a></span><span>
+</span><span id="line-200"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">PromotedTupleT</span></span><span> </span><span id="local-6989586621679193817"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679193817"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">(TypeFunctor (UTerm TypeFunctor IntVar)
+ -&gt; UTerm TypeFunctor IntVar)
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+-&gt; UTerm TypeFunctor IntVar
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. Int -&gt; TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#PromotedTupleTF"><span class="hs-identifier hs-var">PromotedTupleTF</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679193817"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-201"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier hs-var">PromotedNilT</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#PromotedNilTF"><span class="hs-identifier hs-var">PromotedNilTF</span></a></span><span>
+</span><span id="line-202"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier hs-var">PromotedConsT</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#PromotedConsTF"><span class="hs-identifier hs-var">PromotedConsTF</span></a></span><span>
+</span><span id="line-203"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier hs-var">StarT</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#StarTF"><span class="hs-identifier hs-var">StarTF</span></a></span><span>
+</span><span id="line-204"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier hs-var">ConstraintT</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#ConstraintTF"><span class="hs-identifier hs-var">ConstraintTF</span></a></span><span>
+</span><span id="line-205"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">LitT</span></span><span> </span><span id="local-6989586621679193823"><span class="annot"><span class="annottext">TyLit
+</span><a href="#local-6989586621679193823"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">(TypeFunctor (UTerm TypeFunctor IntVar)
+ -&gt; UTerm TypeFunctor IntVar)
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+-&gt; UTerm TypeFunctor IntVar
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TyLit -&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. TyLit -&gt; TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#LitTF"><span class="hs-identifier hs-var">LitTF</span></a></span><span> </span><span class="annot"><span class="annottext">TyLit
+</span><a href="#local-6989586621679193823"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-206"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier hs-var">WildCardT</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#WildCardTF"><span class="hs-identifier hs-var">WildCardTF</span></a></span><span>
+</span><span id="line-207"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ImplicitParamT</span></span><span> </span><span id="local-6989586621679193825"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679193825"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621679193826"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193826"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeFunctor (UTerm TypeFunctor IntVar) -&gt; UTerm TypeFunctor IntVar
+forall (t :: * -&gt; *) v. t (UTerm t v) -&gt; UTerm t v
+</span><span class="hs-identifier hs-var">UTerm</span></span><span> </span><span class="annot"><span class="annottext">(TypeFunctor (UTerm TypeFunctor IntVar)
+ -&gt; UTerm TypeFunctor IntVar)
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+-&gt; UTerm TypeFunctor IntVar
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+-&gt; UTerm TypeFunctor IntVar
+-&gt; TypeFunctor (UTerm TypeFunctor IntVar)
+forall t. [Char] -&gt; t -&gt; TypeFunctor t
+</span><a href="Logic.Ltl.TH.html#ImplicitParamTF"><span class="hs-identifier hs-var">ImplicitParamTF</span></a></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679193825"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; UTerm TypeFunctor IntVar
+</span><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193826"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-208"></span><span>    </span><span class="annot"><a href="#local-6989586621679193787"><span class="hs-identifier hs-var">toUTerm</span></a></span><span> </span><span id="local-6989586621679193827"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193827"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; UTerm TypeFunctor IntVar
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">([Char] -&gt; UTerm TypeFunctor IntVar)
+-&gt; [Char] -&gt; UTerm TypeFunctor IntVar
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;unification for terms of shape &quot;</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Char]
+forall a. Show a =&gt; a -&gt; [Char]
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193827"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; [Char] -&gt; [Char]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot; not (yet) implemented&quot;</span></span><span>
+</span><span id="line-209"></span><span>
+</span><span id="line-210"></span><span class="annot"><span class="hs-comment">-- ** finding the names of type variables in 'data' declarations</span></span><span>
+</span><span id="line-211"></span><span>
+</span><span id="line-212"></span><span class="annot"><a href="Logic.Ltl.TH.html#getDatatypeVars"><span class="hs-identifier hs-type">getDatatypeVars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Name</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Name</span></span><span class="hs-special">]</span><span>
+</span><span id="line-213"></span><span id="getDatatypeVars"><span class="annot"><span class="annottext">getDatatypeVars :: Name -&gt; Q [Name]
+</span><a href="Logic.Ltl.TH.html#getDatatypeVars"><span class="hs-identifier hs-var hs-var">getDatatypeVars</span></a></span></span><span> </span><span id="local-6989586621679193830"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193830"><span class="hs-identifier hs-var">dtName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-214"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">DatatypeInfo</span></span><span>
+</span><span id="line-215"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">datatypeInstTypes :: DatatypeInfo -&gt; Cxt
+</span><span class="hs-identifier hs-var">datatypeInstTypes</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="local-6989586621679193833"><span class="annot"><span class="annottext">Cxt
+</span><a href="#local-6989586621679193833"><span class="hs-identifier hs-var">instTypes</span></a></span></span><span>
+</span><span id="line-216"></span><span>    </span><span class="hs-special">}</span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-217"></span><span>    </span><span class="annot"><span class="annottext">Name -&gt; Q DatatypeInfo
+</span><span class="hs-identifier hs-var">reifyDatatype</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193830"><span class="hs-identifier hs-var">dtName</span></a></span><span>
+</span><span id="line-218"></span><span>  </span><span class="annot"><span class="annottext">[Name] -&gt; Q [Name]
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">([Name] -&gt; Q [Name]) -&gt; [Name] -&gt; Q [Name]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-219"></span><span>    </span><span class="annot"><span class="annottext">(Type -&gt; Name) -&gt; Cxt -&gt; [Name]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span>
+</span><span id="line-220"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-221"></span><span>          </span><span class="annot"><span class="hs-identifier hs-type">VarT</span></span><span> </span><span id="local-6989586621679193835"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193835"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193835"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-222"></span><span>          </span><span class="annot"><span class="hs-identifier hs-type">SigT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VarT</span></span><span> </span><span id="local-6989586621679193836"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193836"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193836"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-223"></span><span>          </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Name
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;datatype declaration must only have type variables&quot;</span></span><span>
+</span><span id="line-224"></span><span>      </span><span class="hs-special">)</span><span>
+</span><span id="line-225"></span><span>      </span><span class="annot"><span class="annottext">Cxt
+</span><a href="#local-6989586621679193833"><span class="hs-identifier hs-var">instTypes</span></a></span><span>
+</span><span id="line-226"></span><span>
+</span><span id="line-227"></span><span class="annot"><a href="Logic.Ltl.TH.html#getEffectTyVars"><span class="hs-identifier hs-type">getEffectTyVars</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Name</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Name</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Name</span></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-228"></span><span id="getEffectTyVars"><span class="annot"><span class="annottext">getEffectTyVars :: Name -&gt; Q (Name, [Name])
+</span><a href="Logic.Ltl.TH.html#getEffectTyVars"><span class="hs-identifier hs-var hs-var">getEffectTyVars</span></a></span></span><span> </span><span id="local-6989586621679193838"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193838"><span class="hs-identifier hs-var">effectName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-229"></span><span>  </span><span id="local-6989586621679193839"><span class="annot"><span class="annottext">[Name]
+</span><a href="#local-6989586621679193839"><span class="hs-identifier hs-var">tyVarNames</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Name -&gt; Q [Name]
+</span><a href="Logic.Ltl.TH.html#getDatatypeVars"><span class="hs-identifier hs-var">getDatatypeVars</span></a></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193838"><span class="hs-identifier hs-var">effectName</span></a></span><span>
+</span><span id="line-230"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Name] -&gt; [Name]
+forall a. [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="annot"><span class="annottext">[Name]
+</span><a href="#local-6989586621679193839"><span class="hs-identifier hs-var">tyVarNames</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-231"></span><span>    </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679193841"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193841"><span class="hs-identifier hs-var">nestTyVarName</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679193842"><span class="annot"><span class="annottext">[Name]
+</span><a href="#local-6989586621679193842"><span class="hs-identifier hs-var">extraTyVarNames</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Name, [Name]) -&gt; Q (Name, [Name])
+forall a. a -&gt; Q a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193841"><span class="hs-identifier hs-var">nestTyVarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Name] -&gt; [Name]
+forall a. [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="annot"><span class="annottext">[Name]
+</span><a href="#local-6989586621679193842"><span class="hs-identifier hs-var">extraTyVarNames</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-232"></span><span>    </span><span class="annot"><span class="annottext">[Name]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Q (Name, [Name])
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;expecting at least two type arguments in effect type&quot;</span></span><span>
+</span><span id="line-233"></span><span>
+</span><span id="line-234"></span><span class="annot"><a href="Logic.Ltl.TH.html#getConTName"><span class="hs-identifier hs-type">getConTName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Name</span></span><span>
+</span><span id="line-235"></span><span id="getConTName"><span class="annot"><span class="annottext">getConTName :: Type -&gt; Name
+</span><a href="Logic.Ltl.TH.html#getConTName"><span class="hs-identifier hs-var hs-var">getConTName</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ConT</span></span><span> </span><span id="local-6989586621679193844"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193844"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679193844"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-236"></span><span class="annot"><a href="Logic.Ltl.TH.html#getConTName"><span class="hs-identifier hs-var">getConTName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">AppT</span></span><span> </span><span id="local-6989586621679193845"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193845"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Name
+</span><a href="Logic.Ltl.TH.html#getConTName"><span class="hs-identifier hs-var">getConTName</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679193845"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-237"></span><span class="annot"><a href="Logic.Ltl.TH.html#getConTName"><span class="hs-identifier hs-var">getConTName</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Name
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;expecting a type constructor applied to some arguments&quot;</span></span><span>
+</span><span id="line-238"></span></pre></body></html>
