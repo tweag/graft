@@ -1,10 +1,12 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
@@ -60,12 +62,10 @@ module Logic.Ltl
     LtlInterpHigherOrder (..),
 
     -- * Interpreting 'Ltl' modifications
+    LtlInstanceKind (..),
+    InterpretEffectsLtl (..),
     interpretLtlAST,
     interpretLtlASTWithInitialFormulas,
-    InterpretEffectsLtl,
-
-    -- * internal
-    interpretEffectStatefulFromLtlHigherOrder,
   )
 where
 
@@ -74,6 +74,7 @@ import Control.Monad
 import Data.Functor.Const
 import Data.Kind
 import Effect
+import Effect.Internal
 
 -- | Type of \"LTL\" formulas. Think of @a@ as a type of atomic
 -- \"modifications\", then a value of type @Ltl a@ describes a composite
@@ -269,12 +270,177 @@ data LtlInterpHigherOrder (mod :: Type) (m :: Type -> Type) (ops :: [Effect]) (a
     ) ->
     LtlInterpHigherOrder mod m ops a
 
--- | Internal: transform a function of the type needed for
--- 'interpretLtlHigherOrder' into a function of the correct type for the
--- corersponding 'InterpretEffectStateful' instance. Used in the "Ltl.TH"
--- module to define the latter instances.
+-- | Used to signify which instance is to be used for a specific effect in the
+-- 'InterpretEffectsLtl' class.
+data LtlInstanceKind = InterpretLtlTag | InterpretLtlHigherOrderTag | InterpretEffectStatefulTag
+
+-- | Internal: A reification of the 'InterpretEffectsLtl' constraint. This
+-- works, because matching on the constructors will bring the constraint on the
+-- constructor in scope. (This is what happens in the function
+-- 'interpretJoinedEffectsLtl'.)
+data InterpretEffectsLtlConstraintList (mod :: Type) (m :: Type -> Type) (tags :: [LtlInstanceKind]) (ops :: [Effect]) where
+  InterpretEffectsLtlNil :: InterpretEffectsLtlConstraintList mod m '[] '[]
+  InterpretEffectsLtlFirstorder ::
+    (InterpretEffect m op, InterpretLtl mod m op) =>
+    InterpretEffectsLtlConstraintList mod m tags ops ->
+    InterpretEffectsLtlConstraintList mod m (InterpretLtlTag ': tags) (op ': ops)
+  InterpretEffectsLtlHigherorder ::
+    (InterpretEffect m op, InterpretLtlHigherOrder mod m op) =>
+    InterpretEffectsLtlConstraintList mod m tags ops ->
+    InterpretEffectsLtlConstraintList mod m (InterpretLtlHigherOrderTag ': tags) (op ': ops)
+  InterpretEffectsLtlEffectStateful ::
+    (InterpretEffectStateful (Const [Ltl mod]) m op) =>
+    InterpretEffectsLtlConstraintList mod m tags ops ->
+    InterpretEffectsLtlConstraintList mod m (InterpretEffectStatefulTag ': tags) (op ': ops)
+
+-- | The constraint used by 'interpretLtlASt' and similar functions. See the documentation there.
 --
--- TODO: Maybe it's time for an "Ltl.Internal" module.
+-- Users of the library will /never/ have to write instances of this class.
+class InterpretEffectsLtl (mod :: Type) (m :: Type -> Type) (tags :: [LtlInstanceKind]) (ops :: [Effect]) where
+  -- | A witness of the constraint.
+  interpretEffectsLtl :: InterpretEffectsLtlConstraintList mod m tags ops
+
+instance InterpretEffectsLtl mod m '[] '[] where
+  interpretEffectsLtl = InterpretEffectsLtlNil
+
+instance (InterpretEffect m op, InterpretLtl mod m op, InterpretEffectsLtl mod m tags ops) => InterpretEffectsLtl mod m (InterpretLtlTag ': tags) (op ': ops) where
+  interpretEffectsLtl = InterpretEffectsLtlFirstorder interpretEffectsLtl
+
+instance (InterpretEffect m op, InterpretLtlHigherOrder mod m op, InterpretEffectsLtl mod m tags ops) => InterpretEffectsLtl mod m (InterpretLtlHigherOrderTag ': tags) (op ': ops) where
+  interpretEffectsLtl = InterpretEffectsLtlHigherorder interpretEffectsLtl
+
+instance (InterpretEffectStateful (Const [Ltl mod]) m op, InterpretEffectsLtl mod m tags ops) => InterpretEffectsLtl mod m (InterpretEffectStatefulTag ': tags) (op ': ops) where
+  interpretEffectsLtl = InterpretEffectsLtlEffectStateful interpretEffectsLtl
+
+-- | Interpret an 'LtlAST' into a suitable domain.
+--
+-- Each effect @op@ in the list @ops@ must have one of the following instances:
+--
+-- - @InterpretLtl mod m op@
+--
+-- - @InterpretLtlHigherOrder mod m op@
+--
+-- - @InterpretEffectStateful (Const [Ltl mod]) m op@
+--
+-- Which instance is expected is declared through the @tags@. Since this type
+-- variable is ambiguous, you will have to type-apply this function to a list
+-- @tags :: ['LtlInstanceKind']@, which declare, in order, what instance you
+-- want to use for the operations in @ops@.
+interpretLtlAST ::
+  forall tags mod m ops a.
+  (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m tags ops) =>
+  LtlAST mod ops a ->
+  m a
+interpretLtlAST = interpretLtlASTWithInitialFormulas @tags []
+
+-- | Like 'interpretLtlAST', just with an initial list of 'Ltl' formulas that
+-- will be evaluated throughout the interpretation, even when there are no
+-- 'modifyLtl's. Prunes all branches that end with incompletely applied 'Ltl'
+-- formulas.
+--
+-- You'll also have to type-apply this to a list of 'LtlInstanceKind's, as described ad
+-- 'interpretLtlAST'.
+--
+-- internal note: This function is the same as 'interpretASTStateful', just for
+-- an 'InterpretEffectsLtl' constraint instead of 'InterpretEffectsStateful'.
+interpretLtlASTWithInitialFormulas ::
+  forall tags mod m ops a.
+  (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m tags ops) =>
+  [Ltl mod] ->
+  LtlAST mod ops a ->
+  m a
+interpretLtlASTWithInitialFormulas ltls acts = do
+  (a, finals) <- second getConst <$> interpretASTLtlInternal constraintList (Const ltls) acts
+  if all finished finals
+    then return a
+    else mzero
+  where
+    constraintList = interpretEffectsLtl @mod @m @(InterpretEffectStatefulTag ': tags)
+
+-- | Internal: The function that recursively interprets the 'AST' in
+-- 'interpretLtlASTWithInitialFormulas'.
+interpretASTLtlInternal ::
+  (Semigroup mod, MonadPlus m) =>
+  InterpretEffectsLtlConstraintList mod m tags ops ->
+  Const [Ltl mod] x ->
+  AST ops a ->
+  m (a, Const [Ltl mod] x)
+interpretASTLtlInternal cs x =
+  interpretOneLayerState
+    ( \x' acts ->
+        interpretJoinedEffectsLtl
+          cs
+          (interpretASTLtlInternal cs)
+          x'
+          (unFixpoint acts)
+    )
+    x
+    . unFixpoint
+
+-- | Internal: For 'interpretLtlASTWithInitialFormulas', we need a function
+-- that takes a 'JoinedEffects', where each effect has one of the three relevant
+-- instances, and returns the effect's interpretation.
+--
+-- This function is called in a mutually recirsive fashion with 'interpretASTLtlInternal'.
+interpretJoinedEffectsLtl ::
+  (Semigroup mod, MonadPlus m) =>
+  InterpretEffectsLtlConstraintList mod m tags ops ->
+  (forall b y. Const [Ltl mod] y -> AST allOps b -> m (b, Const [Ltl mod] y)) ->
+  Const [Ltl mod] x ->
+  JoinedEffects ops (AST allOps) a ->
+  m (a, Const [Ltl mod] x)
+interpretJoinedEffectsLtl InterpretEffectsLtlNil _ _ op = case op of {}
+interpretJoinedEffectsLtl (InterpretEffectsLtlFirstorder _) evalAST x (JoinedEffectsHere op) =
+  interpretEffectStatefulFromLtl evalAST x op
+interpretJoinedEffectsLtl (InterpretEffectsLtlFirstorder cs) evalAST x (JoinedEffectsThere op) =
+  interpretJoinedEffectsLtl cs evalAST x op
+interpretJoinedEffectsLtl (InterpretEffectsLtlHigherorder _) evalAST x (JoinedEffectsHere op) =
+  interpretEffectStatefulFromLtlHigherOrder evalAST x op
+interpretJoinedEffectsLtl (InterpretEffectsLtlHigherorder cs) evalAST x (JoinedEffectsThere op) =
+  interpretJoinedEffectsLtl cs evalAST x op
+interpretJoinedEffectsLtl (InterpretEffectsLtlEffectStateful _) evalAST x (JoinedEffectsHere op) =
+  interpretEffectStateful evalAST x op
+interpretJoinedEffectsLtl (InterpretEffectsLtlEffectStateful cs) evalAST x (JoinedEffectsThere op) =
+  interpretJoinedEffectsLtl cs evalAST x op
+
+-- | Internal: For 'interpretJoinedEffectsLtl', we'll need a function that
+-- behaves like 'interpretEffectStateful', in the setting where we only have an
+-- 'InterpretLtl' instance. This is that function.
+interpretEffectStatefulFromLtl ::
+  ( Semigroup mod,
+    MonadPlus m,
+    InterpretEffect m op,
+    InterpretLtl mod m op
+  ) =>
+  (forall b y. Const [Ltl mod] y -> AST ops b -> m (b, Const [Ltl mod] y)) ->
+  Const [Ltl mod] x ->
+  op (AST ops) a ->
+  m (a, Const [Ltl mod] x)
+interpretEffectStatefulFromLtl evalActs (Const ltls) op =
+  case interpretLtl op of
+    Ignore -> interpretUnmodified ltls op
+    Apply apply ->
+      msum $
+        map
+          ( \(now, later) ->
+              case now of
+                Nothing -> interpretUnmodified later op
+                Just x -> do
+                  mA <- apply x
+                  case mA of
+                    Just a -> return (a, Const later)
+                    Nothing -> mzero
+          )
+          (nowLaterList ltls)
+  where
+    interpretUnmodified later x =
+      (,Const later)
+        <$> interpretEffect
+          (fmap fst . evalActs (Const []))
+          x
+
+-- | Internal: Like 'interpretEffectStatefulFromLtl', just for the higher-order
+-- instance.
 interpretEffectStatefulFromLtlHigherOrder ::
   ( Semigroup mod,
     MonadPlus m,
@@ -313,25 +479,6 @@ interpretEffectStatefulFromLtlHigherOrder evalActs (Const ltls) op =
         <$> interpretEffect
           (fmap fst . evalActs (Const []))
           x
-
--- | The constraint that all effect types in @ops@ have an @'InterpretLtl' mod m@
--- or an @'InterpretLtlHigherOrder' mod m@ instance
-type InterpretEffectsLtl mod m ops = InterpretEffectsStateful (Const [Ltl mod]) m ops
-
--- | interpret an 'LtlAST' into a suitable domain
-interpretLtlAST :: forall mod m ops a. (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m ops) => LtlAST mod ops a -> m a
-interpretLtlAST = interpretLtlASTWithInitialFormulas ([] @(Ltl mod))
-
--- | Like 'interpretLtlAST', just with an initial list of 'Ltl' formulas that
--- will be evaluated throughtout the interpretation, even when there are no
--- 'modifyLtl's. Prunes all branches that end with incompletely applied 'Ltl'
--- formulas.
-interpretLtlASTWithInitialFormulas :: (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m ops) => [Ltl mod] -> LtlAST mod ops a -> m a
-interpretLtlASTWithInitialFormulas ltls acts = do
-  (a, finals) <- interpretASTStateful (Const ltls) acts
-  if all finished finals
-    then return a
-    else mzero
 
 -- | Internal: Split an LTL formula that describes a modification of a
 -- computation into a list of @(doNow, doLater)@ pairs, where
