@@ -41,6 +41,28 @@ class (Monad m) => MonadKeyValue k v m where
   deleteValue :: k -> m ()
 
 -- $doc
+-- From this type class, we can write a few test cases,
+-- corresponding to a serie of actions over key-value-store.
+
+helloTrace123 :: (MonadKeyValue Integer String m) => m ()
+helloTrace123 = do
+  storeValue 1 "Hello "
+  storeValue 2 "my "
+  storeValue 3 "friend"
+
+helloTrace111 :: (MonadKeyValue Integer String m) => m ()
+helloTrace111 = do
+  storeValue 1 "Hello "
+  storeValue 1 "my "
+  storeValue 1 "friend"
+
+bugTrace :: (MonadKeyValue Integer String m) => m ()
+bugTrace = do
+  storeValue 1 "a"
+  deleteValue @_ @String 1
+  storeValue 1 "b"
+
+-- $doc
 -- What we'll test is an implementation of 'MonadKeyValue'. We'll implement it
 -- very simply, but note that the implementation of 'deleteValue' is wrong: we
 -- never delete anything from the store. We'll "find" this mistake later on.
@@ -251,14 +273,10 @@ interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST 
 -- >>> exampleSomewhere1
 -- []
 
-exampleSomewhere1 :: [((), Map Int String)]
+exampleSomewhere1 :: [((), Map Integer String)]
 exampleSomewhere1 =
   interpretAndRun mempty $
-    modifyLtl (somewhere ConcatIfReplace) $
-      do
-        storeValue 1 "Hello "
-        storeValue 2 "my "
-        storeValue 3 "friend"
+    modifyLtl (somewhere ConcatIfReplace) helloTrace123
 
 -- $doc
 -- In the next example, we'll expect two results, because there are two
@@ -277,14 +295,10 @@ exampleSomewhere1 =
 -- >>> exampleSomewhere2
 -- [((),fromList [(1,"friend")]),((),fromList [(1,"my friend")])]
 
-exampleSomewhere2 :: [((), Map Int String)]
+exampleSomewhere2 :: [((), Map Integer String)]
 exampleSomewhere2 =
   interpretAndRun mempty $
-    modifyLtl (somewhere ConcatIfReplace) $
-      do
-        storeValue 1 "Hello "
-        storeValue 1 "my "
-        storeValue 1 "friend"
+    modifyLtl (somewhere ConcatIfReplace) helloTrace111
 
 -- $doc
 -- Another very commonly used 'Ltl' formula is 'everywhere'. It applies the
@@ -296,14 +310,10 @@ exampleSomewhere2 =
 -- >>> exampleEverywhere1
 -- []
 
-exampleEverywhere1 :: [((), Map Int String)]
+exampleEverywhere1 :: [((), Map Integer String)]
 exampleEverywhere1 =
   interpretAndRun mempty $
-    modifyLtl (everywhere ConcatIfReplace) $
-      do
-        storeValue 1 "Hello "
-        storeValue 1 "my "
-        storeValue 1 "friend"
+    modifyLtl (everywhere ConcatIfReplace) helloTrace111
 
 -- $doc
 -- Note that, unlike 'somewhere', 'everywhere' doesn't imply that any
@@ -313,46 +323,26 @@ exampleEverywhere1 =
 -- >>> exampleEverywhere2
 -- [((),fromList [])]
 
-exampleEverywhere2 :: [((), Map Int String)]
+exampleEverywhere2 :: [((), Map Integer String)]
 exampleEverywhere2 =
   interpretAndRun mempty $
     modifyLtl (everywhere ConcatIfReplace) $
       return ()
 
--- $doc
--- We can make the modification applicable, and return the expected @"Hello my
--- friend"@  at key @1@, if we only apply 'everywhere' after the first action:
---
--- >>> exampleEverywhere3
--- [((),fromList [(1,"Hello my friend")])]
-
-exampleEverywhere3 :: [((), Map Int String)]
-exampleEverywhere3 =
-  interpretAndRun mempty $
-    do
-      storeValue 1 "Hello "
-      modifyLtl (everywhere ConcatIfReplace) $ do
-        storeValue 1 "my "
-        storeValue 1 "friend"
-
 -- ** Custom 'Ltl' formulas
 
 -- $doc
--- Another way to make the 'everywhere' example work is by using a custom 'Ltl'
--- formula: instead of applying 'ConcatIfReplace' on every action, let's only
--- start applying at the second action using @'LtlNext' . 'everywhere'@.
+-- We can make the modification applicable, and return the expected @"Hello my
+-- friend"@ at key @1@, if we only apply 'everywhere' after the first action:
+-- This requires a custom formula using @'LtlNext' which starts on next step.
 --
 -- >>> exampleCustom1
 -- [((),fromList [(1,"Hello my friend")])]
 
-exampleCustom1 :: [((), Map Int String)]
+exampleCustom1 :: [((), Map Integer String)]
 exampleCustom1 =
   interpretAndRun mempty $
-    modifyLtl (LtlNext . everywhere $ ConcatIfReplace) $
-      do
-        storeValue 1 "Hello "
-        storeValue 1 "my "
-        storeValue 1 "friend"
+    modifyLtl (LtlNext . everywhere $ ConcatIfReplace) helloTrace111
 
 -- $doc
 -- There are many possibilities for custom formulas. Please refer to the
@@ -382,9 +372,4 @@ exampleBug =
     []
       @=? interpretAndRun
         mempty
-        ( modifyLtl (somewhere ConcatIfReplace) $
-            do
-              storeValue 1 "a"
-              deleteValue 1
-              storeValue 1 "b"
-        )
+        (modifyLtl (somewhere ConcatIfReplace) bugTrace)
