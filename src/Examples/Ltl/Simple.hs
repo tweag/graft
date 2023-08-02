@@ -231,7 +231,7 @@ interpretAndRun ::
   Map k v ->
   LtlAST SingleStepMod '[KeyValueEffect k v] a ->
   [(a, Map k v)]
-interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST acts
+interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST @'[InterpretLtlTag] acts
 
 -- * A few example traces
 

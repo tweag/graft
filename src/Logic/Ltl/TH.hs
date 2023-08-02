@@ -8,28 +8,24 @@
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
+-- | experimental module to derive instances of the relevant classes for the
+-- LTL interface. Not intended for use (yet).
 module Logic.Ltl.TH (makeLtl) where
 
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Except (runExceptT)
-import Control.Monad.Identity (Identity (runIdentity), fix)
+import Control.Monad.Identity
 import Control.Unification
 import Control.Unification.IntVar (evalIntBindingT)
 import Control.Unification.Ranked (UFailure (MismatchFailure, OccursFailure))
 import Control.Unification.Ranked.IntVar
-import Data.Bits (Bits (xor))
-import Data.IntMap (IntMap)
 import Data.List
-import Data.Maybe
-import qualified Debug.Trace as Debug
 import Effect
 import GHC.Generics
-import GHC.RTS.Flags (MiscFlags (MiscFlags))
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 import Logic.Ltl
-import Type.Reflection (TypeRep)
 
 -- | There are three type classes that are relevant for the API in "Logic.Ltl":
 --

@@ -58,6 +58,8 @@ instance (Monoid w, Monad m) => MonadWriter w (DomainT s w m) where
 
 type ExampleEffects s w = '[WriterEffect w, StateEffect s]
 
+type ExampleTags = '[InterpretLtlHigherOrderTag, InterpretLtlTag]
+
 interpretAndRun ::
   (Monoid w) =>
   s ->
@@ -119,7 +121,7 @@ interpretAndRunLtl ::
   Integer ->
   LtlAST Modification (ExampleEffects Integer String) a ->
   [(a, String)]
-interpretAndRunLtl start acts = runDomainT start $ (interpretLtlAST @Modification) acts
+interpretAndRunLtl start acts = runDomainT start $ interpretLtlAST @ExampleTags acts
 
 example1a, example1b :: [((), String)]
 example1a = interpretAndRunLtl (-1) $ modifyLtl (somewhere ModA) trace1

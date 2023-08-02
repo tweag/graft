@@ -20,6 +20,9 @@ module Effect
     InterpretEffectStateful (..),
     InterpretEffectsStateful (..),
     interpretASTStateful,
+
+    -- * Internal
+    JoinedEffects (..),
   )
 where
 
@@ -125,7 +128,7 @@ interpretAST = interpAST constraintList
 --
 -- For example in "Fixpoint.Examples", I play around with the type of LTL
 -- formulas for 'x'.
-class InterpretEffectStateful t m op where
+class InterpretEffectStateful (t :: Type -> Type) m op where
   -- | Given a function that describes how to interpret 'AST's statefully, a
   -- current "interpretation state", and an effect, return the interpretation
   -- of the effect.

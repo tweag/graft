@@ -46,7 +46,7 @@ instance (MonadTest m) => InterpretLtl TestModification m TestEffect where
   interpretLtl (EmitInteger i) = Apply $ \f -> emitInteger (f i) >> return (Just ())
 
 go :: LtlAST TestModification '[TestEffect] a -> [[Integer]]
-go = execWriterT . interpretLtlAST
+go = execWriterT . interpretLtlAST @'[InterpretLtlTag]
 
 nonemptyTraces :: [LtlAST TestModification '[TestEffect] ()]
 nonemptyTraces =
