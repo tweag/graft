@@ -9,18 +9,18 @@
 </span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.html"><span class="hs-identifier">Effect</span></a></span><span>
 </span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.Error.html"><span class="hs-identifier">Effect.Error</span></a></span><span>
 </span><span id="line-11"></span><span>
-</span><span id="line-12"></span><span class="hs-comment">-- | A &quot;passthough&quot; instance for 'ErrorEffect's: Modifications are applied in</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- | A &quot;passthough&quot; instance for 'MonadErrorEffect's: Modifications are applied in</span><span>
 </span><span id="line-13"></span><span class="hs-comment">-- all nested positions of 'CatchError', but don't actually change the semantics</span><span>
-</span><span id="line-14"></span><span class="hs-comment">-- of any 'ErrorEffect'.</span><span>
-</span><span id="line-15"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679190122"><span id="local-6989586621679190123"><span id="local-6989586621679190124"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="#local-6989586621679190122"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679190123"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Effect.html#InterpretEffectStateful"><span class="hs-identifier hs-type">InterpretEffectStateful</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679190124"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679190123"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Effect.Error.html#ErrorEffect"><span class="hs-identifier hs-type">ErrorEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679190122"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-16"></span><span>  </span><span id="local-6989586621679190169"><span class="annot"><span class="annottext">interpretEffectStateful :: forall (ops :: [Effect]) x a.
+</span><span id="line-14"></span><span class="hs-comment">-- of any 'MonadErrorEffect'.</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679193119"><span id="local-6989586621679193120"><span id="local-6989586621679193121"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="#local-6989586621679193119"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679193120"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Effect.html#InterpretEffectStateful"><span class="hs-identifier hs-type">InterpretEffectStateful</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679193121"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679193120"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Effect.Error.html#MonadErrorEffect"><span class="hs-identifier hs-type">MonadErrorEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679193119"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-16"></span><span>  </span><span id="local-6989586621679193166"><span class="annot"><span class="annottext">interpretEffectStateful :: forall (ops :: [Effect]) x a.
 (forall b y. x y -&gt; AST ops b -&gt; m (b, x y))
--&gt; x x -&gt; ErrorEffect e (AST ops) a -&gt; m (a, x x)
-</span><a href="#local-6989586621679190169"><span class="hs-identifier hs-var hs-var hs-var hs-var">interpretEffectStateful</span></a></span></span><span> </span><span id="local-6989586621679190171"><span class="annot"><span class="annottext">forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
-</span><a href="#local-6989586621679190171"><span class="hs-identifier hs-var">interpAST</span></a></span></span><span> </span><span id="local-6989586621679190172"><span class="annot"><span class="annottext">x x
-</span><a href="#local-6989586621679190172"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Effect.Error.html#CatchError"><span class="hs-identifier hs-type">CatchError</span></a></span><span> </span><span id="local-6989586621679190173"><span class="annot"><span class="annottext">AST ops a
-</span><a href="#local-6989586621679190173"><span class="hs-identifier hs-var">acts</span></a></span></span><span> </span><span id="local-6989586621679190174"><span class="annot"><span class="annottext">e -&gt; AST ops a
-</span><a href="#local-6989586621679190174"><span class="hs-identifier hs-var">handler</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+-&gt; x x -&gt; MonadErrorEffect e (AST ops) a -&gt; m (a, x x)
+</span><a href="#local-6989586621679193166"><span class="hs-identifier hs-var hs-var hs-var hs-var">interpretEffectStateful</span></a></span></span><span> </span><span id="local-6989586621679193168"><span class="annot"><span class="annottext">forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
+</span><a href="#local-6989586621679193168"><span class="hs-identifier hs-var">interpAST</span></a></span></span><span> </span><span id="local-6989586621679193169"><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679193169"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Effect.Error.html#CatchError"><span class="hs-identifier hs-type">CatchError</span></a></span><span> </span><span id="local-6989586621679193170"><span class="annot"><span class="annottext">AST ops a
+</span><a href="#local-6989586621679193170"><span class="hs-identifier hs-var">acts</span></a></span></span><span> </span><span id="local-6989586621679193171"><span class="annot"><span class="annottext">e -&gt; AST ops a
+</span><a href="#local-6989586621679193171"><span class="hs-identifier hs-var">handler</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-17"></span><span>    </span><span class="annot"><span class="annottext">m (a, x x) -&gt; (e -&gt; m (a, x x)) -&gt; m (a, x x)
 forall a. m a -&gt; (e -&gt; m a) -&gt; m a
 forall e (m :: * -&gt; *) a.
@@ -29,25 +29,27 @@ m a -&gt; (e -&gt; m a) -&gt; m a
 </span><span class="hs-identifier hs-var">catchError</span></span><span>
 </span><span id="line-18"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="annottext">x x -&gt; AST ops a -&gt; m (a, x x)
 forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
-</span><a href="#local-6989586621679190171"><span class="hs-identifier hs-var">interpAST</span></a></span><span> </span><span class="annot"><span class="annottext">x x
-</span><a href="#local-6989586621679190172"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">AST ops a
-</span><a href="#local-6989586621679190173"><span class="hs-identifier hs-var">acts</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679193168"><span class="hs-identifier hs-var">interpAST</span></a></span><span> </span><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679193169"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">AST ops a
+</span><a href="#local-6989586621679193170"><span class="hs-identifier hs-var">acts</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-19"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="annottext">x x -&gt; AST ops a -&gt; m (a, x x)
 forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
-</span><a href="#local-6989586621679190171"><span class="hs-identifier hs-var">interpAST</span></a></span><span> </span><span class="annot"><span class="annottext">x x
-</span><a href="#local-6989586621679190172"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">(AST ops a -&gt; m (a, x x)) -&gt; (e -&gt; AST ops a) -&gt; e -&gt; m (a, x x)
+</span><a href="#local-6989586621679193168"><span class="hs-identifier hs-var">interpAST</span></a></span><span> </span><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679193169"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">(AST ops a -&gt; m (a, x x)) -&gt; (e -&gt; AST ops a) -&gt; e -&gt; m (a, x x)
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; AST ops a
-</span><a href="#local-6989586621679190174"><span class="hs-identifier hs-var">handler</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-20"></span><span>  </span><span class="annot"><a href="Effect.html#interpretEffectStateful"><span class="hs-identifier hs-var">interpretEffectStateful</span></a></span><span> </span><span id="local-6989586621679190177"><span class="annot"><span class="annottext">forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
-</span><a href="#local-6989586621679190177"><span class="hs-identifier hs-var">interpAST</span></a></span></span><span> </span><span id="local-6989586621679190178"><span class="annot"><span class="annottext">x x
-</span><a href="#local-6989586621679190178"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679190179"><span class="annot"><span class="annottext">ErrorEffect e (AST ops) a
-</span><a href="#local-6989586621679190179"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">,</span><span class="annot"><span class="annottext">x x
-</span><a href="#local-6989586621679190178"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, x x)) -&gt; m a -&gt; m (a, x x)
+</span><a href="#local-6989586621679193171"><span class="hs-identifier hs-var">handler</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>  </span><span class="annot"><a href="Effect.html#interpretEffectStateful"><span class="hs-identifier hs-var">interpretEffectStateful</span></a></span><span> </span><span id="local-6989586621679193174"><span class="annot"><span class="annottext">forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
+</span><a href="#local-6989586621679193174"><span class="hs-identifier hs-var">interpAST</span></a></span></span><span> </span><span id="local-6989586621679193175"><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679193175"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679193176"><span class="annot"><span class="annottext">MonadErrorEffect e (AST ops) a
+</span><a href="#local-6989586621679193176"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-special">,</span><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679193175"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, x x)) -&gt; m a -&gt; m (a, x x)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
-</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(forall b. AST ops b -&gt; m b) -&gt; ErrorEffect e (AST ops) a -&gt; m a
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(forall b. AST ops b -&gt; m b)
+-&gt; MonadErrorEffect e (AST ops) a -&gt; m a
 forall (ops :: [Effect]) a.
-(forall b. AST ops b -&gt; m b) -&gt; ErrorEffect e (AST ops) a -&gt; m a
+(forall b. AST ops b -&gt; m b)
+-&gt; MonadErrorEffect e (AST ops) a -&gt; m a
 forall (m :: * -&gt; *) (op :: Effect) (ops :: [Effect]) a.
 InterpretEffect m op =&gt;
 (forall b. AST ops b -&gt; m b) -&gt; op (AST ops) a -&gt; m a
@@ -61,7 +63,7 @@ forall a b. (a, b) -&gt; a
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">x x -&gt; AST ops b -&gt; m (b, x x)
 forall b y. x y -&gt; AST ops b -&gt; m (b, x y)
-</span><a href="#local-6989586621679190177"><span class="hs-identifier hs-var">interpAST</span></a></span><span> </span><span class="annot"><span class="annottext">x x
-</span><a href="#local-6989586621679190178"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ErrorEffect e (AST ops) a
-</span><a href="#local-6989586621679190179"><span class="hs-identifier hs-var">op</span></a></span><span>
+</span><a href="#local-6989586621679193174"><span class="hs-identifier hs-var">interpAST</span></a></span><span> </span><span class="annot"><span class="annottext">x x
+</span><a href="#local-6989586621679193175"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">MonadErrorEffect e (AST ops) a
+</span><a href="#local-6989586621679193176"><span class="hs-identifier hs-var">op</span></a></span><span>
 </span><span id="line-21"></span></pre></body></html>
