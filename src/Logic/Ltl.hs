@@ -381,7 +381,7 @@ interpretASTLtlInternal cs x =
 -- that takes a 'JoinedEffects', where each effect has one of the three relevant
 -- instances, and returns the effect's interpretation.
 --
--- This function is called in a mutually recirsive fashion with 'interpretASTLtlInternal'.
+-- This function is called in a mutually recursive fashion with 'interpretASTLtlInternal'.
 interpretJoinedEffectsLtl ::
   (Semigroup mod, MonadPlus m) =>
   InterpretEffectsLtlConstraintList mod m tags ops ->

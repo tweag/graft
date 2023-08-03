@@ -24,6 +24,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Effect
 import Effect.Fail
+import Effect.Fail.Passthrough ()
 import Effect.TH
 import Language.Haskell.TH (varT)
 import Logic.Ltl
@@ -127,7 +128,10 @@ makeReification
   ''MonadKeyValue
   ''KeyValueEffect
 
-makeInterpretation (\_ _ -> [t|()|]) ''MonadKeyValue ''KeyValueEffect
+makeInterpretation
+  (\_ _ -> [t|()|])
+  ''MonadKeyValue
+  ''KeyValueEffect
 
 -- $doc
 -- If the constructor names of 'KeyValueEffect' are the method names of
@@ -196,6 +200,12 @@ makeInterpretation (\_ _ -> [t|()|]) ''MonadKeyValue ''KeyValueEffect
 
 data SingleStepMod = ConcatIfReplace
 
+data RenameMod k where
+  Rename :: (k -> k) -> RenameMod k
+
+instance Semigroup (RenameMod k) where
+  (Rename f) <> (Rename g) = Rename $ f . g
+
 -- $doc
 -- The evaluation of 'Ltl' formulas sometimes makes it necessary to try
 -- applying two 'SingleStepMod's on the same step. The 'Semigroup' instance
@@ -239,6 +249,16 @@ instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (Key
       Nothing -> return Nothing
   interpretLtl _ = Ignore
 
+instance (MonadKeyValue k v m) => InterpretLtl (RenameMod k) m (KeyValueEffect k v) where
+  interpretLtl (StoreValue key val) = Apply $ \(Rename f) -> do
+    storeValue (f key) val
+    return $ Just ()
+  interpretLtl (DeleteValue key) = Apply $ \(Rename f) -> do
+    deleteValue @_ @v (f key)
+    return $ Just ()
+  interpretLtl (GetValue key) = Apply $ \(Rename f) -> do
+    Just <$> getValue (f key)
+
 -- * Interpreting modified 'AST's
 
 -- $doc
@@ -272,11 +292,11 @@ instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (Key
 -- and state of the store:
 
 interpretAndRun ::
-  (Monoid v, Ord k) =>
+  (Semigroup x, Ord k, InterpretLtl x (KeyValueT k v []) (KeyValueEffect k v)) =>
   Map k v ->
-  LtlAST SingleStepMod '[KeyValueEffect k v] a ->
+  LtlAST x '[KeyValueEffect k v, FailEffect] a ->
   [(a, Map k v)]
-interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST @'[InterpretLtlTag] acts
+interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST @'[InterpretLtlTag, InterpretEffectStatefulTag] acts
 
 -- * A few example traces
 
@@ -289,7 +309,7 @@ interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST 
 --
 -- describes the three traces you get by applying @x@ to @act1@, @act2@, and
 -- @act3@, while leaving the other actions unmodified. Only traces where @x@
--- was /successfully/ will be returned by 'interpretLTLAST', though. This means
+-- was /successfully/ applied will be returned by 'interpretLTLAST', though. This means
 -- that our first example will return an empty list, since 'ConcatIfReplace'
 -- never applies (as we never 'storeValue' for a key that's already present).
 --
@@ -351,6 +371,11 @@ exampleEverywhere2 =
   interpretAndRun mempty $
     modifyLtl (everywhere ConcatIfReplace) $
       return ()
+
+exampleEverywhere3 :: [((), Map String Integer)]
+exampleEverywhere3 =
+  interpretAndRun mempty $
+    modifyLtl (everywhere $ Rename @String (++ "New")) swapTrace
 
 -- ** Custom 'Ltl' formulas
 
