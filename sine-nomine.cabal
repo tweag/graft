@@ -15,6 +15,7 @@ library
       Effect
       Effect.Error
       Effect.Error.Passthrough
+      Effect.Fail
       Effect.Internal
       Effect.IO
       Effect.IO.Passthrough

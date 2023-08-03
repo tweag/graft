@@ -23,7 +23,9 @@ import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Effect
+import Effect.Fail
 import Effect.TH
+import Language.Haskell.TH (varT)
 import Logic.Ltl
 import qualified Test.Tasty as Tasty
 import Test.Tasty.HUnit ((@=?))
@@ -120,7 +122,12 @@ data KeyValueEffect k v :: Effect where
   GetValue :: k -> KeyValueEffect k v m (Maybe v)
   DeleteValue :: k -> KeyValueEffect k v m ()
 
-makeEffect ''MonadKeyValue ''KeyValueEffect
+makeReification
+  (\_ ops -> [t|(EffectInject FailEffect $(varT ops))|])
+  ''MonadKeyValue
+  ''KeyValueEffect
+
+makeInterpretation (\_ _ -> [t|()|]) ''MonadKeyValue ''KeyValueEffect
 
 -- $doc
 -- If the constructor names of 'KeyValueEffect' are the method names of
