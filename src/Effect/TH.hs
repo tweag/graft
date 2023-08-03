@@ -13,20 +13,125 @@ where
 import Control.Monad
 import Data.Bifunctor
 import Data.Char (toLower)
+import qualified Data.Map as Map
 import Effect
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 
 -- | Automatically write "reification" and "interpretation" instances for an
--- effect type. See the documentation for 'makeReification' and
--- 'makeInterpretation', since this function is merely a wrapper around these
--- two. You must also use these two macros if you want to add extra constraints
--- to the instances.
+-- effect type and its associated class of monads.
+--
+-- Assume a class definition like
+--
+-- > class (SomeConstraint a, MonadBar b m) => MonadFoo a b m
+--
+-- and an effect type defined like
+--
+-- > data MonadFooEffect a b :: Effect
+--
+-- Then the macro
+--
+-- > makeEffect ''MonadFoo ''MonadFooEffect
+--
+-- will expand into two instance definitions:
+--
+-- 1. The "reification" instance
+--
+-- > instance (SomeConstraint a,
+-- >           EffectInject (MonadBarEffect b) ops,
+-- >           EffectInject (MonadFooEffect a b) ops)
+-- >   => MonadFoo a b (AST ops)
+--
+-- says that an 'AST' whose list @ops@ of effect types contains
+-- @MonadFooEffect@ is a @MonadFoo@. In order for this instance to make sense,
+-- though, we'll have to add at least satisfy the constraints that were already
+-- there on the class definition of @MonadFoo@. Therefore, we have to add
+--
+-- - @SomeConstraint a@,
+--
+-- - a constraint that implies @MonadBar b (AST ops)@: That is the reason for
+--   the constraint @EffectInject (MonadBarEffect b) ops@. This macro assumes
+--   that the only way for an 'AST' to become a @MonadX@ for some @X@ is to
+--   contain the correct effect type @MonadXEffect@. That is we employ a
+--
+-- __naming convention__: The effect type corresponding to the class @X@ is
+-- called @XEffect@. For example, 'MonadError' corresponds to
+-- 'MonadErrorEffect'.
+--
+-- while we're at it, there's another
+--
+-- __naming convention__: The names of the constructors of @XEffect@ must be
+-- exactly the names of the methods of the class @X@, just starting with an
+-- upper-case letter.
+--
+-- 2.  the "interpretation" instance
+--
+-- > instance (MonadFoo a b m) => InterpretEffect m (MonadFooEffect a b)
+--
+-- says that for any @MonadFoo a b m@, we can interpret the effects described
+-- by @MonadFooEffect a b@ into @m@.
+--
+--
+-- /remark for the general case/: This macro works by using the "additional
+-- constraints" arguments to 'makeReification' and 'makeInterpretation'. If you
+-- want to generate the instances with other constraints, you'll have to use
+-- these two macros directly.
 makeEffect :: Name -> Name -> Q [Dec]
 makeEffect className effectName = do
-  d1 <- makeReification (\_ _ -> [t|()|]) className effectName
-  d2 <- makeInterpretation (\_ _ -> [t|()|]) className effectName
+  ClassI (ClassD ctx _ vars _ _) _ <- reify className
+  let names =
+        map
+          ( \case
+              PlainTV x _ -> x
+              KindedTV x _ _ -> x
+          )
+          vars
+      -- The context of the class definition (i.e. its constraints, as a
+      -- function of the type variables used. The list of 'Name's containss all
+      -- of the "extra" type variables, and the singular 'Name' is the name of
+      -- the monad @m@.
+      ctxAsFunction :: [Name] -> Name -> [Type]
+      ctxAsFunction extraNames mName =
+        applySubstitution
+          (Map.fromList $ zip names (VarT <$> extraNames ++ [mName]))
+          ctx
+  d1 <- makeReification (reificationExtraConstraints ctxAsFunction) className effectName
+  d2 <- makeInterpretation (interpretationExtraConstraints ctxAsFunction) className effectName
   return $ d1 ++ d2
+  where
+    reificationExtraConstraints,
+      interpretationExtraConstraints ::
+        ([Name] -> Name -> [Type]) -> [Name] -> Name -> Q Type
+
+    reificationExtraConstraints ctx extraNames opsName = do
+      dummyName <- newName "dummy"
+      bigTuple
+        <$> mapMaybeM
+          ( \constraint ->
+              if dummyName `elem` freeVariables constraint
+                then case constraint of
+                  AppT c x
+                    | x == VarT dummyName ->
+                        if c /= ConT ''Monad
+                          then Just <$> [t|EffectInject $(return (onFirst mkEffectName c)) $(varT opsName)|]
+                          else return Nothing
+                  _ -> error "can't (yet) handle class constraints that don't have the \"monad\" argument in the last position. Try using 'makeInterpretation' and 'makeReification' directly"
+                else return $ Just constraint
+          )
+          (ctx extraNames dummyName)
+
+    interpretationExtraConstraints _ _ _ = [t|()|]
+
+    -- on a type constructor applied to some arguments apply some
+    -- transformation to the name of the constructor
+    onFirst :: (Name -> Name) -> Type -> Type
+    onFirst f (ConT n) = ConT $ f n
+    onFirst f (AppT a b) = AppT (onFirst f a) b
+    onFirst _ _ = error "expected a type constructor applied to some arguments"
+
+    -- make a big tuple of the form (...((((), a), b), c) ...) out of a list like [a, b, c]
+    bigTuple :: [Type] -> Type
+    bigTuple = foldl (\a b -> AppT (AppT (TupleT 2) a) b) (TupleT 0)
 
 -- | Write a "reification" instance for an effect type. Such an instance
 -- allows writing 'AST's containing effects of that type using the syntax of
@@ -51,11 +156,9 @@ makeEffect className effectName = do
 -- >   throwError err = astInject (ThrowError err)
 -- >   catchError acts handler = astInject (CatchError acts handler)
 --
--- (up to alpha-eta-equality).
---
 -- For this to work, it is expected that:
 --
--- - The second quoted type passed to the splice is the class that you want to
+-- - The first quoted type passed to the splice is the class that you want to
 --   use for your syntax. Its kind should be @(* -> *) -> Constraint@
 --
 -- - The second quoted type is the effect type.
@@ -169,17 +272,19 @@ makeReification qExtraConstraints className effectName = do
 --
 -- the TH splice
 --
--- > makeInterpretation (\mName -> [t|MonadError $(varT (mkName "e")) $(varT m)|]) [t|ErrorEffect $(varT (mkName "e"))|]
+-- > makeInterpretation (\[e] m -> [t|SomeConstraint $(varT e) $(varT m)|]) [t|ErrorEffect $(varT (mkName "e"))|]
 --
 -- will expand into an instance like
 --
--- > instance (MonadError e m) => InterpretEffect m (ErrorEffect e) where
+-- > instance (SomeConstraint e m, MonadError e m) => InterpretEffect m (ErrorEffect e) where
 -- >   interpretEffect _ (ThrowError err) = throwError @e err
 -- >   interpretEffect evalAST (CatchError acts handler) = catchError @e (evalAST acts) (evalAST . handler)
 --
--- (up to alpha-eta-equality).
---
 -- For this to work, it is expected that:
+--
+-- - The first quoted type passed to the splice is the class of monads that yow
+--   want to interpret the effect into. Its kind should be @(* -> *) ->
+--   Constraint@
 --
 -- - The second quoted type is the effect type.
 --   Its kind should be @(* -> *) -> * -> *@.
@@ -415,3 +520,16 @@ lowerFirst = mkName . lowerFirstString . nameBase
   where
     lowerFirstString (c : cs) = toLower c : cs
     lowerFirstString [] = error "empty name. This can't happen unless I wrote some very weird TemplateHaskell."
+
+-- | Get the corresponding effect name for the name of a class. The naming
+-- scheme is that @X@ will correspond to @XEffect@.
+mkEffectName :: Name -> Name
+mkEffectName = mkName . (++ "Effect") . nameBase
+
+mapMaybeM :: (Monad m) => (a -> m (Maybe b)) -> [a] -> m [b]
+mapMaybeM _ [] = return []
+mapMaybeM f (x : xs) = do
+  my <- f x
+  case my of
+    Nothing -> mapMaybeM f xs
+    Just y -> (y :) <$> mapMaybeM f xs
