@@ -28,7 +28,7 @@
 </span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH</span></span><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Type</span></span><span class="hs-special">)</span><span>
 </span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Logic.NextBind.html"><span class="hs-identifier">Logic.NextBind</span></a></span><span>
 </span><span id="line-30"></span><span>
-</span><span id="line-31"></span><span class="hs-keyword">newtype</span><span> </span><span id="Customer"><span class="annot"><a href="ShopExample.html#Customer"><span class="hs-identifier hs-var">Customer</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Customer"><span class="annot"><a href="ShopExample.html#Customer"><span class="hs-identifier hs-var">Customer</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679197320"><span id="local-6989586621679197326"><span class="annot"><span class="annottext">Customer -&gt; Customer -&gt; Bool
+</span><span id="line-31"></span><span class="hs-keyword">newtype</span><span> </span><span id="Customer"><span class="annot"><a href="ShopExample.html#Customer"><span class="hs-identifier hs-var">Customer</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Customer"><span class="annot"><a href="ShopExample.html#Customer"><span class="hs-identifier hs-var">Customer</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679194317"><span id="local-6989586621679194323"><span class="annot"><span class="annottext">Customer -&gt; Customer -&gt; Bool
 (Customer -&gt; Customer -&gt; Bool)
 -&gt; (Customer -&gt; Customer -&gt; Bool) -&gt; Eq Customer
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -36,7 +36,7 @@ $c== :: Customer -&gt; Customer -&gt; Bool
 == :: Customer -&gt; Customer -&gt; Bool
 $c/= :: Customer -&gt; Customer -&gt; Bool
 /= :: Customer -&gt; Customer -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197336"><span id="local-6989586621679197342"><span id="local-6989586621679197347"><span id="local-6989586621679197352"><span id="local-6989586621679197357"><span id="local-6989586621679197362"><span id="local-6989586621679197367"><span class="annot"><span class="annottext">Eq Customer
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194333"><span id="local-6989586621679194339"><span id="local-6989586621679194344"><span id="local-6989586621679194349"><span id="local-6989586621679194354"><span id="local-6989586621679194359"><span id="local-6989586621679194364"><span class="annot"><span class="annottext">Eq Customer
 Eq Customer
 -&gt; (Customer -&gt; Customer -&gt; Ordering)
 -&gt; (Customer -&gt; Customer -&gt; Bool)
@@ -73,7 +73,7 @@ $cmax :: Customer -&gt; Customer -&gt; Customer
 max :: Customer -&gt; Customer -&gt; Customer
 $cmin :: Customer -&gt; Customer -&gt; Customer
 min :: Customer -&gt; Customer -&gt; Customer
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197374"><span id="local-6989586621679197381"><span id="local-6989586621679197385"><span class="annot"><span class="annottext">Int -&gt; Customer -&gt; String -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194371"><span id="local-6989586621679194378"><span id="local-6989586621679194382"><span class="annot"><span class="annottext">Int -&gt; Customer -&gt; String -&gt; String
 [Customer] -&gt; String -&gt; String
 Customer -&gt; String
 (Int -&gt; Customer -&gt; String -&gt; String)
@@ -92,14 +92,14 @@ showList :: [Customer] -&gt; String -&gt; String
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-32"></span><span>
 </span><span id="line-33"></span><span class="hs-keyword">newtype</span><span> </span><span id="Coins"><span class="annot"><a href="ShopExample.html#Coins"><span class="hs-identifier hs-var">Coins</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Coins"><span class="annot"><a href="ShopExample.html#Coins"><span class="hs-identifier hs-var">Coins</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getCoins"><span class="annot"><span class="annottext">Coins -&gt; Int
-</span><a href="ShopExample.html#getCoins"><span class="hs-identifier hs-var hs-var">getCoins</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679197392"><span id="local-6989586621679197397"><span class="annot"><span class="annottext">Coins -&gt; Coins -&gt; Bool
+</span><a href="ShopExample.html#getCoins"><span class="hs-identifier hs-var hs-var">getCoins</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679194389"><span id="local-6989586621679194394"><span class="annot"><span class="annottext">Coins -&gt; Coins -&gt; Bool
 (Coins -&gt; Coins -&gt; Bool) -&gt; (Coins -&gt; Coins -&gt; Bool) -&gt; Eq Coins
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c== :: Coins -&gt; Coins -&gt; Bool
 == :: Coins -&gt; Coins -&gt; Bool
 $c/= :: Coins -&gt; Coins -&gt; Bool
 /= :: Coins -&gt; Coins -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197404"><span id="local-6989586621679197408"><span id="local-6989586621679197412"><span id="local-6989586621679197416"><span id="local-6989586621679197420"><span id="local-6989586621679197424"><span id="local-6989586621679197428"><span class="annot"><span class="annottext">Eq Coins
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194401"><span id="local-6989586621679194405"><span id="local-6989586621679194409"><span id="local-6989586621679194413"><span id="local-6989586621679194417"><span id="local-6989586621679194421"><span id="local-6989586621679194425"><span class="annot"><span class="annottext">Eq Coins
 Eq Coins
 -&gt; (Coins -&gt; Coins -&gt; Ordering)
 -&gt; (Coins -&gt; Coins -&gt; Bool)
@@ -136,7 +136,7 @@ $cmax :: Coins -&gt; Coins -&gt; Coins
 max :: Coins -&gt; Coins -&gt; Coins
 $cmin :: Coins -&gt; Coins -&gt; Coins
 min :: Coins -&gt; Coins -&gt; Coins
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197433"><span id="local-6989586621679197438"><span id="local-6989586621679197442"><span id="local-6989586621679197446"><span id="local-6989586621679197450"><span id="local-6989586621679197454"><span id="local-6989586621679197458"><span class="annot"><span class="annottext">Integer -&gt; Coins
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194430"><span id="local-6989586621679194435"><span id="local-6989586621679194439"><span id="local-6989586621679194443"><span id="local-6989586621679194447"><span id="local-6989586621679194451"><span id="local-6989586621679194455"><span class="annot"><span class="annottext">Integer -&gt; Coins
 Coins -&gt; Coins
 Coins -&gt; Coins -&gt; Coins
 (Coins -&gt; Coins -&gt; Coins)
@@ -170,7 +170,7 @@ $csignum :: Coins -&gt; Coins
 signum :: Coins -&gt; Coins
 $cfromInteger :: Integer -&gt; Coins
 fromInteger :: Integer -&gt; Coins
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197464"><span id="local-6989586621679197469"><span id="local-6989586621679197473"><span class="annot"><span class="annottext">Int -&gt; Coins -&gt; String -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194461"><span id="local-6989586621679194466"><span id="local-6989586621679194470"><span class="annot"><span class="annottext">Int -&gt; Coins -&gt; String -&gt; String
 [Coins] -&gt; String -&gt; String
 Coins -&gt; String
 (Int -&gt; Coins -&gt; String -&gt; String)
@@ -187,7 +187,7 @@ showList :: [Coins] -&gt; String -&gt; String
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-34"></span><span>
 </span><span id="line-35"></span><span class="hs-keyword">newtype</span><span> </span><span id="Coupons"><span class="annot"><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-var">Coupons</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Coupons"><span class="annot"><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-var">Coupons</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getCoupons"><span class="annot"><span class="annottext">Coupons -&gt; Int
-</span><a href="ShopExample.html#getCoupons"><span class="hs-identifier hs-var hs-var">getCoupons</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679197478"><span id="local-6989586621679197482"><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
+</span><a href="ShopExample.html#getCoupons"><span class="hs-identifier hs-var hs-var">getCoupons</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679194475"><span id="local-6989586621679194479"><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
 (Coupons -&gt; Coupons -&gt; Bool)
 -&gt; (Coupons -&gt; Coupons -&gt; Bool) -&gt; Eq Coupons
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -195,7 +195,7 @@ $c== :: Coupons -&gt; Coupons -&gt; Bool
 == :: Coupons -&gt; Coupons -&gt; Bool
 $c/= :: Coupons -&gt; Coupons -&gt; Bool
 /= :: Coupons -&gt; Coupons -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197489"><span id="local-6989586621679197493"><span id="local-6989586621679197497"><span id="local-6989586621679197501"><span id="local-6989586621679197505"><span id="local-6989586621679197509"><span id="local-6989586621679197513"><span class="annot"><span class="annottext">Eq Coupons
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194486"><span id="local-6989586621679194490"><span id="local-6989586621679194494"><span id="local-6989586621679194498"><span id="local-6989586621679194502"><span id="local-6989586621679194506"><span id="local-6989586621679194510"><span class="annot"><span class="annottext">Eq Coupons
 Eq Coupons
 -&gt; (Coupons -&gt; Coupons -&gt; Ordering)
 -&gt; (Coupons -&gt; Coupons -&gt; Bool)
@@ -232,7 +232,7 @@ $cmax :: Coupons -&gt; Coupons -&gt; Coupons
 max :: Coupons -&gt; Coupons -&gt; Coupons
 $cmin :: Coupons -&gt; Coupons -&gt; Coupons
 min :: Coupons -&gt; Coupons -&gt; Coupons
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197518"><span id="local-6989586621679197522"><span id="local-6989586621679197526"><span id="local-6989586621679197530"><span id="local-6989586621679197534"><span id="local-6989586621679197538"><span id="local-6989586621679197542"><span class="annot"><span class="annottext">Integer -&gt; Coupons
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194515"><span id="local-6989586621679194519"><span id="local-6989586621679194523"><span id="local-6989586621679194527"><span id="local-6989586621679194531"><span id="local-6989586621679194535"><span id="local-6989586621679194539"><span class="annot"><span class="annottext">Integer -&gt; Coupons
 Coupons -&gt; Coupons
 Coupons -&gt; Coupons -&gt; Coupons
 (Coupons -&gt; Coupons -&gt; Coupons)
@@ -266,7 +266,7 @@ $csignum :: Coupons -&gt; Coupons
 signum :: Coupons -&gt; Coupons
 $cfromInteger :: Integer -&gt; Coupons
 fromInteger :: Integer -&gt; Coupons
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197547"><span id="local-6989586621679197551"><span id="local-6989586621679197555"><span class="annot"><span class="annottext">Int -&gt; Coupons -&gt; String -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194544"><span id="local-6989586621679194548"><span id="local-6989586621679194552"><span class="annot"><span class="annottext">Int -&gt; Coupons -&gt; String -&gt; String
 [Coupons] -&gt; String -&gt; String
 Coupons -&gt; String
 (Int -&gt; Coupons -&gt; String -&gt; String)
@@ -285,7 +285,7 @@ showList :: [Coupons] -&gt; String -&gt; String
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-36"></span><span>
 </span><span id="line-37"></span><span class="hs-keyword">newtype</span><span> </span><span id="Bananas"><span class="annot"><a href="ShopExample.html#Bananas"><span class="hs-identifier hs-var">Bananas</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Bananas"><span class="annot"><a href="ShopExample.html#Bananas"><span class="hs-identifier hs-var">Bananas</span></a></span></span><span> </span><span class="hs-special">{</span><span id="getBananas"><span class="annot"><span class="annottext">Bananas -&gt; Int
-</span><a href="ShopExample.html#getBananas"><span class="hs-identifier hs-var hs-var">getBananas</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679197560"><span id="local-6989586621679197564"><span class="annot"><span class="annottext">Bananas -&gt; Bananas -&gt; Bool
+</span><a href="ShopExample.html#getBananas"><span class="hs-identifier hs-var hs-var">getBananas</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">}</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679194557"><span id="local-6989586621679194561"><span class="annot"><span class="annottext">Bananas -&gt; Bananas -&gt; Bool
 (Bananas -&gt; Bananas -&gt; Bool)
 -&gt; (Bananas -&gt; Bananas -&gt; Bool) -&gt; Eq Bananas
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -293,7 +293,7 @@ $c== :: Bananas -&gt; Bananas -&gt; Bool
 == :: Bananas -&gt; Bananas -&gt; Bool
 $c/= :: Bananas -&gt; Bananas -&gt; Bool
 /= :: Bananas -&gt; Bananas -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197571"><span id="local-6989586621679197575"><span id="local-6989586621679197579"><span id="local-6989586621679197583"><span id="local-6989586621679197587"><span id="local-6989586621679197591"><span id="local-6989586621679197595"><span class="annot"><span class="annottext">Eq Bananas
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194568"><span id="local-6989586621679194572"><span id="local-6989586621679194576"><span id="local-6989586621679194580"><span id="local-6989586621679194584"><span id="local-6989586621679194588"><span id="local-6989586621679194592"><span class="annot"><span class="annottext">Eq Bananas
 Eq Bananas
 -&gt; (Bananas -&gt; Bananas -&gt; Ordering)
 -&gt; (Bananas -&gt; Bananas -&gt; Bool)
@@ -330,7 +330,7 @@ $cmax :: Bananas -&gt; Bananas -&gt; Bananas
 max :: Bananas -&gt; Bananas -&gt; Bananas
 $cmin :: Bananas -&gt; Bananas -&gt; Bananas
 min :: Bananas -&gt; Bananas -&gt; Bananas
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197600"><span id="local-6989586621679197604"><span id="local-6989586621679197608"><span id="local-6989586621679197612"><span id="local-6989586621679197616"><span id="local-6989586621679197620"><span id="local-6989586621679197624"><span class="annot"><span class="annottext">Integer -&gt; Bananas
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194597"><span id="local-6989586621679194601"><span id="local-6989586621679194605"><span id="local-6989586621679194609"><span id="local-6989586621679194613"><span id="local-6989586621679194617"><span id="local-6989586621679194621"><span class="annot"><span class="annottext">Integer -&gt; Bananas
 Bananas -&gt; Bananas
 Bananas -&gt; Bananas -&gt; Bananas
 (Bananas -&gt; Bananas -&gt; Bananas)
@@ -364,7 +364,7 @@ $csignum :: Bananas -&gt; Bananas
 signum :: Bananas -&gt; Bananas
 $cfromInteger :: Integer -&gt; Bananas
 fromInteger :: Integer -&gt; Bananas
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197629"><span id="local-6989586621679197633"><span id="local-6989586621679197637"><span class="annot"><span class="annottext">Int -&gt; Bananas -&gt; String -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Num</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194626"><span id="local-6989586621679194630"><span id="local-6989586621679194634"><span class="annot"><span class="annottext">Int -&gt; Bananas -&gt; String -&gt; String
 [Bananas] -&gt; String -&gt; String
 Bananas -&gt; String
 (Int -&gt; Bananas -&gt; String -&gt; String)
@@ -386,7 +386,7 @@ showList :: [Bananas] -&gt; String -&gt; String
 </span><span id="line-40"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="OutOfBananas"><span class="annot"><a href="ShopExample.html#OutOfBananas"><span class="hs-identifier hs-var">OutOfBananas</span></a></span></span><span>
 </span><span id="line-41"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="NotEnoughPaid"><span class="annot"><a href="ShopExample.html#NotEnoughPaid"><span class="hs-identifier hs-var">NotEnoughPaid</span></a></span></span><span>
 </span><span id="line-42"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="NotEnoughCoupons"><span class="annot"><a href="ShopExample.html#NotEnoughCoupons"><span class="hs-identifier hs-var">NotEnoughCoupons</span></a></span></span><span>
-</span><span id="line-43"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679197643"><span id="local-6989586621679197645"><span id="local-6989586621679197649"><span class="annot"><span class="annottext">Int -&gt; ShopError -&gt; String -&gt; String
+</span><span id="line-43"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679194640"><span id="local-6989586621679194642"><span id="local-6989586621679194646"><span class="annot"><span class="annottext">Int -&gt; ShopError -&gt; String -&gt; String
 [ShopError] -&gt; String -&gt; String
 ShopError -&gt; String
 (Int -&gt; ShopError -&gt; String -&gt; String)
@@ -402,7 +402,7 @@ $cshow :: ShopError -&gt; String
 show :: ShopError -&gt; String
 $cshowList :: [ShopError] -&gt; String -&gt; String
 showList :: [ShopError] -&gt; String -&gt; String
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197652"><span id="local-6989586621679197654"><span class="annot"><span class="annottext">ShopError -&gt; ShopError -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194649"><span id="local-6989586621679194651"><span class="annot"><span class="annottext">ShopError -&gt; ShopError -&gt; Bool
 (ShopError -&gt; ShopError -&gt; Bool)
 -&gt; (ShopError -&gt; ShopError -&gt; Bool) -&gt; Eq ShopError
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -412,7 +412,7 @@ $c/= :: ShopError -&gt; ShopError -&gt; Bool
 /= :: ShopError -&gt; ShopError -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-44"></span><span>
-</span><span id="line-45"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197129"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MonadShop"><span class="annot"><a href="ShopExample.html#MonadShop"><span class="hs-identifier hs-var">MonadShop</span></a></span></span><span> </span><span id="local-6989586621679197129"><span class="annot"><a href="#local-6989586621679197129"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-45"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194127"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MonadShop"><span class="annot"><a href="ShopExample.html#MonadShop"><span class="hs-identifier hs-var">MonadShop</span></a></span></span><span> </span><span id="local-6989586621679194127"><span class="annot"><a href="#local-6989586621679194127"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-46"></span><span>  </span><span class="hs-comment">-- | buy some bananas</span><span>
 </span><span id="line-47"></span><span>  </span><span id="buy"><span class="annot"><a href="ShopExample.html#buy"><span class="hs-identifier hs-type">buy</span></a></span></span><span> </span><span class="hs-glyph">::</span><span>
 </span><span id="line-48"></span><span>    </span><span class="annot"><span class="hs-comment">-- | who is buying</span></span><span>
@@ -423,9 +423,9 @@ $c/= :: ShopError -&gt; ShopError -&gt; Bool
 </span><span id="line-53"></span><span>    </span><span class="annot"><a href="ShopExample.html#Coins"><span class="hs-identifier hs-type">Coins</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-54"></span><span>    </span><span class="annot"><span class="hs-comment">-- | how many bananas to buy. Must be nonnegative.</span></span><span>
 </span><span id="line-55"></span><span>    </span><span class="annot"><a href="ShopExample.html#Bananas"><span class="hs-identifier hs-type">Bananas</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-56"></span><span>    </span><span class="annot"><a href="#local-6989586621679197129"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><a href="#local-6989586621679194127"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-57"></span><span>
-</span><span id="line-58"></span><span class="hs-keyword">data</span><span> </span><span id="ShopState"><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-var">ShopState</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ShopState"><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-var">ShopState</span></a></span></span><span> </span><span class="annot"><a href="ShopExample.html#Coins"><span class="hs-identifier hs-type">Coins</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Bananas"><span class="hs-identifier hs-type">Bananas</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="ShopExample.html#Customer"><span class="hs-identifier hs-type">Customer</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-type">Coupons</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679197661"><span id="local-6989586621679197670"><span id="local-6989586621679197674"><span class="annot"><span class="annottext">Int -&gt; ShopState -&gt; String -&gt; String
+</span><span id="line-58"></span><span class="hs-keyword">data</span><span> </span><span id="ShopState"><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-var">ShopState</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ShopState"><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-var">ShopState</span></a></span></span><span> </span><span class="annot"><a href="ShopExample.html#Coins"><span class="hs-identifier hs-type">Coins</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Bananas"><span class="hs-identifier hs-type">Bananas</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="ShopExample.html#Customer"><span class="hs-identifier hs-type">Customer</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-type">Coupons</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679194658"><span id="local-6989586621679194667"><span id="local-6989586621679194671"><span class="annot"><span class="annottext">Int -&gt; ShopState -&gt; String -&gt; String
 [ShopState] -&gt; String -&gt; String
 ShopState -&gt; String
 (Int -&gt; ShopState -&gt; String -&gt; String)
@@ -441,7 +441,7 @@ $cshow :: ShopState -&gt; String
 show :: ShopState -&gt; String
 $cshowList :: [ShopState] -&gt; String -&gt; String
 showList :: [ShopState] -&gt; String -&gt; String
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197677"><span id="local-6989586621679197685"><span class="annot"><span class="annottext">ShopState -&gt; ShopState -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194674"><span id="local-6989586621679194682"><span class="annot"><span class="annottext">ShopState -&gt; ShopState -&gt; Bool
 (ShopState -&gt; ShopState -&gt; Bool)
 -&gt; (ShopState -&gt; ShopState -&gt; Bool) -&gt; Eq ShopState
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -451,13 +451,13 @@ $c/= :: ShopState -&gt; ShopState -&gt; Bool
 /= :: ShopState -&gt; ShopState -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-59"></span><span>
-</span><span id="line-60"></span><span class="hs-keyword">type</span><span> </span><span id="ShopT"><span class="annot"><a href="ShopExample.html#ShopT"><span class="hs-identifier hs-var">ShopT</span></a></span></span><span> </span><span id="local-6989586621679197688"><span class="annot"><a href="#local-6989586621679197688"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197688"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span class="hs-keyword">type</span><span> </span><span id="ShopT"><span class="annot"><a href="ShopExample.html#ShopT"><span class="hs-identifier hs-var">ShopT</span></a></span></span><span> </span><span id="local-6989586621679194685"><span class="annot"><a href="#local-6989586621679194685"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194685"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-61"></span><span>
 </span><span id="line-62"></span><span class="hs-keyword">type</span><span> </span><span id="Shop"><span class="annot"><a href="ShopExample.html#Shop"><span class="hs-identifier hs-var">Shop</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="ShopExample.html#ShopT"><span class="hs-identifier hs-type">ShopT</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Identity</span></span><span>
 </span><span id="line-63"></span><span>
-</span><span id="line-64"></span><span class="hs-keyword">instance</span><span> </span><span class="hs-pragma">{-# OVERLAPPING</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span id="local-6989586621679197155"><span id="local-6989586621679197698"><span id="local-6989586621679197702"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="annot"><a href="#local-6989586621679197155"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Alternative</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#ShopT"><span class="hs-identifier hs-type">ShopT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197155"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-65"></span><span>  </span><span id="local-6989586621679197722"><span class="annot"><span class="annottext">empty :: forall a. ShopT m a
-</span><a href="#local-6989586621679197722"><span class="hs-identifier hs-var hs-var hs-var hs-var">empty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">StateT ShopState m a -&gt; ExceptT ShopError (StateT ShopState m) a
+</span><span id="line-64"></span><span class="hs-keyword">instance</span><span> </span><span class="hs-pragma">{-# OVERLAPPING</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span id="local-6989586621679194153"><span id="local-6989586621679194695"><span id="local-6989586621679194699"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="annot"><a href="#local-6989586621679194153"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Alternative</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#ShopT"><span class="hs-identifier hs-type">ShopT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194153"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-65"></span><span>  </span><span id="local-6989586621679194719"><span class="annot"><span class="annottext">empty :: forall a. ShopT m a
+</span><a href="#local-6989586621679194719"><span class="hs-identifier hs-var hs-var hs-var hs-var">empty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">StateT ShopState m a -&gt; ExceptT ShopError (StateT ShopState m) a
 forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; ExceptT ShopError m a
 forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
 (MonadTrans t, Monad m) =&gt;
@@ -474,10 +474,10 @@ m a -&gt; t m a
 forall a. m a
 forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a
 </span><span class="hs-identifier hs-var">mzero</span></span><span>
-</span><span id="line-66"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span id="local-6989586621679197729"><span class="annot"><span class="annottext">ShopState -&gt; m (Either ShopError a, ShopState)
-</span><a href="#local-6989586621679197729"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621679197730"><span class="annot"><span class="annottext">&lt;|&gt; :: forall a. ShopT m a -&gt; ShopT m a -&gt; ShopT m a
-</span><a href="#local-6989586621679197730"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;|&gt;</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span id="local-6989586621679197732"><span class="annot"><span class="annottext">ShopState -&gt; m (Either ShopError a, ShopState)
-</span><a href="#local-6989586621679197732"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">StateT ShopState m (Either ShopError a)
+</span><span id="line-66"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span id="local-6989586621679194726"><span class="annot"><span class="annottext">ShopState -&gt; m (Either ShopError a, ShopState)
+</span><a href="#local-6989586621679194726"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621679194727"><span class="annot"><span class="annottext">&lt;|&gt; :: forall a. ShopT m a -&gt; ShopT m a -&gt; ShopT m a
+</span><a href="#local-6989586621679194727"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;|&gt;</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span id="local-6989586621679194729"><span class="annot"><span class="annottext">ShopState -&gt; m (Either ShopError a, ShopState)
+</span><a href="#local-6989586621679194729"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">StateT ShopState m (Either ShopError a)
 -&gt; ExceptT ShopError (StateT ShopState m) a
 forall e (m :: * -&gt; *) a. m (Either e a) -&gt; ExceptT e m a
 </span><span class="hs-identifier hs-var">ExceptT</span></span><span> </span><span class="annot"><span class="annottext">(StateT ShopState m (Either ShopError a)
@@ -493,40 +493,40 @@ forall s (m :: * -&gt; *) a. (s -&gt; m (a, s)) -&gt; StateT s m a
 -&gt; (ShopState -&gt; m (Either ShopError a, ShopState))
 -&gt; StateT ShopState m (Either ShopError a)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679197733"><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197733"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ShopState -&gt; m (Either ShopError a, ShopState)
-</span><a href="#local-6989586621679197729"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197733"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">m (Either ShopError a, ShopState)
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679194730"><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194730"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ShopState -&gt; m (Either ShopError a, ShopState)
+</span><a href="#local-6989586621679194726"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194730"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">m (Either ShopError a, ShopState)
 -&gt; m (Either ShopError a, ShopState)
 -&gt; m (Either ShopError a, ShopState)
 forall a. m a -&gt; m a -&gt; m a
 forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a -&gt; m a -&gt; m a
 </span><span class="hs-operator hs-var">`mplus`</span></span><span> </span><span class="annot"><span class="annottext">ShopState -&gt; m (Either ShopError a, ShopState)
-</span><a href="#local-6989586621679197732"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197733"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><a href="#local-6989586621679194729"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194730"><span class="hs-identifier hs-var">s</span></a></span><span>
 </span><span id="line-67"></span><span>
-</span><span id="line-68"></span><span class="hs-keyword">instance</span><span> </span><span class="hs-pragma">{-# OVERLAPPING</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span id="local-6989586621679197178"><span id="local-6989586621679197743"><span id="local-6989586621679197747"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="annot"><a href="#local-6989586621679197178"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#ShopT"><span class="hs-identifier hs-type">ShopT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197178"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-68"></span><span class="hs-keyword">instance</span><span> </span><span class="hs-pragma">{-# OVERLAPPING</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span id="local-6989586621679194176"><span id="local-6989586621679194740"><span id="local-6989586621679194744"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="annot"><a href="#local-6989586621679194176"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#ShopT"><span class="hs-identifier hs-type">ShopT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194176"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span>
 </span><span id="line-69"></span><span>
 </span><span id="line-70"></span><span class="hs-comment">-- One coin is worth five bananas, that's why the shop hands out coupons worth</span><span>
 </span><span id="line-71"></span><span class="hs-comment">-- one banana each.</span><span>
 </span><span id="line-72"></span><span>
-</span><span id="line-73"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679197182"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679197182"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#MonadShop"><span class="hs-identifier hs-type">MonadShop</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#ShopT"><span class="hs-identifier hs-type">ShopT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197182"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-74"></span><span>  </span><span id="local-6989586621679197799"><span class="annot"><span class="annottext">buy :: Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; ShopT m ()
-</span><a href="ShopExample.html#buy"><span class="hs-identifier hs-var hs-var hs-var hs-var">buy</span></a></span></span><span> </span><span id="local-6989586621679197800"><span class="annot"><span class="annottext">Customer
-</span><a href="#local-6989586621679197800"><span class="hs-identifier hs-var">customer</span></a></span></span><span> </span><span id="local-6989586621679197801"><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197801"><span class="hs-identifier hs-var">coupons</span></a></span></span><span> </span><span id="local-6989586621679197802"><span class="annot"><span class="annottext">Coins
-</span><a href="#local-6989586621679197802"><span class="hs-identifier hs-var">coins</span></a></span></span><span> </span><span id="local-6989586621679197803"><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197803"><span class="hs-identifier hs-var">bananas</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-75"></span><span>    </span><span id="local-6989586621679197804"><span class="annot"><span class="annottext">shopState :: ShopState
-</span><a href="#local-6989586621679197804"><span class="hs-identifier hs-var">shopState</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span id="local-6989586621679197805"><span class="annot"><span class="annottext">Coins
-</span><a href="#local-6989586621679197805"><span class="hs-identifier hs-var">shopCoins</span></a></span></span><span> </span><span id="local-6989586621679197806"><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197806"><span class="hs-identifier hs-var">shopBananas</span></a></span></span><span> </span><span id="local-6989586621679197807"><span class="annot"><span class="annottext">Map Customer Coupons
-</span><a href="#local-6989586621679197807"><span class="hs-identifier hs-var">couponMap</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ExceptT ShopError (StateT ShopState m) ShopState
+</span><span id="line-73"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679194180"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679194180"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#MonadShop"><span class="hs-identifier hs-type">MonadShop</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#ShopT"><span class="hs-identifier hs-type">ShopT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194180"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-74"></span><span>  </span><span id="local-6989586621679194796"><span class="annot"><span class="annottext">buy :: Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; ShopT m ()
+</span><a href="ShopExample.html#buy"><span class="hs-identifier hs-var hs-var hs-var hs-var">buy</span></a></span></span><span> </span><span id="local-6989586621679194797"><span class="annot"><span class="annottext">Customer
+</span><a href="#local-6989586621679194797"><span class="hs-identifier hs-var">customer</span></a></span></span><span> </span><span id="local-6989586621679194798"><span class="annot"><span class="annottext">Coupons
+</span><a href="#local-6989586621679194798"><span class="hs-identifier hs-var">coupons</span></a></span></span><span> </span><span id="local-6989586621679194799"><span class="annot"><span class="annottext">Coins
+</span><a href="#local-6989586621679194799"><span class="hs-identifier hs-var">coins</span></a></span></span><span> </span><span id="local-6989586621679194800"><span class="annot"><span class="annottext">Bananas
+</span><a href="#local-6989586621679194800"><span class="hs-identifier hs-var">bananas</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-75"></span><span>    </span><span id="local-6989586621679194801"><span class="annot"><span class="annottext">shopState :: ShopState
+</span><a href="#local-6989586621679194801"><span class="hs-identifier hs-var">shopState</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span id="local-6989586621679194802"><span class="annot"><span class="annottext">Coins
+</span><a href="#local-6989586621679194802"><span class="hs-identifier hs-var">shopCoins</span></a></span></span><span> </span><span id="local-6989586621679194803"><span class="annot"><span class="annottext">Bananas
+</span><a href="#local-6989586621679194803"><span class="hs-identifier hs-var">shopBananas</span></a></span></span><span> </span><span id="local-6989586621679194804"><span class="annot"><span class="annottext">Map Customer Coupons
+</span><a href="#local-6989586621679194804"><span class="hs-identifier hs-var">couponMap</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ExceptT ShopError (StateT ShopState m) ShopState
 forall s (m :: * -&gt; *). MonadState s m =&gt; m s
 </span><span class="hs-identifier hs-var">get</span></span><span>
 </span><span id="line-76"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ShopState -&gt; Maybe ShopError
-</span><a href="#local-6989586621679197809"><span class="hs-identifier hs-var">check</span></a></span><span> </span><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197804"><span class="hs-identifier hs-var">shopState</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679194806"><span class="hs-identifier hs-var">check</span></a></span><span> </span><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194801"><span class="hs-identifier hs-var">shopState</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-77"></span><span>      </span><span class="annot"><span class="annottext">Maybe ShopError
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-78"></span><span>        </span><span class="annot"><span class="annottext">ShopState -&gt; ShopT m ()
@@ -535,79 +535,79 @@ forall s (m :: * -&gt; *). MonadState s m =&gt; s -&gt; m ()
 </span><span id="line-79"></span><span>          </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Coins -&gt; Bananas -&gt; Map Customer Coupons -&gt; ShopState
 </span><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-var">ShopState</span></a></span><span>
 </span><span id="line-80"></span><span>              </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Coins
-</span><a href="#local-6989586621679197805"><span class="hs-identifier hs-var">shopCoins</span></a></span><span> </span><span class="annot"><span class="annottext">Coins -&gt; Coins -&gt; Coins
+</span><a href="#local-6989586621679194802"><span class="hs-identifier hs-var">shopCoins</span></a></span><span> </span><span class="annot"><span class="annottext">Coins -&gt; Coins -&gt; Coins
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Coins
-</span><a href="#local-6989586621679197802"><span class="hs-identifier hs-var">coins</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679194799"><span class="hs-identifier hs-var">coins</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-81"></span><span>              </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197806"><span class="hs-identifier hs-var">shopBananas</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas -&gt; Bananas -&gt; Bananas
+</span><a href="#local-6989586621679194803"><span class="hs-identifier hs-var">shopBananas</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas -&gt; Bananas -&gt; Bananas
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197803"><span class="hs-identifier hs-var">bananas</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679194800"><span class="hs-identifier hs-var">bananas</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-82"></span><span>              </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Customer -&gt; Map Customer Coupons -&gt; Maybe Coupons
 forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">Customer
-</span><a href="#local-6989586621679197800"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="annot"><span class="annottext">Map Customer Coupons
-</span><a href="#local-6989586621679197807"><span class="hs-identifier hs-var">couponMap</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679194797"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="annot"><span class="annottext">Map Customer Coupons
+</span><a href="#local-6989586621679194804"><span class="hs-identifier hs-var">couponMap</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-83"></span><span>                  </span><span class="annot"><span class="annottext">Maybe Coupons
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-84"></span><span>                    </span><span class="hs-keyword">if</span><span>
 </span><span id="line-85"></span><span>                        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197801"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
+</span><a href="#local-6989586621679194798"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Coupons
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Customer -&gt; Coupons -&gt; Map Customer Coupons -&gt; Map Customer Coupons
 forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
 </span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">Customer
-</span><a href="#local-6989586621679197800"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197801"><span class="hs-identifier hs-var">coupons</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map Customer Coupons
-</span><a href="#local-6989586621679197807"><span class="hs-identifier hs-var">couponMap</span></a></span><span>
+</span><a href="#local-6989586621679194797"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Coupons
+</span><a href="#local-6989586621679194798"><span class="hs-identifier hs-var">coupons</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map Customer Coupons
+</span><a href="#local-6989586621679194804"><span class="hs-identifier hs-var">couponMap</span></a></span><span>
 </span><span id="line-86"></span><span>                        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197801"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
+</span><a href="#local-6989586621679194798"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Coupons
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Map Customer Coupons
-</span><a href="#local-6989586621679197807"><span class="hs-identifier hs-var">couponMap</span></a></span><span>
+</span><a href="#local-6989586621679194804"><span class="hs-identifier hs-var">couponMap</span></a></span><span>
 </span><span id="line-87"></span><span>                        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Map Customer Coupons
 forall a. HasCallStack =&gt; String -&gt; a
 </span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;This can't happen: the check for coupons succeeded, but the customer has none&quot;</span></span><span>
-</span><span id="line-88"></span><span>                  </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679197816"><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197816"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Customer -&gt; Coupons -&gt; Map Customer Coupons -&gt; Map Customer Coupons
+</span><span id="line-88"></span><span>                  </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679194813"><span class="annot"><span class="annottext">Coupons
+</span><a href="#local-6989586621679194813"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Customer -&gt; Coupons -&gt; Map Customer Coupons -&gt; Map Customer Coupons
 forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
 </span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">Customer
-</span><a href="#local-6989586621679197800"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197816"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Coupons
+</span><a href="#local-6989586621679194797"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Coupons
+</span><a href="#local-6989586621679194813"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Coupons
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197801"><span class="hs-identifier hs-var">coupons</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map Customer Coupons
-</span><a href="#local-6989586621679197807"><span class="hs-identifier hs-var">couponMap</span></a></span><span>
+</span><a href="#local-6989586621679194798"><span class="hs-identifier hs-var">coupons</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map Customer Coupons
+</span><a href="#local-6989586621679194804"><span class="hs-identifier hs-var">couponMap</span></a></span><span>
 </span><span id="line-89"></span><span>              </span><span class="hs-special">)</span><span>
 </span><span id="line-90"></span><span>          </span><span class="hs-special">)</span><span>
-</span><span id="line-91"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679197817"><span class="annot"><span class="annottext">ShopError
-</span><a href="#local-6989586621679197817"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ShopError -&gt; ShopT m ()
+</span><span id="line-91"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679194814"><span class="annot"><span class="annottext">ShopError
+</span><a href="#local-6989586621679194814"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ShopError -&gt; ShopT m ()
 forall a. ShopError -&gt; ExceptT ShopError (StateT ShopState m) a
 forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">ShopError
-</span><a href="#local-6989586621679197817"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><a href="#local-6989586621679194814"><span class="hs-identifier hs-var">err</span></a></span><span>
 </span><span id="line-92"></span><span>    </span><span class="hs-keyword">where</span><span>
-</span><span id="line-93"></span><span>      </span><span class="annot"><a href="#local-6989586621679197809"><span class="hs-identifier hs-type">check</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span>
-</span><span id="line-94"></span><span>      </span><span id="local-6989586621679197809"><span class="annot"><span class="annottext">check :: ShopState -&gt; Maybe ShopError
-</span><a href="#local-6989586621679197809"><span class="hs-identifier hs-var hs-var">check</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="annot"><span class="annottext">Coins
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679197819"><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197819"><span class="hs-identifier hs-var">shopBananas</span></a></span></span><span> </span><span id="local-6989586621679197820"><span class="annot"><span class="annottext">Map Customer Coupons
-</span><a href="#local-6989586621679197820"><span class="hs-identifier hs-var">couponMap</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-93"></span><span>      </span><span class="annot"><a href="#local-6989586621679194806"><span class="hs-identifier hs-type">check</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span>
+</span><span id="line-94"></span><span>      </span><span id="local-6989586621679194806"><span class="annot"><span class="annottext">check :: ShopState -&gt; Maybe ShopError
+</span><a href="#local-6989586621679194806"><span class="hs-identifier hs-var hs-var">check</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="annot"><span class="annottext">Coins
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679194816"><span class="annot"><span class="annottext">Bananas
+</span><a href="#local-6989586621679194816"><span class="hs-identifier hs-var">shopBananas</span></a></span></span><span> </span><span id="local-6989586621679194817"><span class="annot"><span class="annottext">Map Customer Coupons
+</span><a href="#local-6989586621679194817"><span class="hs-identifier hs-var">couponMap</span></a></span></span><span class="hs-special">)</span><span>
 </span><span id="line-95"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197819"><span class="hs-identifier hs-var">shopBananas</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas -&gt; Bananas -&gt; Bool
+</span><a href="#local-6989586621679194816"><span class="hs-identifier hs-var">shopBananas</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas -&gt; Bananas -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197803"><span class="hs-identifier hs-var">bananas</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShopError -&gt; Maybe ShopError
+</span><a href="#local-6989586621679194800"><span class="hs-identifier hs-var">bananas</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShopError -&gt; Maybe ShopError
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ShopError
 </span><a href="ShopExample.html#OutOfBananas"><span class="hs-identifier hs-var">OutOfBananas</span></a></span><span>
 </span><span id="line-96"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197801"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
+</span><a href="#local-6989586621679194798"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Coupons
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span>
@@ -616,15 +616,15 @@ forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Coins -&gt; Int
 </span><a href="ShopExample.html#getCoins"><span class="hs-identifier hs-var">getCoins</span></a></span><span> </span><span class="annot"><span class="annottext">Coins
-</span><a href="#local-6989586621679197802"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679194799"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Coupons -&gt; Int
 </span><a href="ShopExample.html#getCoupons"><span class="hs-identifier hs-var">getCoupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197801"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679194798"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Bananas -&gt; Int
 </span><a href="ShopExample.html#getBananas"><span class="hs-identifier hs-var">getBananas</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197803"><span class="hs-identifier hs-var">bananas</span></a></span><span>
+</span><a href="#local-6989586621679194800"><span class="hs-identifier hs-var">bananas</span></a></span><span>
 </span><span id="line-98"></span><span>              </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">ShopError -&gt; Maybe ShopError
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ShopError
@@ -633,42 +633,42 @@ forall a. a -&gt; Maybe a
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
 </span><span id="line-100"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197801"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
+</span><a href="#local-6989586621679194798"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Coupons
 </span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-101"></span><span>            </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Customer -&gt; Map Customer Coupons -&gt; Maybe Coupons
 forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">Customer
-</span><a href="#local-6989586621679197800"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="annot"><span class="annottext">Map Customer Coupons
-</span><a href="#local-6989586621679197820"><span class="hs-identifier hs-var">couponMap</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679194797"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="annot"><span class="annottext">Map Customer Coupons
+</span><a href="#local-6989586621679194817"><span class="hs-identifier hs-var">couponMap</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-102"></span><span>              </span><span class="annot"><span class="annottext">Maybe Coupons
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ShopError -&gt; Maybe ShopError
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ShopError
 </span><a href="ShopExample.html#NotEnoughCoupons"><span class="hs-identifier hs-var">NotEnoughCoupons</span></a></span><span>
-</span><span id="line-103"></span><span>              </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679197823"><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197823"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-103"></span><span>              </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679194820"><span class="annot"><span class="annottext">Coupons
+</span><a href="#local-6989586621679194820"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-104"></span><span>                </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197823"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
+</span><a href="#local-6989586621679194820"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197801"><span class="hs-identifier hs-var">coupons</span></a></span><span>
+</span><a href="#local-6989586621679194798"><span class="hs-identifier hs-var">coupons</span></a></span><span>
 </span><span id="line-105"></span><span>                  </span><span class="hs-keyword">then</span><span>
 </span><span id="line-106"></span><span>                    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">5</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Coins -&gt; Int
 </span><a href="ShopExample.html#getCoins"><span class="hs-identifier hs-var">getCoins</span></a></span><span> </span><span class="annot"><span class="annottext">Coins
-</span><a href="#local-6989586621679197802"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679194799"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Int
 </span><a href="ShopExample.html#getCoupons"><span class="hs-identifier hs-var">getCoupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197801"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679194798"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Bananas -&gt; Int
 </span><a href="ShopExample.html#getBananas"><span class="hs-identifier hs-var">getBananas</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197803"><span class="hs-identifier hs-var">bananas</span></a></span><span>
+</span><a href="#local-6989586621679194800"><span class="hs-identifier hs-var">bananas</span></a></span><span>
 </span><span id="line-107"></span><span>                      </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">ShopError -&gt; Maybe ShopError
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ShopError
@@ -685,11 +685,11 @@ forall a. a -&gt; Maybe a
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Coins -&gt; Int
 </span><a href="ShopExample.html#getCoins"><span class="hs-identifier hs-var">getCoins</span></a></span><span> </span><span class="annot"><span class="annottext">Coins
-</span><a href="#local-6989586621679197802"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679194799"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Bananas -&gt; Int
 </span><a href="ShopExample.html#getBananas"><span class="hs-identifier hs-var">getBananas</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197803"><span class="hs-identifier hs-var">bananas</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShopError -&gt; Maybe ShopError
+</span><a href="#local-6989586621679194800"><span class="hs-identifier hs-var">bananas</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShopError -&gt; Maybe ShopError
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">ShopError
 </span><a href="ShopExample.html#NotEnoughPaid"><span class="hs-identifier hs-var">NotEnoughPaid</span></a></span><span> </span><span class="hs-comment">-- we know that coupons == 0</span><span>
@@ -698,11 +698,11 @@ forall a. a -&gt; Maybe a
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
 </span><span id="line-112"></span><span>
-</span><span id="line-113"></span><span id="local-6989586621679197202"><span id="local-6989586621679197203"><span class="annot"><a href="ShopExample.html#runShopT"><span class="hs-identifier hs-type">runShopT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#ShopT"><span class="hs-identifier hs-type">ShopT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197202"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197203"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679197202"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197203"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-113"></span><span id="local-6989586621679194200"><span id="local-6989586621679194201"><span class="annot"><a href="ShopExample.html#runShopT"><span class="hs-identifier hs-type">runShopT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#ShopT"><span class="hs-identifier hs-type">ShopT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194200"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194201"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679194200"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194201"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-114"></span><span id="runShopT"><span class="annot"><span class="annottext">runShopT :: forall (m :: * -&gt; *) a.
 ShopState -&gt; ShopT m a -&gt; m (Either ShopError a, ShopState)
-</span><a href="ShopExample.html#runShopT"><span class="hs-identifier hs-var hs-var">runShopT</span></a></span></span><span> </span><span id="local-6989586621679197825"><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197825"><span class="hs-identifier hs-var">start</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(StateT ShopState m (Either ShopError a)
+</span><a href="ShopExample.html#runShopT"><span class="hs-identifier hs-var hs-var">runShopT</span></a></span></span><span> </span><span id="local-6989586621679194822"><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194822"><span class="hs-identifier hs-var">start</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(StateT ShopState m (Either ShopError a)
  -&gt; ShopState -&gt; m (Either ShopError a, ShopState))
 -&gt; ShopState
 -&gt; StateT ShopState m (Either ShopError a)
@@ -712,7 +712,7 @@ forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
 -&gt; ShopState -&gt; m (Either ShopError a, ShopState)
 forall s (m :: * -&gt; *) a. StateT s m a -&gt; s -&gt; m (a, s)
 </span><span class="hs-identifier hs-var">runStateT</span></span><span> </span><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197825"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">(StateT ShopState m (Either ShopError a)
+</span><a href="#local-6989586621679194822"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">(StateT ShopState m (Either ShopError a)
  -&gt; m (Either ShopError a, ShopState))
 -&gt; (ShopT m a -&gt; StateT ShopState m (Either ShopError a))
 -&gt; ShopT m a
@@ -722,10 +722,10 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 forall e (m :: * -&gt; *) a. ExceptT e m a -&gt; m (Either e a)
 </span><span class="hs-identifier hs-var">runExceptT</span></span><span>
 </span><span id="line-115"></span><span>
-</span><span id="line-116"></span><span id="local-6989586621679197218"><span class="annot"><a href="ShopExample.html#runShop"><span class="hs-identifier hs-type">runShop</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#Shop"><span class="hs-identifier hs-type">Shop</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197218"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197218"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-116"></span><span id="local-6989586621679194216"><span class="annot"><a href="ShopExample.html#runShop"><span class="hs-identifier hs-type">runShop</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#Shop"><span class="hs-identifier hs-type">Shop</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194216"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194216"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-117"></span><span id="runShop"><span class="annot"><span class="annottext">runShop :: forall a. ShopState -&gt; Shop a -&gt; (Either ShopError a, ShopState)
-</span><a href="ShopExample.html#runShop"><span class="hs-identifier hs-var hs-var">runShop</span></a></span></span><span> </span><span id="local-6989586621679197831"><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197831"><span class="hs-identifier hs-var">start</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identity (Either ShopError a, ShopState)
+</span><a href="ShopExample.html#runShop"><span class="hs-identifier hs-var hs-var">runShop</span></a></span></span><span> </span><span id="local-6989586621679194828"><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194828"><span class="hs-identifier hs-var">start</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identity (Either ShopError a, ShopState)
 -&gt; (Either ShopError a, ShopState)
 forall a. Identity a -&gt; a
 </span><span class="hs-identifier hs-var">runIdentity</span></span><span> </span><span class="annot"><span class="annottext">(Identity (Either ShopError a, ShopState)
@@ -738,7 +738,7 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 forall (m :: * -&gt; *) a.
 ShopState -&gt; ShopT m a -&gt; m (Either ShopError a, ShopState)
 </span><a href="ShopExample.html#runShopT"><span class="hs-identifier hs-var">runShopT</span></a></span><span> </span><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197831"><span class="hs-identifier hs-var">start</span></a></span><span>
+</span><a href="#local-6989586621679194828"><span class="hs-identifier hs-var">start</span></a></span><span>
 </span><span id="line-118"></span><span>
 </span><span id="line-119"></span><span class="annot"><a href="ShopExample.html#initialShopState"><span class="hs-identifier hs-type">initialShopState</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span>
 </span><span id="line-120"></span><span id="initialShopState"><span class="annot"><span class="annottext">initialShopState :: ShopState
@@ -757,23 +757,28 @@ forall a. Monoid a =&gt; a
 </span><span id="line-125"></span><span>
 </span><span id="line-126"></span><span class="hs-comment">-- (Map.fromList [(Customer &quot;Alice&quot;, Coupons 0), (Customer &quot;Bob&quot;, Coupons 0)])</span><span>
 </span><span id="line-127"></span><span>
-</span><span id="line-128"></span><span class="hs-keyword">data</span><span> </span><span id="MonadShopEffect"><span class="annot"><a href="ShopExample.html#MonadShopEffect"><span class="hs-identifier hs-var">MonadShopEffect</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679197834"><span class="annot"><a href="#local-6989586621679197834"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679197835"><span class="annot"><a href="#local-6989586621679197835"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-129"></span><span>  </span><span id="local-6989586621679197243"><span id="Buy"><span class="annot"><a href="ShopExample.html#Buy"><span class="hs-identifier hs-var">Buy</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#Customer"><span class="hs-identifier hs-type">Customer</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-type">Coupons</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#Coins"><span class="hs-identifier hs-type">Coins</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#Bananas"><span class="hs-identifier hs-type">Bananas</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#MonadShopEffect"><span class="hs-identifier hs-type">MonadShopEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197243"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-128"></span><span class="hs-keyword">data</span><span> </span><span id="ShopEffect"><span class="annot"><a href="ShopExample.html#ShopEffect"><span class="hs-identifier hs-var">ShopEffect</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679194831"><span class="annot"><a href="#local-6989586621679194831"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679194832"><span class="annot"><a href="#local-6989586621679194832"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-129"></span><span>  </span><span id="local-6989586621679194240"><span id="Buy"><span class="annot"><a href="ShopExample.html#Buy"><span class="hs-identifier hs-var">Buy</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#Customer"><span class="hs-identifier hs-type">Customer</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-type">Coupons</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#Coins"><span class="hs-identifier hs-type">Coins</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#Bananas"><span class="hs-identifier hs-type">Bananas</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#ShopEffect"><span class="hs-identifier hs-type">ShopEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194240"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
 </span><span id="line-130"></span><span>
-</span><span id="line-131"></span><span id="local-6989586621679197239"><span id="local-6989586621679197240"><span id="local-6989586621679197840"><span id="local-6989586621679197849"><span class="hs-identifier">makeEffect</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadShop</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadShopEffect</span></span></span></span></span><span>
+</span><span id="line-131"></span><span id="local-6989586621679194231"><span id="local-6989586621679194837"><span class="hs-identifier">makeInterpretation</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[t|</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">|]</span><span class="hs-special">)</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadShop</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">ShopEffect</span></span></span><span>
 </span><span id="line-132"></span><span>
-</span><span id="line-133"></span><span class="hs-keyword">data</span><span> </span><span id="Tweak"><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-var">Tweak</span></a></span></span><span> </span><span id="local-6989586621679197866"><span class="annot"><a href="#local-6989586621679197866"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-134"></span><span>  </span><span id="AskForCoupons"><span class="annot"><a href="ShopExample.html#AskForCoupons"><span class="hs-identifier hs-var">AskForCoupons</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-type">Coupons</span></a></span><span>
-</span><span id="line-135"></span><span>  </span><span id="UseCoupons"><span class="annot"><a href="ShopExample.html#UseCoupons"><span class="hs-identifier hs-var">UseCoupons</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-type">Coupons</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-136"></span><span>
-</span><span id="line-137"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679197256"><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#MonadShop"><span class="hs-identifier hs-type">MonadShop</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197256"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Logic.NextBind.html#InterpretNextBind"><span class="hs-identifier hs-type">InterpretNextBind</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197256"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#MonadShopEffect"><span class="hs-identifier hs-type">MonadShopEffect</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-138"></span><span>  </span><span id="local-6989586621679197876"><span class="annot"><span class="annottext">interpretNextBind :: forall (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
-MonadShopEffect (AST ops) a -&gt; Interpretation Tweak m ops a
-</span><a href="#local-6989586621679197876"><span class="hs-identifier hs-var hs-var hs-var hs-var">interpretNextBind</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#Buy"><span class="hs-identifier hs-type">Buy</span></a></span><span> </span><span id="local-6989586621679197879"><span class="annot"><span class="annottext">Customer
-</span><a href="#local-6989586621679197879"><span class="hs-identifier hs-var">customer</span></a></span></span><span> </span><span id="local-6989586621679197880"><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197880"><span class="hs-identifier hs-var">coupons</span></a></span></span><span> </span><span id="local-6989586621679197881"><span class="annot"><span class="annottext">Coins
-</span><a href="#local-6989586621679197881"><span class="hs-identifier hs-var">coins</span></a></span></span><span> </span><span id="local-6989586621679197882"><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197882"><span class="hs-identifier hs-var">bananas</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall x. Tweak x -&gt; m (Maybe (a, x)))
+</span><span id="line-133"></span><span id="local-6989586621679194239"><span id="local-6989586621679194854"><span class="hs-identifier">makeReification</span><span>
+</span><span id="line-134"></span><span>  </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">ops</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[t|</span><span class="hs-identifier">EffectInject</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">ErrorEffect</span><span> </span><span class="hs-identifier">ShopError</span><span class="hs-special">)</span><span> </span><span class="hs-special">$</span><span class="hs-special">(</span><span class="hs-identifier">varT</span><span> </span><span class="hs-identifier">ops</span><span class="hs-special">)</span><span class="hs-special">|]</span><span class="hs-special">)</span><span>
+</span><span id="line-135"></span><span>  </span><span class="hs-special">''</span><span class="hs-identifier">MonadShop</span><span>
+</span><span id="line-136"></span><span>  </span><span class="hs-special">''</span><span class="hs-identifier">ShopEffect</span></span></span><span>
+</span><span id="line-137"></span><span>
+</span><span id="line-138"></span><span class="hs-keyword">data</span><span> </span><span id="Tweak"><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-var">Tweak</span></a></span></span><span> </span><span id="local-6989586621679194862"><span class="annot"><a href="#local-6989586621679194862"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-139"></span><span>  </span><span id="AskForCoupons"><span class="annot"><a href="ShopExample.html#AskForCoupons"><span class="hs-identifier hs-var">AskForCoupons</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-type">Coupons</span></a></span><span>
+</span><span id="line-140"></span><span>  </span><span id="UseCoupons"><span class="annot"><a href="ShopExample.html#UseCoupons"><span class="hs-identifier hs-var">UseCoupons</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-type">Coupons</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679194253"><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#MonadShop"><span class="hs-identifier hs-type">MonadShop</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194253"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Logic.NextBind.html#InterpretNextBind"><span class="hs-identifier hs-type">InterpretNextBind</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194253"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#ShopEffect"><span class="hs-identifier hs-type">ShopEffect</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-143"></span><span>  </span><span id="local-6989586621679194872"><span class="annot"><span class="annottext">interpretNextBind :: forall (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
+ShopEffect (AST ops) a -&gt; Interpretation Tweak m ops a
+</span><a href="#local-6989586621679194872"><span class="hs-identifier hs-var hs-var hs-var hs-var">interpretNextBind</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#Buy"><span class="hs-identifier hs-type">Buy</span></a></span><span> </span><span id="local-6989586621679194875"><span class="annot"><span class="annottext">Customer
+</span><a href="#local-6989586621679194875"><span class="hs-identifier hs-var">customer</span></a></span></span><span> </span><span id="local-6989586621679194876"><span class="annot"><span class="annottext">Coupons
+</span><a href="#local-6989586621679194876"><span class="hs-identifier hs-var">coupons</span></a></span></span><span> </span><span id="local-6989586621679194877"><span class="annot"><span class="annottext">Coins
+</span><a href="#local-6989586621679194877"><span class="hs-identifier hs-var">coins</span></a></span></span><span> </span><span id="local-6989586621679194878"><span class="annot"><span class="annottext">Bananas
+</span><a href="#local-6989586621679194878"><span class="hs-identifier hs-var">bananas</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall x. Tweak x -&gt; m (Maybe (a, x)))
 -&gt; Interpretation Tweak m ops a
 forall (t :: * -&gt; *) (m :: * -&gt; *) a (ops :: [(* -&gt; *) -&gt; * -&gt; *]).
 (forall x. t x -&gt; m (Maybe (a, x))) -&gt; Interpretation t m ops a
@@ -783,75 +788,75 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) a (ops :: [(* -&gt; *) -&gt; * -&gt; *]
 -&gt; Interpretation Tweak m ops a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-139"></span><span>    </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-140"></span><span>      </span><span class="annot"><span class="annottext">Tweak x
+</span><span id="line-144"></span><span>    </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-145"></span><span>      </span><span class="annot"><span class="annottext">Tweak x
 </span><a href="ShopExample.html#AskForCoupons"><span class="hs-identifier hs-var">AskForCoupons</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-141"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679197895"><span class="annot"><span class="annottext">delta :: Int
-</span><a href="#local-6989586621679197895"><span class="hs-identifier hs-var hs-var">delta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Coins -&gt; Int
+</span><span id="line-146"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679194891"><span class="annot"><span class="annottext">delta :: Int
+</span><a href="#local-6989586621679194891"><span class="hs-identifier hs-var hs-var">delta</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Coins -&gt; Int
 </span><a href="ShopExample.html#getCoins"><span class="hs-identifier hs-var">getCoins</span></a></span><span> </span><span class="annot"><span class="annottext">Coins
-</span><a href="#local-6989586621679197881"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+</span><a href="#local-6989586621679194877"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">5</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Bananas -&gt; Int
 </span><a href="ShopExample.html#getBananas"><span class="hs-identifier hs-var">getBananas</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197882"><span class="hs-identifier hs-var">bananas</span></a></span><span>
-</span><span id="line-142"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679197895"><span class="hs-identifier hs-var">delta</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679194878"><span class="hs-identifier hs-var">bananas</span></a></span><span>
+</span><span id="line-147"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679194891"><span class="hs-identifier hs-var">delta</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span>
-</span><span id="line-143"></span><span>              </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-144"></span><span>                </span><span class="annot"><span class="annottext">Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
+</span><span id="line-148"></span><span>              </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-149"></span><span>                </span><span class="annot"><span class="annottext">Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
 forall (m :: * -&gt; *).
 MonadShop m =&gt;
 Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
 </span><a href="ShopExample.html#buy"><span class="hs-identifier hs-var">buy</span></a></span><span> </span><span class="annot"><span class="annottext">Customer
-</span><a href="#local-6989586621679197879"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Int -&gt; Coupons
+</span><a href="#local-6989586621679194875"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Int -&gt; Coupons
 </span><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-var">Coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679197895"><span class="hs-identifier hs-var">delta</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Coins
-</span><a href="#local-6989586621679197881"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197882"><span class="hs-identifier hs-var">bananas</span></a></span><span>
-</span><span id="line-145"></span><span>                </span><span class="annot"><span class="annottext">Maybe (a, x) -&gt; m (Maybe (a, x))
+</span><a href="#local-6989586621679194891"><span class="hs-identifier hs-var">delta</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Coins
+</span><a href="#local-6989586621679194877"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas
+</span><a href="#local-6989586621679194878"><span class="hs-identifier hs-var">bananas</span></a></span><span>
+</span><span id="line-150"></span><span>                </span><span class="annot"><span class="annottext">Maybe (a, x) -&gt; m (Maybe (a, x))
 forall a. a -&gt; m a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a, x) -&gt; Maybe (a, x)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Coupons
 </span><a href="ShopExample.html#Coupons"><span class="hs-identifier hs-var">Coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679197895"><span class="hs-identifier hs-var">delta</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-146"></span><span>              </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe (a, x) -&gt; m (Maybe (a, x))
+</span><a href="#local-6989586621679194891"><span class="hs-identifier hs-var">delta</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-151"></span><span>              </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe (a, x) -&gt; m (Maybe (a, x))
 forall a. a -&gt; m a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Maybe (a, x)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-147"></span><span>      </span><span class="annot"><a href="ShopExample.html#UseCoupons"><span class="hs-identifier hs-type">UseCoupons</span></a></span><span> </span><span id="local-6989586621679197901"><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197901"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-148"></span><span>        </span><span class="annot"><span class="annottext">Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
+</span><span id="line-152"></span><span>      </span><span class="annot"><a href="ShopExample.html#UseCoupons"><span class="hs-identifier hs-type">UseCoupons</span></a></span><span> </span><span id="local-6989586621679194897"><span class="annot"><span class="annottext">Coupons
+</span><a href="#local-6989586621679194897"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-153"></span><span>        </span><span class="annot"><span class="annottext">Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
 forall (m :: * -&gt; *).
 MonadShop m =&gt;
 Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
 </span><a href="ShopExample.html#buy"><span class="hs-identifier hs-var">buy</span></a></span><span> </span><span class="annot"><span class="annottext">Customer
-</span><a href="#local-6989586621679197879"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197880"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Coupons
+</span><a href="#local-6989586621679194875"><span class="hs-identifier hs-var">customer</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Coupons
+</span><a href="#local-6989586621679194876"><span class="hs-identifier hs-var">coupons</span></a></span><span> </span><span class="annot"><span class="annottext">Coupons -&gt; Coupons -&gt; Coupons
 forall a. Num a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Coupons
-</span><a href="#local-6989586621679197901"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Coins
-</span><a href="#local-6989586621679197881"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas
-</span><a href="#local-6989586621679197882"><span class="hs-identifier hs-var">bananas</span></a></span><span>
-</span><span id="line-149"></span><span>        </span><span class="annot"><span class="annottext">Maybe (a, x) -&gt; m (Maybe (a, x))
+</span><a href="#local-6989586621679194897"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Coins
+</span><a href="#local-6989586621679194877"><span class="hs-identifier hs-var">coins</span></a></span><span> </span><span class="annot"><span class="annottext">Bananas
+</span><a href="#local-6989586621679194878"><span class="hs-identifier hs-var">bananas</span></a></span><span>
+</span><span id="line-154"></span><span>        </span><span class="annot"><span class="annottext">Maybe (a, x) -&gt; m (Maybe (a, x))
 forall a. a -&gt; m a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a, x) -&gt; Maybe (a, x)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-150"></span><span>
-</span><span id="line-151"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679197269"><span id="local-6989586621679197270"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679197269"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Logic.NextBind.html#InterpretNextBind"><span class="hs-identifier hs-type">InterpretNextBind</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197269"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Effect.Error.html#MonadErrorEffect"><span class="hs-identifier hs-type">MonadErrorEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197270"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-152"></span><span>  </span><span id="local-6989586621679197905"><span class="annot"><span class="annottext">interpretNextBind :: forall (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
-MonadErrorEffect e (AST ops) a -&gt; Interpretation Tweak m ops a
-</span><a href="Logic.NextBind.html#interpretNextBind"><span class="hs-identifier hs-var hs-var hs-var hs-var">interpretNextBind</span></a></span></span><span> </span><span class="annot"><span class="annottext">MonadErrorEffect e (AST ops) a
+</span><span id="line-155"></span><span>
+</span><span id="line-156"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679194266"><span id="local-6989586621679194267"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679194266"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Logic.NextBind.html#InterpretNextBind"><span class="hs-identifier hs-type">InterpretNextBind</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194266"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Effect.Error.html#ErrorEffect"><span class="hs-identifier hs-type">ErrorEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194267"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-157"></span><span>  </span><span id="local-6989586621679194901"><span class="annot"><span class="annottext">interpretNextBind :: forall (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
+ErrorEffect e (AST ops) a -&gt; Interpretation Tweak m ops a
+</span><a href="Logic.NextBind.html#interpretNextBind"><span class="hs-identifier hs-var hs-var hs-var hs-var">interpretNextBind</span></a></span></span><span> </span><span class="annot"><span class="annottext">ErrorEffect e (AST ops) a
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall x. Tweak x -&gt; m (Maybe (a, x)))
 -&gt; Interpretation Tweak m ops a
 forall (t :: * -&gt; *) (m :: * -&gt; *) a (ops :: [(* -&gt; *) -&gt; * -&gt; *]).
@@ -872,114 +877,114 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Maybe (a, x)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-153"></span><span>
-</span><span id="line-154"></span><span id="local-6989586621679197276"><span id="local-6989586621679197278"><span class="annot"><a href="ShopExample.html#interpretAndRun"><span class="hs-identifier hs-type">interpretAndRun</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-155"></span><span>  </span><span class="annot"><a href="Logic.NextBind.html#NextBind"><span class="hs-identifier hs-type">NextBind</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197276"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-156"></span><span>  </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-157"></span><span>  </span><span class="annot"><a href="Effect.html#AST"><span class="hs-identifier hs-type">AST</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><a href="ShopExample.html#MonadShopEffect"><span class="hs-identifier hs-type">MonadShopEffect</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Effect.Error.html#MonadErrorEffect"><span class="hs-identifier hs-type">MonadErrorEffect</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679197278"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-158"></span><span>  </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679197278"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Logic.NextBind.html#NextBind"><span class="hs-identifier hs-type">NextBind</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197276"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span></span><span>
-</span><span id="line-159"></span><span id="interpretAndRun"><span class="annot"><span class="annottext">interpretAndRun :: forall x a.
+</span><span id="line-158"></span><span>
+</span><span id="line-159"></span><span id="local-6989586621679194273"><span id="local-6989586621679194275"><span class="annot"><a href="ShopExample.html#interpretAndRun"><span class="hs-identifier hs-type">interpretAndRun</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-160"></span><span>  </span><span class="annot"><a href="Logic.NextBind.html#NextBind"><span class="hs-identifier hs-type">NextBind</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194273"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-161"></span><span>  </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-162"></span><span>  </span><span class="annot"><a href="Effect.html#AST"><span class="hs-identifier hs-type">AST</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><a href="ShopExample.html#ShopEffect"><span class="hs-identifier hs-type">ShopEffect</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Effect.Error.html#ErrorEffect"><span class="hs-identifier hs-type">ErrorEffect</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679194275"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-163"></span><span>  </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679194275"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Logic.NextBind.html#NextBind"><span class="hs-identifier hs-type">NextBind</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194273"><span class="hs-identifier hs-type">x</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-164"></span><span id="interpretAndRun"><span class="annot"><span class="annottext">interpretAndRun :: forall x a.
 NextBind Tweak x
 -&gt; ShopState
--&gt; AST '[MonadShopEffect, MonadErrorEffect ShopError] a
+-&gt; AST '[ShopEffect, ErrorEffect ShopError] a
 -&gt; [(Either ShopError (a, NextBind Tweak x), ShopState)]
-</span><a href="ShopExample.html#interpretAndRun"><span class="hs-identifier hs-var hs-var">interpretAndRun</span></a></span></span><span> </span><span id="local-6989586621679197932"><span class="annot"><span class="annottext">NextBind Tweak x
-</span><a href="#local-6989586621679197932"><span class="hs-identifier hs-var">modification</span></a></span></span><span> </span><span id="local-6989586621679197933"><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197933"><span class="hs-identifier hs-var">start</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShopState
+</span><a href="ShopExample.html#interpretAndRun"><span class="hs-identifier hs-var hs-var">interpretAndRun</span></a></span></span><span> </span><span id="local-6989586621679194928"><span class="annot"><span class="annottext">NextBind Tweak x
+</span><a href="#local-6989586621679194928"><span class="hs-identifier hs-var">modification</span></a></span></span><span> </span><span id="local-6989586621679194929"><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194929"><span class="hs-identifier hs-var">start</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ShopState
 -&gt; ShopT [] (a, NextBind Tweak x)
 -&gt; [(Either ShopError (a, NextBind Tweak x), ShopState)]
 forall (m :: * -&gt; *) a.
 ShopState -&gt; ShopT m a -&gt; m (Either ShopError a, ShopState)
 </span><a href="ShopExample.html#runShopT"><span class="hs-identifier hs-var">runShopT</span></a></span><span> </span><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197933"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">(ShopT [] (a, NextBind Tweak x)
+</span><a href="#local-6989586621679194929"><span class="hs-identifier hs-var">start</span></a></span><span> </span><span class="annot"><span class="annottext">(ShopT [] (a, NextBind Tweak x)
  -&gt; [(Either ShopError (a, NextBind Tweak x), ShopState)])
--&gt; (AST '[MonadShopEffect, MonadErrorEffect ShopError] a
+-&gt; (AST '[ShopEffect, ErrorEffect ShopError] a
     -&gt; ShopT [] (a, NextBind Tweak x))
--&gt; AST '[MonadShopEffect, MonadErrorEffect ShopError] a
+-&gt; AST '[ShopEffect, ErrorEffect ShopError] a
 -&gt; [(Either ShopError (a, NextBind Tweak x), ShopState)]
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">NextBind Tweak x
--&gt; AST '[MonadShopEffect, MonadErrorEffect ShopError] a
+-&gt; AST '[ShopEffect, ErrorEffect ShopError] a
 -&gt; ShopT [] (a, NextBind Tweak x)
 forall (m :: * -&gt; *) (t :: * -&gt; *) (ops :: [(* -&gt; *) -&gt; * -&gt; *]) x
        a.
 (Monad m, InterpretEffectsStateful t m ops) =&gt;
 t x -&gt; AST ops a -&gt; m (a, t x)
 </span><a href="Effect.html#interpretASTStateful"><span class="hs-identifier hs-var">interpretASTStateful</span></a></span><span> </span><span class="annot"><span class="annottext">NextBind Tweak x
-</span><a href="#local-6989586621679197932"><span class="hs-identifier hs-var">modification</span></a></span><span>
-</span><span id="line-160"></span><span>
-</span><span id="line-161"></span><span id="local-6989586621679197299"><span id="local-6989586621679197300"><span class="annot"><a href="ShopExample.html#interpretRunPrune"><span class="hs-identifier hs-type">interpretRunPrune</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-162"></span><span>  </span><span class="annot"><a href="Logic.NextBind.html#NextBind"><span class="hs-identifier hs-type">NextBind</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197299"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-163"></span><span>  </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-164"></span><span>  </span><span class="annot"><a href="Effect.html#AST"><span class="hs-identifier hs-type">AST</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><a href="ShopExample.html#MonadShopEffect"><span class="hs-identifier hs-type">MonadShopEffect</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Effect.Error.html#MonadErrorEffect"><span class="hs-identifier hs-type">MonadErrorEffect</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679197300"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-165"></span><span>  </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197300"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span></span><span>
-</span><span id="line-166"></span><span id="interpretRunPrune"><span class="annot"><span class="annottext">interpretRunPrune :: forall x a.
+</span><a href="#local-6989586621679194928"><span class="hs-identifier hs-var">modification</span></a></span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span id="local-6989586621679194296"><span id="local-6989586621679194297"><span class="annot"><a href="ShopExample.html#interpretRunPrune"><span class="hs-identifier hs-type">interpretRunPrune</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-167"></span><span>  </span><span class="annot"><a href="Logic.NextBind.html#NextBind"><span class="hs-identifier hs-type">NextBind</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#Tweak"><span class="hs-identifier hs-type">Tweak</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194296"><span class="hs-identifier hs-type">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-168"></span><span>  </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-169"></span><span>  </span><span class="annot"><a href="Effect.html#AST"><span class="hs-identifier hs-type">AST</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><a href="ShopExample.html#ShopEffect"><span class="hs-identifier hs-type">ShopEffect</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Effect.Error.html#ErrorEffect"><span class="hs-identifier hs-type">ErrorEffect</span></a></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679194297"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-170"></span><span>  </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="ShopExample.html#ShopError"><span class="hs-identifier hs-type">ShopError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194297"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="ShopExample.html#ShopState"><span class="hs-identifier hs-type">ShopState</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-171"></span><span id="interpretRunPrune"><span class="annot"><span class="annottext">interpretRunPrune :: forall x a.
 NextBind Tweak x
 -&gt; ShopState
--&gt; AST '[MonadShopEffect, MonadErrorEffect ShopError] a
+-&gt; AST '[ShopEffect, ErrorEffect ShopError] a
 -&gt; [(Either ShopError a, ShopState)]
-</span><a href="ShopExample.html#interpretRunPrune"><span class="hs-identifier hs-var hs-var">interpretRunPrune</span></a></span></span><span> </span><span id="local-6989586621679197936"><span class="annot"><span class="annottext">NextBind Tweak x
-</span><a href="#local-6989586621679197936"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621679197937"><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197937"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-167"></span><span>  </span><span class="annot"><span class="annottext">((Either ShopError (a, NextBind Tweak x), ShopState)
+</span><a href="ShopExample.html#interpretRunPrune"><span class="hs-identifier hs-var hs-var">interpretRunPrune</span></a></span></span><span> </span><span id="local-6989586621679194932"><span class="annot"><span class="annottext">NextBind Tweak x
+</span><a href="#local-6989586621679194932"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621679194933"><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194933"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-172"></span><span>  </span><span class="annot"><span class="annottext">((Either ShopError (a, NextBind Tweak x), ShopState)
  -&gt; Maybe (Either ShopError a, ShopState))
 -&gt; [(Either ShopError (a, NextBind Tweak x), ShopState)]
 -&gt; [(Either ShopError a, ShopState)]
 forall a b. (a -&gt; Maybe b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">mapMaybe</span></span><span>
-</span><span id="line-168"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-169"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679197939"><span class="annot"><span class="annottext">ShopError
-</span><a href="#local-6989586621679197939"><span class="hs-identifier hs-var">err</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197940"><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197940"><span class="hs-identifier hs-var">st</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Either ShopError a, ShopState)
+</span><span id="line-173"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-174"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679194935"><span class="annot"><span class="annottext">ShopError
+</span><a href="#local-6989586621679194935"><span class="hs-identifier hs-var">err</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194936"><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194936"><span class="hs-identifier hs-var">st</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Either ShopError a, ShopState)
 -&gt; Maybe (Either ShopError a, ShopState)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ShopError -&gt; Either ShopError a
 forall a b. a -&gt; Either a b
 </span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="annottext">ShopError
-</span><a href="#local-6989586621679197939"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197940"><span class="hs-identifier hs-var">st</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-170"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679197941"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679197941"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197942"><span class="annot"><span class="annottext">NextBind Tweak x
-</span><a href="#local-6989586621679197942"><span class="hs-identifier hs-var">nb</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197943"><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197943"><span class="hs-identifier hs-var">st</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-171"></span><span>          </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">NextBind Tweak x -&gt; Bool
+</span><a href="#local-6989586621679194935"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194936"><span class="hs-identifier hs-var">st</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-175"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679194937"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679194937"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194938"><span class="annot"><span class="annottext">NextBind Tweak x
+</span><a href="#local-6989586621679194938"><span class="hs-identifier hs-var">nb</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194939"><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194939"><span class="hs-identifier hs-var">st</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-176"></span><span>          </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">NextBind Tweak x -&gt; Bool
 forall (t :: * -&gt; *) x. NextBind t x -&gt; Bool
 </span><a href="Logic.NextBind.html#finished"><span class="hs-identifier hs-var">finished</span></a></span><span> </span><span class="annot"><span class="annottext">NextBind Tweak x
-</span><a href="#local-6989586621679197942"><span class="hs-identifier hs-var">nb</span></a></span><span>
-</span><span id="line-172"></span><span>            </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">(Either ShopError a, ShopState)
+</span><a href="#local-6989586621679194938"><span class="hs-identifier hs-var">nb</span></a></span><span>
+</span><span id="line-177"></span><span>            </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">(Either ShopError a, ShopState)
 -&gt; Maybe (Either ShopError a, ShopState)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Either ShopError a
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679197941"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197943"><span class="hs-identifier hs-var">st</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-173"></span><span>            </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe (Either ShopError a, ShopState)
+</span><a href="#local-6989586621679194937"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194939"><span class="hs-identifier hs-var">st</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-178"></span><span>            </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe (Either ShopError a, ShopState)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-174"></span><span>    </span><span class="hs-special">)</span><span>
-</span><span id="line-175"></span><span>    </span><span class="annot"><span class="annottext">([(Either ShopError (a, NextBind Tweak x), ShopState)]
+</span><span id="line-179"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-180"></span><span>    </span><span class="annot"><span class="annottext">([(Either ShopError (a, NextBind Tweak x), ShopState)]
  -&gt; [(Either ShopError a, ShopState)])
--&gt; (AST '[MonadShopEffect, MonadErrorEffect ShopError] a
+-&gt; (AST '[ShopEffect, ErrorEffect ShopError] a
     -&gt; [(Either ShopError (a, NextBind Tweak x), ShopState)])
--&gt; AST '[MonadShopEffect, MonadErrorEffect ShopError] a
+-&gt; AST '[ShopEffect, ErrorEffect ShopError] a
 -&gt; [(Either ShopError a, ShopState)]
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">NextBind Tweak x
 -&gt; ShopState
--&gt; AST '[MonadShopEffect, MonadErrorEffect ShopError] a
+-&gt; AST '[ShopEffect, ErrorEffect ShopError] a
 -&gt; [(Either ShopError (a, NextBind Tweak x), ShopState)]
 forall x a.
 NextBind Tweak x
 -&gt; ShopState
--&gt; AST '[MonadShopEffect, MonadErrorEffect ShopError] a
+-&gt; AST '[ShopEffect, ErrorEffect ShopError] a
 -&gt; [(Either ShopError (a, NextBind Tweak x), ShopState)]
 </span><a href="ShopExample.html#interpretAndRun"><span class="hs-identifier hs-var">interpretAndRun</span></a></span><span> </span><span class="annot"><span class="annottext">NextBind Tweak x
-</span><a href="#local-6989586621679197936"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">ShopState
-</span><a href="#local-6989586621679197937"><span class="hs-identifier hs-var">s</span></a></span><span>
-</span><span id="line-176"></span><span>
-</span><span id="line-177"></span><span id="local-6989586621679197309"><span class="annot"><a href="ShopExample.html#trace1"><span class="hs-identifier hs-type">trace1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#MonadShop"><span class="hs-identifier hs-type">MonadShop</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197309"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679197309"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-178"></span><span id="trace1"><span class="annot"><span class="annottext">trace1 :: forall (m :: * -&gt; *). MonadShop m =&gt; m ()
+</span><a href="#local-6989586621679194932"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">ShopState
+</span><a href="#local-6989586621679194933"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-181"></span><span>
+</span><span id="line-182"></span><span id="local-6989586621679194306"><span class="annot"><a href="ShopExample.html#trace1"><span class="hs-identifier hs-type">trace1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#MonadShop"><span class="hs-identifier hs-type">MonadShop</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194306"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679194306"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-183"></span><span id="trace1"><span class="annot"><span class="annottext">trace1 :: forall (m :: * -&gt; *). MonadShop m =&gt; m ()
 </span><a href="ShopExample.html#trace1"><span class="hs-identifier hs-var hs-var">trace1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
 forall (m :: * -&gt; *).
 MonadShop m =&gt;
@@ -993,11 +998,11 @@ Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
 </span><span class="hs-number">2</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Bananas
 </span><a href="ShopExample.html#Bananas"><span class="hs-identifier hs-var">Bananas</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">8</span></span><span class="hs-special">)</span><span>
-</span><span id="line-179"></span><span>
-</span><span id="line-180"></span><span id="local-6989586621679197948"><span class="annot"><a href="ShopExample.html#trace2"><span class="hs-identifier hs-type">trace2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#MonadShop"><span class="hs-identifier hs-type">MonadShop</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197948"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679197948"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-181"></span><span id="trace2"><span class="annot"><span class="annottext">trace2 :: forall (m :: * -&gt; *). MonadShop m =&gt; m ()
+</span><span id="line-184"></span><span>
+</span><span id="line-185"></span><span id="local-6989586621679194944"><span class="annot"><a href="ShopExample.html#trace2"><span class="hs-identifier hs-type">trace2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="ShopExample.html#MonadShop"><span class="hs-identifier hs-type">MonadShop</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194944"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679194944"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-186"></span><span id="trace2"><span class="annot"><span class="annottext">trace2 :: forall (m :: * -&gt; *). MonadShop m =&gt; m ()
 </span><a href="ShopExample.html#trace2"><span class="hs-identifier hs-var hs-var">trace2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-182"></span><span>  </span><span class="annot"><span class="annottext">Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
+</span><span id="line-187"></span><span>  </span><span class="annot"><span class="annottext">Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
 forall (m :: * -&gt; *).
 MonadShop m =&gt;
 Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
@@ -1010,7 +1015,7 @@ Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
 </span><span class="hs-number">2</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Bananas
 </span><a href="ShopExample.html#Bananas"><span class="hs-identifier hs-var">Bananas</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">8</span></span><span class="hs-special">)</span><span>
-</span><span id="line-183"></span><span>    </span><span class="annot"><span class="annottext">m () -&gt; m () -&gt; m ()
+</span><span id="line-188"></span><span>    </span><span class="annot"><span class="annottext">m () -&gt; m () -&gt; m ()
 forall a b. m a -&gt; m b -&gt; m b
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
@@ -1026,4 +1031,4 @@ Customer -&gt; Coupons -&gt; Coins -&gt; Bananas -&gt; m ()
 </span><span class="hs-number">3</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Bananas
 </span><a href="ShopExample.html#Bananas"><span class="hs-identifier hs-var">Bananas</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">13</span></span><span class="hs-special">)</span><span>
-</span><span id="line-184"></span></pre></body></html>
+</span><span id="line-189"></span></pre></body></html>
