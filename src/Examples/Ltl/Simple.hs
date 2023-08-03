@@ -9,6 +9,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -Wno-type-defaults #-}
 
 -- | A simple, but complete, tutorial for  how to use "Logic.Ltl". This does
 -- not cover
@@ -35,7 +36,7 @@ import qualified Test.Tasty.HUnit as Tasty
 -- captures the behaviour you want to test. For the sake of this tutorial, let's
 -- take a key-value-store.
 
-class (Monad m) => MonadKeyValue k v m where
+class (MonadFail m) => MonadKeyValue k v m where
   storeValue :: k -> v -> m ()
   getValue :: k -> m (Maybe v)
   deleteValue :: k -> m ()
@@ -43,6 +44,21 @@ class (Monad m) => MonadKeyValue k v m where
 -- $doc
 -- From this type class, we can write a few test cases,
 -- corresponding to a serie of actions over key-value-store.
+
+swapTrace :: (MonadKeyValue String Integer m) => m ()
+swapTrace = do
+  storeValue "a" 1
+  storeValue "b" 2
+  Just a <- getValue @_ @Integer "a"
+  Just b <- getValue @_ @Integer "b"
+  storeValue "a" b
+  storeValue "b" a
+
+deleteTrace :: (MonadKeyValue String Integer m) => m ()
+deleteTrace = do
+  storeValue "a" 1
+  deleteValue @_ @Integer "a"
+  storeValue "a" 2
 
 helloTrace123 :: (MonadKeyValue Integer String m) => m ()
 helloTrace123 = do
@@ -72,7 +88,7 @@ type KeyValueT k v = StateT (Map k v)
 runKeyValueT :: Map k v -> KeyValueT k v m a -> m (a, Map k v)
 runKeyValueT = flip runStateT
 
-instance (Ord k, Monad m) => MonadKeyValue k v (KeyValueT k v m) where
+instance (Ord k, MonadFail m) => MonadKeyValue k v (KeyValueT k v m) where
   storeValue k v = modify $ Map.insert k v
   getValue k = gets $ Map.lookup k
   deleteValue _ = return ()
