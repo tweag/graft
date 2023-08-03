@@ -16,17 +16,9 @@ import Effect
 import Effect.TH
 import Language.Haskell.TH
 
-data WriterEffect w :: Effect where
-  Tell :: w -> WriterEffect w m ()
-  Listen :: m a -> WriterEffect w m (a, w)
-  Pass :: m (a, w -> w) -> WriterEffect w m a
+data MonadWriterEffect w :: Effect where
+  Tell :: w -> MonadWriterEffect w m ()
+  Listen :: m a -> MonadWriterEffect w m (a, w)
+  Pass :: m (a, w -> w) -> MonadWriterEffect w m a
 
-makeReification
-  (\[w] _ -> [t|Monoid $(varT w)|])
-  ''MonadWriter
-  ''WriterEffect
-
-makeInterpretation
-  (\[w] _ -> [t|Monoid $(varT w)|])
-  ''MonadWriter
-  ''WriterEffect
+makeEffect ''MonadWriter ''MonadWriterEffect

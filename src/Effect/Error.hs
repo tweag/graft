@@ -13,8 +13,8 @@ module Effect.Error where
 import Control.Monad.Except
 import Effect.TH
 
-data ErrorEffect e m a where
-  ThrowError :: e -> ErrorEffect e m a
-  CatchError :: m a -> (e -> m a) -> ErrorEffect e m a
+data MonadErrorEffect e m a where
+  ThrowError :: e -> MonadErrorEffect e m a
+  CatchError :: m a -> (e -> m a) -> MonadErrorEffect e m a
 
-makeEffect ''MonadError ''ErrorEffect
+makeEffect ''MonadError ''MonadErrorEffect

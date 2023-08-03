@@ -15,8 +15,8 @@ import Control.Monad.State
 import Data.Kind
 import Effect.TH
 
-data StateEffect s (m :: Type -> Type) a where
-  Put :: s -> StateEffect s m ()
-  Get :: StateEffect s m s
+data MonadStateEffect s (m :: Type -> Type) a where
+  Put :: s -> MonadStateEffect s m ()
+  Get :: MonadStateEffect s m s
 
-makeEffect ''MonadState ''StateEffect
+makeEffect ''MonadState ''MonadStateEffect

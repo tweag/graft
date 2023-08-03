@@ -125,21 +125,16 @@ initialShopState =
 
 -- (Map.fromList [(Customer "Alice", Coupons 0), (Customer "Bob", Coupons 0)])
 
-data ShopEffect (m :: Type -> Type) (a :: Type) where
-  Buy :: Customer -> Coupons -> Coins -> Bananas -> ShopEffect m ()
+data MonadShopEffect (m :: Type -> Type) (a :: Type) where
+  Buy :: Customer -> Coupons -> Coins -> Bananas -> MonadShopEffect m ()
 
-makeInterpretation (\_ _ -> [t|()|]) ''MonadShop ''ShopEffect
-
-makeReification
-  (\_ ops -> [t|EffectInject (ErrorEffect ShopError) $(varT ops)|])
-  ''MonadShop
-  ''ShopEffect
+makeEffect ''MonadShop ''MonadShopEffect
 
 data Tweak a where
   AskForCoupons :: Tweak Coupons
   UseCoupons :: Coupons -> Tweak ()
 
-instance (MonadShop m) => InterpretNextBind Tweak m ShopEffect where
+instance (MonadShop m) => InterpretNextBind Tweak m MonadShopEffect where
   interpretNextBind (Buy customer coupons coins bananas) = Direct $
     \case
       AskForCoupons ->
@@ -153,20 +148,20 @@ instance (MonadShop m) => InterpretNextBind Tweak m ShopEffect where
         buy customer (coupons + n) coins bananas
         return (Just ((), ()))
 
-instance (Monad m) => InterpretNextBind Tweak m (ErrorEffect e) where
+instance (Monad m) => InterpretNextBind Tweak m (MonadErrorEffect e) where
   interpretNextBind _ = Direct $ const $ return Nothing
 
 interpretAndRun ::
   NextBind Tweak x ->
   ShopState ->
-  AST '[ShopEffect, ErrorEffect ShopError] a ->
+  AST '[MonadShopEffect, MonadErrorEffect ShopError] a ->
   [(Either ShopError (a, NextBind Tweak x), ShopState)]
 interpretAndRun modification start = runShopT start . interpretASTStateful modification
 
 interpretRunPrune ::
   NextBind Tweak x ->
   ShopState ->
-  AST '[ShopEffect, ErrorEffect ShopError] a ->
+  AST '[MonadShopEffect, MonadErrorEffect ShopError] a ->
   [(Either ShopError a, ShopState)]
 interpretRunPrune m s =
   mapMaybe

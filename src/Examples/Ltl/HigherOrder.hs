@@ -22,7 +22,6 @@ import Effect.Error
 import Effect.Error.Passthrough ()
 import Effect.TH
 import Examples.Ltl.Simple
-import Language.Haskell.TH (varT)
 import Logic.Ltl
 
 type MiniLangError = String
@@ -65,27 +64,13 @@ instance
       Just b ->
         when (truthy @v b) $ acts >> while @k @v test acts
 
-data MiniLangEffect k v :: Effect where
-  IfThenElse :: k -> m a -> m a -> MiniLangEffect k v m a
-  While :: k -> m () -> MiniLangEffect k v m ()
+data MonadMiniLangEffect k v :: Effect where
+  IfThenElse :: k -> m a -> m a -> MonadMiniLangEffect k v m a
+  While :: k -> m () -> MonadMiniLangEffect k v m ()
 
 -- TODO make the error message nicer when we forget constraints on ops
 
-makeReification
-  ( \[k, v] ops ->
-      [t|
-        ( Truthy $(varT v),
-          EffectInject (KeyValueEffect $(varT k) $(varT v)) $(varT ops)
-        )
-        |]
-  )
-  ''MonadMiniLang
-  ''MiniLangEffect
-
-makeInterpretation
-  (\_ _ -> [t|()|])
-  ''MonadMiniLang
-  ''MiniLangEffect
+makeEffect ''MonadMiniLang ''MonadMiniLangEffect
 
 data MiniLangValue = MLBool Bool | MLInteger Integer deriving (Show)
 
@@ -93,7 +78,7 @@ instance Truthy MiniLangValue where
   truthy (MLBool b) = b
   truthy (MLInteger i) = i /= 0
 
-instance (MonadMiniLang String MiniLangValue m) => InterpretLtlHigherOrder x m (MiniLangEffect String MiniLangValue) where
+instance (MonadMiniLang String MiniLangValue m) => InterpretLtlHigherOrder x m (MonadMiniLangEffect String MiniLangValue) where
   interpretLtlHigherOrder (IfThenElse cond l r) = Nested $
     \evalAST ltls -> do
       ifThenElse @String @MiniLangValue
@@ -162,7 +147,7 @@ data Tweak k = Rename (k -> Maybe k)
 instance Semigroup (Tweak k) where
   Rename f <> Rename g = Rename $ \key -> (f =<< g key) <|> g key <|> f key
 
-instance (MonadKeyValue k v m) => InterpretLtl (Tweak k) m (KeyValueEffect k v) where
+instance (MonadKeyValue k v m) => InterpretLtl (Tweak k) m (MonadKeyValueEffect k v) where
   interpretLtl (GetValue key) = Apply $ \(Rename f) -> case f key of
     Nothing -> return Nothing
     Just key' -> Just <$> getValue key'
@@ -177,9 +162,9 @@ interpretAndRunMiniLang ::
   Map String MiniLangValue ->
   LtlAST
     (Tweak String)
-    '[ ErrorEffect MiniLangError,
-       KeyValueEffect String MiniLangValue,
-       MiniLangEffect String MiniLangValue
+    '[ MonadErrorEffect MiniLangError,
+       MonadKeyValueEffect String MiniLangValue,
+       MonadMiniLangEffect String MiniLangValue
      ]
     a ->
   [(Either MiniLangError a, Map String MiniLangValue)]

@@ -56,7 +56,7 @@ instance (Monoid w, Monad m) => MonadWriter w (DomainT s w m) where
 
 -- * reifying and interpreting the operations of the example domain
 
-type ExampleEffects s w = '[WriterEffect w, StateEffect s]
+type ExampleEffects s w = '[MonadWriterEffect w, MonadStateEffect s]
 
 type ExampleTags = '[InterpretLtlHigherOrderTag, InterpretLtlTag]
 
@@ -80,7 +80,7 @@ instance Semigroup Modification where
   ModB <> ModB = ModB
   _ <> _ = ModAB
 
-instance (MonadWriter String m, Show s, MonadState s m, MonadPlus m) => InterpretLtl Modification m (StateEffect s) where
+instance (MonadWriter String m, Show s, MonadState s m, MonadPlus m) => InterpretLtl Modification m (MonadStateEffect s) where
   interpretLtl op = Apply $ \x ->
     case (x, op) of
       (ModA, Put s) -> do
@@ -91,7 +91,7 @@ instance (MonadWriter String m, Show s, MonadState s m, MonadPlus m) => Interpre
       (ModB, Put _) -> return $ Just () -- don't change the state
       _ -> return Nothing
 
-instance {-# OVERLAPPING #-} (MonadWriter w m, MonadPlus m) => InterpretLtlHigherOrder Modification m (WriterEffect w) where
+instance {-# OVERLAPPING #-} (MonadWriter w m, MonadPlus m) => InterpretLtlHigherOrder Modification m (MonadWriterEffect w) where
   interpretLtlHigherOrder (Tell _) = Direct $ Apply $ const $ return Nothing
   interpretLtlHigherOrder (Listen acts) =
     Nested $ \evalAST ltls -> do
