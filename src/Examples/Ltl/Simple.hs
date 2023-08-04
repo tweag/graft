@@ -21,7 +21,6 @@ module Examples.Ltl.Simple where
 import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Effect
 import Effect.TH
 import Logic.Ltl
 import qualified Test.Tasty as Tasty
@@ -76,18 +75,23 @@ instance (Ord k, Monad m) => MonadKeyValue k v (KeyValueT k v m) where
 -- The @(Type -> Type)@ parameter doesn't interest us here; it is the "nesting"
 -- monad used for higher order effects. The second parameter is the return type
 -- of the method.
+--
+-- There's a macro that will write such an effect type for us, and give it the
+-- name @MonadKeyValueEffect@:
 
-data MonadKeyValueEffect k v :: Effect where
-  StoreValue :: k -> v -> MonadKeyValueEffect k v m ()
-  GetValue :: k -> MonadKeyValueEffect k v m (Maybe v)
-  DeleteValue :: k -> MonadKeyValueEffect k v m ()
+defineEffectType ''MonadKeyValue
+
+-- $doc
+-- Now, we have to make the rest of the machinery aware that we want to use the
+-- effect type we just defined as the abtract representation for
+-- @MonadKeyValue@:
 
 makeEffect ''MonadKeyValue ''MonadKeyValueEffect
 
 -- $doc
 -- If the constructor names of 'MonadKeyValueEffect' are the method names of
 -- 'MonadKeyValue' (starting with an upper case letter) and the types match,
--- the Template Haskell macro 'makeEffect' can be used to generate two instance
+-- the Template Haskell macro 'makeEffect' will generate two instance
 -- definitions:
 --
 -- The "reification" instance
@@ -209,13 +213,21 @@ instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (Mon
 --
 -- The module also provides
 --
--- > interpretLtlAST :: forall mod m ops a. (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m ops) => LtlAST mod ops a -> m a
+-- > interpretLtlAST :: forall mod m ops a. (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m tags ops) => LtlAST mod ops a -> m a
 --
 -- which interprets the @'LtlAST' mod ops@ into any suitable monad @m@. Here,
 -- "suitable" means:
 --
--- - All of the effects in @ops@ have an 'InterpretLtl mod m' instance (this is
---   the 'InterpretEffectsLtl' constraint).
+-- - All of the effects in @ops@ have one of the following three instances:
+--
+--     - @InterpretLtl mod m@ (this is what we have here)
+--
+--     - @InterpretLtlHigherOrder mod m@ (this is for higher order effect
+--       types, we're not interested in that here)
+--
+--     - @InterpretEffectStateful (Const [Ltl mod]) m@ (this is a low-level
+--       class used to implement the LTL framework itself, and we're /not at all/
+--       interested in it here)
 --
 -- - @m@ is a 'MonadPlus'. This is necessary because there might be several
 --   ways to satisfy an 'Ltl' formula. The whole point of using 'Ltl' do describe
@@ -225,6 +237,10 @@ instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (Mon
 -- Using 'interpretLtlAST', we can write a convenience function that will
 -- interpret an 'LtlAST' of 'MonadKeyValueEffect's and return the final return value
 -- and state of the store:
+--
+-- Note how we type-apply 'interpretLtlAST' to alist of "tags" of kind
+-- 'LtlInstanceKind': These tags speficy, in order, which of the three
+-- instances described above we expect the effects to have.
 
 interpretAndRun ::
   (Monoid v, Ord k) =>
