@@ -12,13 +12,7 @@
 module Effect.Writer where
 
 import Control.Monad.Writer
-import Effect
 import Effect.TH
-import Language.Haskell.TH
 
-data MonadWriterEffect w :: Effect where
-  Tell :: w -> MonadWriterEffect w m ()
-  Listen :: m a -> MonadWriterEffect w m (a, w)
-  Pass :: m (a, w -> w) -> MonadWriterEffect w m a
-
+defineEffectType ''MonadWriter
 makeEffect ''MonadWriter ''MonadWriterEffect

@@ -11,10 +11,7 @@
 module Effect.IO where
 
 import Control.Monad.IO.Class
-import Data.Kind
 import Effect.TH
 
-data MonadIOEffect (m :: Type -> Type) a where
-  LiftIO :: IO a -> MonadIOEffect m a
-
+defineEffectType ''MonadIO
 makeEffect ''MonadIO ''MonadIOEffect
