@@ -115,7 +115,7 @@ makeEffect className effectName = do
                         if c /= ConT ''Monad
                           then Just <$> [t|EffectInject $(return (onFirst mkEffectName c)) $(varT opsName)|]
                           else return Nothing
-                  _ -> error "can't (yet) handle class constraints that don't have the \"monad\" argument in the last position. Try using 'makeInterpretation' and 'makeReification' directly"
+                  _ -> error $ "The class '" ++ nameBase className ++ "' has a constraint where the \"monad\" argument isn't the last. The TH can't (yet) handle this. Try using 'makeInterpretation' and 'makeReification' directly"
                 else return $ Just constraint
           )
           (ctx extraNames dummyName)
