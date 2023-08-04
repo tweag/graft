@@ -25,13 +25,11 @@ library
       Effect.THTests
       Effect.Writer
       Effect.Writer.Passthrough
-      Examples
       Examples.Ltl.HigherOrder
       Examples.Ltl.Simple
       Logic.Ltl
       Logic.Ltl.TH
       Logic.NextBind
-      ShopExample
   other-modules:
       Paths_sine_nomine
   hs-source-dirs:
