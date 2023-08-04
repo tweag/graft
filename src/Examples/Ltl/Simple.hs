@@ -183,11 +183,16 @@ makeInterpretation
 -- intrinsic meaning, but will only be explained by the 'InterpretLtl'
 -- instance.
 
-data RenameMod k where
-  Rename :: (k -> k) -> RenameMod k
+data KeyValueMod k = KeyValueMod
+  { toIgnoreOverride :: Bool,
+    transformation :: k -> k
+  }
 
-data StoreNoOverride where
-  DontOverride :: StoreNoOverride
+renameKey :: (k -> k) -> KeyValueMod k
+renameKey f = KeyValueMod {toIgnoreOverride = False, transformation = f}
+
+noStoreOverride :: KeyValueMod k
+noStoreOverride = KeyValueMod {toIgnoreOverride = True, transformation = id}
 
 -- $doc
 -- The evaluation of 'Ltl' formulas sometimes makes it necessary to try
@@ -195,11 +200,12 @@ data StoreNoOverride where
 -- describes how they should combine. (In our example, it's very simple,
 -- because there is only one 'SingleStepMod', namely 'ConcatIfReplace'.)
 
-instance Semigroup (RenameMod k) where
-  (Rename f) <> (Rename g) = Rename $ f . g
-
-instance Semigroup StoreNoOverride where
-  _ <> _ = DontOverride
+instance Semigroup (KeyValueMod k) where
+  mod1 <> mod2 =
+    KeyValueMod
+      { toIgnoreOverride = toIgnoreOverride mod1 || toIgnoreOverride mod2,
+        transformation = transformation mod1 . transformation mod2
+      }
 
 -- $doc
 -- The 'InterpretLtl' instance is the heart of this while operation, since it
@@ -225,25 +231,16 @@ instance Semigroup StoreNoOverride where
 -- at the @n@-th step may depend on information we know only after having run
 -- (and modified) the first @n-1@ steps.
 
-instance (MonadKeyValue k v m) => InterpretLtl StoreNoOverride m (KeyValueEffect k v) where
-  interpretLtl (StoreValue key nVal) = Apply $ \_ -> do
-    -- the type application is needed here to get around the otherwise
-    -- ambiguous type @v@:
+instance (MonadKeyValue k v m) => InterpretLtl (KeyValueMod k) m (KeyValueEffect k v) where
+  interpretLtl (StoreValue key nVal) = Apply $ \modif -> do
     val <- getValue @k @v key
-    case val of
-      Nothing -> storeValue key nVal >> return (Just ())
-      Just _ -> return (Just ())
-  interpretLtl _ = Ignore
-
-instance (MonadKeyValue k v m) => InterpretLtl (RenameMod k) m (KeyValueEffect k v) where
-  interpretLtl (StoreValue key val) = Apply $ \(Rename f) -> do
-    storeValue (f key) val
-    return $ Just ()
-  interpretLtl (DeleteValue key) = Apply $ \(Rename f) -> do
-    deleteValue @_ @v (f key)
-    return $ Just ()
-  interpretLtl (GetValue key) = Apply $ \(Rename f) -> do
-    Just <$> getValue (f key)
+    case (val, toIgnoreOverride modif) of
+      (Just _, True) -> return (Just ())
+      _ -> storeValue (transformation modif key) nVal >> return (Just ())
+  interpretLtl (DeleteValue key) = Apply $ \modif ->
+    deleteValue @k @v (transformation modif key) >> return (Just ())
+  interpretLtl (GetValue key) = Apply $ \modif ->
+    Just <$> getValue @k @v (transformation modif key)
 
 -- * Interpreting modified 'AST's
 
@@ -259,12 +256,6 @@ instance (MonadKeyValue k v m) => InterpretLtl (RenameMod k) m (KeyValueEffect k
 -- formula of your choice.
 --
 -- The module also provides
---
--- > interpretLtlAST :: forall mod m ops a. (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m ops) => LtlAST mod ops a -> m a
---
--- which interprets the @'LtlAST' mod ops@ into any suitable monad @m@. Here,
--- "suitable" means:
---
 -- - All of the effects in @ops@ have an 'InterpretLtl mod m' instance (this is
 --   the 'InterpretEffectsLtl' constraint).
 --
@@ -278,9 +269,9 @@ instance (MonadKeyValue k v m) => InterpretLtl (RenameMod k) m (KeyValueEffect k
 -- and state of the store:
 
 interpretAndRun ::
-  (Semigroup x, Ord k, InterpretLtl x (KeyValueT k v []) (KeyValueEffect k v)) =>
+  (Ord k, InterpretLtl (KeyValueMod k) (KeyValueT k v []) (KeyValueEffect k v)) =>
   Map k v ->
-  LtlAST x '[KeyValueEffect k v, FailEffect] a ->
+  LtlAST (KeyValueMod k) '[KeyValueEffect k v, FailEffect] a ->
   [(a, Map k v)]
 interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST @'[InterpretLtlTag, InterpretEffectStatefulTag] acts
 
@@ -296,11 +287,11 @@ interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST 
 -- that our first example will return an empty list, since 'ConcatIfReplace'
 -- never applies (as we never 'storeValue' for a key that's already present).
 --
--- >>> exampleSomewhere1
--- []
+-- >>> exampleSomewhereSwap
+-- [((1,1),fromList [("a",1),("anew",2),("b",1)]),((2,2),fromList [("a",2),("b",2),("bnew",1)])]
 
-appendNew :: RenameMod String
-appendNew = Rename (++ "new")
+appendNew :: KeyValueMod String
+appendNew = renameKey (++ "new")
 
 exampleSomewhereSwap :: [((Integer, Integer), Map String Integer)]
 exampleSomewhereSwap =
@@ -321,8 +312,8 @@ exampleSomewhereSwap =
 --   @\"my\"@ at key @1@, so we'll store @\"my friend\"@. Since there are no more
 --   'storeValue' operations after that, that's also what we see in the result.
 --
--- >>> exampleSomewhere2
--- [((),fromList [(1,"friend")]),((),fromList [(1,"my friend")])]
+-- >>> exampleSomewhereDelete
+-- [(2,fromList [("a",2),("anew",1),("b",2)]),(2,fromList [("a",2),("bnew",2)]),(2,fromList [("a",2),("b",2)]),(1,fromList [("a",1),("anew",2),("b",2)])]
 
 exampleSomewhereDelete :: [(Integer, Map String Integer)]
 exampleSomewhereDelete =
@@ -341,7 +332,7 @@ exampleSomewhereDelete =
 
 exampleEverywhereCorrect :: [(Integer, Integer)]
 exampleEverywhereCorrect =
-  fst <$> interpretAndRun mempty (modifyLtl (everywhere DontOverride) swapTrace)
+  fst <$> interpretAndRun mempty (modifyLtl (everywhere noStoreOverride) swapTrace)
 
 -- $doc
 --
@@ -350,7 +341,7 @@ exampleEverywhereCorrect =
 
 exampleEverywhereBug :: [Integer]
 exampleEverywhereBug =
-  fst <$> interpretAndRun mempty (modifyLtl (everywhere DontOverride) deleteTrace)
+  fst <$> interpretAndRun mempty (modifyLtl (everywhere noStoreOverride) deleteTrace)
 
 -- $doc
 -- Note that, unlike 'somewhere', 'everywhere' doesn't imply that any
@@ -373,16 +364,19 @@ exampleEverywhereEmpty =
 -- friend"@ at key @1@, if we only apply 'everywhere' after the first action:
 -- This requires a custom formula using @'LtlNext' which starts on next step.
 --
--- >>> exampleCustom1
--- [((),fromList [(1,"Hello my friend")])]
+-- >>> exampleThereEmpty
+-- []
 
 exampleThereEmpty :: [Integer]
 exampleThereEmpty =
   fst <$> interpretAndRun mempty (modifyLtl (there 4 appendNew) deleteTrace)
 
+-- >>> exampleThereBug
+-- [1]
+
 exampleThereBug :: [Integer]
 exampleThereBug =
-  fst <$> interpretAndRun mempty (modifyLtl (there 3 DontOverride) deleteTrace)
+  fst <$> interpretAndRun mempty (modifyLtl (there 3 noStoreOverride) deleteTrace)
 
 -- ** Custom 'Ltl' formulas
 

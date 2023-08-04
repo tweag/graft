@@ -139,6 +139,7 @@ somewhere a = LtlTruth `LtlUntil` LtlAtom a
 everywhere :: a -> Ltl a
 everywhere a = LtlFalsity `LtlRelease` LtlAtom a
 
+-- | Apply an atomic modification at the nth step in the trace (0-indexed).
 there :: Integer -> a -> Ltl a
 there 0 a = LtlAtom a
 there n a = LtlNext $ there (n - 1) a
