@@ -10,6 +10,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 
+-- | This module contains a more advanced use case for the LTL framework from
+-- "Logic.Ltl". It assumes you've read the first tutorial in
+-- "Examples.Ltl.Simple".
 module Examples.Ltl.HigherOrder where
 
 import Control.Applicative
@@ -25,6 +28,14 @@ import Examples.Ltl.Simple
 import Language.Haskell.TH (varT)
 import Logic.Ltl
 
+-- $doc
+-- The idea in this tutorial is to use the key-value store from
+-- "Examples.Ltl.Simple" as a basis for a minimal programming language: the
+-- keys will be variable names, and the values, well, the values. We add a
+-- branching construct 'ifThenElse' and a looping construct 'while'. Both of
+-- these have as their first argument a key (i.e. a variable name), and branch
+-- depending on whether the value associated to the key is 'truthy'.
+
 type MiniLangError = String
 
 class Truthy v where
@@ -33,6 +44,14 @@ class Truthy v where
 class (Truthy v, MonadKeyValue k v m) => MonadMiniLang k v m where
   ifThenElse :: k -> m a -> m a -> m a
   while :: k -> m () -> m ()
+
+-- $doc
+-- As in the first-order tutorial, we also  ave a simple implementation of our
+-- interface of interest, @MonadMiniLang@. Note that the branching in the
+-- implementation of 'ifThenElse' and 'while' is implemented in a way that is
+-- sometimes seen in real-world programming languages (Lua is an example): if
+-- there's no value associated to the variable name, that counts as "false"
+-- i.e. not 'truthy'.
 
 type MiniLangT k v m = ExceptT MiniLangError (KeyValueT k v m)
 
@@ -56,7 +75,7 @@ instance
   ifThenElse cond l r = do
     mTest <- getValue cond
     case mTest of
-      Nothing -> r -- throwError
+      Nothing -> r
       Just b -> if truthy @v b then l else r
   while test acts = do
     mTest <- getValue test
@@ -65,11 +84,17 @@ instance
       Just b ->
         when (truthy @v b) $ acts >> while @k @v test acts
 
+-- TODO after merging PR#2: replace the following up to (***) with
+--
+-- > defineEffectType ''MonadMiniLang
+-- > makeEffect ''MonadMiniLang ''MonadMiniLangEffect
+--
+-- and reference the explanation in the first tutorial
+--
+
 data MiniLangEffect k v :: Effect where
   IfThenElse :: k -> m a -> m a -> MiniLangEffect k v m a
   While :: k -> m () -> MiniLangEffect k v m ()
-
--- TODO make the error message nicer when we forget constraints on ops
 
 makeReification
   ( \[k, v] ops ->
@@ -87,11 +112,33 @@ makeInterpretation
   ''MonadMiniLang
   ''MiniLangEffect
 
+-- (***)
+
+-- $doc
+-- For our little programming language, let's have booleans and integers, and
+-- define them to be 'truthy' in the customary way: booleans truthy by their
+-- very nature, integers are truthy if they're nonzero.
+
 data MiniLangValue = MLBool Bool | MLInteger Integer deriving (Show)
 
 instance Truthy MiniLangValue where
   truthy (MLBool b) = b
   truthy (MLInteger i) = i /= 0
+
+-- $doc
+-- This next instance is what this tutorial is about. It makes the evaluation
+-- of 'Ltl' formulas pass into the two higher-order effects 'IfThenElse' and
+-- 'While' in the obvious ways:
+--
+-- - For 'IfThenElse', look at the condition. If it is 'truthy', continue
+--   evaluating the 'Ltl' formula(s) on the "then" branch, otherwise the "else"
+--   branch.
+--
+-- - For 'While', look at the condition. If it is 'truthy', run throuhg the
+--   body once more, while continuing to evaluate the 'Ltl' formula(s), otherwise
+--   continue evaluation after with whatever remains of the 'Ltl' formula(s).
+--
+-- TODO: explain it really thoroughly.
 
 instance (MonadMiniLang String MiniLangValue m) => InterpretLtlHigherOrder x m (MiniLangEffect String MiniLangValue) where
   interpretLtlHigherOrder (IfThenElse cond l r) = Nested $
@@ -120,6 +167,9 @@ instance (MonadMiniLang String MiniLangValue m) => InterpretLtlHigherOrder x m (
                 (_, ltls') <- evalAST ltls acts
                 whileWithLtls evalAST ltls' test acts
               else return ((), ltls)
+
+-- $doc
+-- TODO: here are a few silly example programs.
 
 getInteger :: (MonadError MiniLangError m, MonadMiniLang String MiniLangValue m) => String -> m Integer
 getInteger name = do
@@ -156,6 +206,12 @@ foo = simpleRun . fibonacciTest
 
 bar :: Integer -> (Either String Integer, Map String MiniLangValue)
 bar = simpleRun . branchTest
+
+-- $doc
+-- TODO here is a tweak that will apply a "renaming" function to all variable
+-- names. We can use it to "detect" the "strange" behaviour that programs are
+-- not invariant under uniform renaming of all variables, because 'ifThenElse'
+-- and 'while' use hard-coded variable names.
 
 data Tweak k = Rename (k -> Maybe k)
 
