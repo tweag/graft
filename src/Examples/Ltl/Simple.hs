@@ -200,6 +200,9 @@ noStoreOverride = KeyValueMod {toIgnoreOverride = True, transformation = id}
 -- describes how they should combine. (In our example, it's very simple,
 -- because there is only one 'SingleStepMod', namely 'ConcatIfReplace'.)
 
+-- TODO write something about commutativity
+-- copy warning for LtlAnd
+
 instance Semigroup (KeyValueMod k) where
   mod1 <> mod2 =
     KeyValueMod
@@ -236,11 +239,16 @@ instance (MonadKeyValue k v m) => InterpretLtl (KeyValueMod k) m (KeyValueEffect
     val <- getValue @k @v key
     case (val, toIgnoreOverride modif) of
       (Just _, True) -> return (Just ())
-      _ -> storeValue (transformation modif key) nVal >> return (Just ())
+      (Nothing, True) -> return Nothing
+      (_, False) -> storeValue (transformation modif key) nVal >> return (Just ())
   interpretLtl (DeleteValue key) = Apply $ \modif ->
-    deleteValue @k @v (transformation modif key) >> return (Just ())
+    if toIgnoreOverride modif
+      then return Nothing
+      else deleteValue @k @v (transformation modif key) >> return (Just ())
   interpretLtl (GetValue key) = Apply $ \modif ->
-    Just <$> getValue @k @v (transformation modif key)
+    if toIgnoreOverride modif
+      then return Nothing
+      else Just <$> getValue @k @v (transformation modif key)
 
 -- * Interpreting modified 'AST's
 
@@ -296,7 +304,7 @@ appendNew = renameKey (++ "new")
 exampleSomewhereSwap :: [((Integer, Integer), Map String Integer)]
 exampleSomewhereSwap =
   interpretAndRun mempty $
-    modifyLtl (somewhere appendNew) swapTrace
+    modifyLtl (somewhere noStoreOverride) swapTrace
 
 -- $doc
 -- In the next example, we'll expect two results, because there are two
@@ -318,7 +326,7 @@ exampleSomewhereSwap =
 exampleSomewhereDelete :: [(Integer, Map String Integer)]
 exampleSomewhereDelete =
   interpretAndRun mempty $
-    modifyLtl (somewhere appendNew) deleteTrace
+    modifyLtl (somewhere noStoreOverride) deleteTrace
 
 -- $doc
 -- Another very commonly used 'Ltl' formula is 'everywhere'. It applies the
