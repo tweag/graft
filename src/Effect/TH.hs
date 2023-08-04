@@ -13,8 +13,7 @@ where
 import Control.Monad
 import Data.Bifunctor
 import Data.Char (toLower)
-import qualified Data.Map as Map
-import Effect
+import Effect.Internal
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 
