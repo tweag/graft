@@ -4,7 +4,8 @@
 {-# LANGUAGE TupleSections #-}
 
 module Effect.TH
-  ( makeEffect,
+  ( defineEffectType,
+    makeEffect,
     makeReification,
     makeInterpretation,
   )
@@ -12,10 +13,133 @@ where
 
 import Control.Monad
 import Data.Bifunctor
-import Data.Char (toLower)
+import Data.Char (toLower, toUpper)
+import qualified Data.Map as Map
 import Effect.Internal
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
+
+-- I'd like for this to work, but I think it can't work because of some TH stage restrictions?
+--
+--
+-- -- | Given a class of monads @X@, the macro
+-- --
+-- -- > autoMagic ''X
+-- --
+-- -- will set everything up so that you can
+-- --
+-- -- 1. use the same syntax as in @X@ to write 'AST's, and
+-- --
+-- -- 2. interpret 'AST's written usgin this syntax.
+-- --
+-- -- This works by defining an "effect type" @XEffect@ and
+-- --
+-- -- 1. an @X@ instance for any @AST ops@ where @ops@ contains @XEffect@
+-- --
+-- -- 2. an 'InterpretEffect m XEffect' for any monad @m@ with @X m@.
+-- --
+-- -- In particular, you can also mix and match effect types and their classes'
+-- -- syntax in one @AST ops@, as long as they are all in @ops@.
+-- --
+-- -- For more detail, see the comments at 'defineEffectType' and 'makeEffect',
+-- -- around which this is a wrapper.
+-- autoMagic :: Name -> Q [Dec]
+-- autoMagic className = do
+--   d1 <- defineEffectType className
+--   d2 <- makeEffect className (mkEffectName className)
+--   return $ d1 ++ d2
+
+-- | Generate the effect type corresponding to a class.
+--
+-- By, example, given
+--
+-- > class (...) => Foo a b m where
+-- >   foo :: a -> b -> m ()
+-- >   bar :: forall c. Ord c => (c -> m a) -> b -> m (c, Bool)
+--
+-- the macro
+--
+-- > defineEffectType ''Foo
+--
+-- writes an effect type like
+--
+-- > data FooEffect a b :: Effect where
+-- >   Foo :: a -> b -> FooEffect a b m ()
+-- >   Bar :: forall c. Ord c => (c -> m a) -> b -> FooEffect a b m (c, Bool)
+--
+-- There are two naming conventions here:
+--
+-- __naming convention 1__: The effect type corresponding to the class @X@ is
+-- called @XEffect@. For example, 'MonadError' corresponds to
+-- 'MonadErrorEffect'.
+--
+-- __naming convention 2__: The names of the constructors of @XEffect@ must be
+-- exactly the names of the methods of the class @X@, just starting with an
+-- upper-case letter.
+--
+-- This macro furhtermore assumes that the last type variable in the the class
+-- definition (here, that's @m@) is of kind @Type -> Type@.  This makes sense
+-- for our application, because our classes will normally be classes of monads.
+defineEffectType :: Name -> Q [Dec]
+defineEffectType className = do
+  ClassI (ClassD _ _ varsAndM _ methods) _ <- reify className
+  let -- any type variables in the class definition besides the last
+      vars = init varsAndM
+      varNames = nameFromTyVarBndr <$> vars
+
+      -- the last type variable in the class definition (i.e. the type the class is making a constraint on)
+      mVar = last varsAndM
+      mName = nameFromTyVarBndr mVar
+
+      effectName = mkEffectName className
+      effectType = foldl (\t n -> AppT t (VarT n)) (ConT effectName) varNames
+  (: [])
+    <$> dataD
+      (return [])
+      effectName
+      ( map
+          ( \case
+              PlainTV n _ -> PlainTV n ()
+              KindedTV n _ t -> KindedTV n () t
+          )
+          vars
+      )
+      (Just $ ConT ''Effect)
+      ( map
+          ( \case
+              SigD methodName methodType -> do
+                let (methodTyVars, methodConstraints, tys) = case methodType of
+                      ForallT tvars ctx ty -> (tvars, ctx, destructFunctionType ty)
+                      ty -> ([], [], destructFunctionType ty)
+                    codomain = case last tys of
+                      AppT _m x -> AppT (AppT effectType (VarT mName)) x
+                      _ ->
+                        error $
+                          "Expecting every method of the class "
+                            ++ nameBase className
+                            ++ " to return something of the form \"m a\" for some a, but got something like "
+                            ++ show (last tys)
+                    argTypes = init tys
+                forallC
+                  ( map
+                      ( \case
+                          PlainTV n _ -> PlainTV n SpecifiedSpec
+                          KindedTV n _ t -> KindedTV n SpecifiedSpec t
+                      )
+                      varsAndM
+                      ++ methodTyVars
+                  )
+                  (return methodConstraints)
+                  ( gadtC
+                      [upperFirst methodName]
+                      (map (return . (Bang NoSourceUnpackedness NoSourceStrictness,)) argTypes)
+                      (return codomain)
+                  )
+              _ -> error "I made a wrong assumption about TH's reification of classes: expected a list of signature declarations using the 'SigD' constructor"
+          )
+          methods
+      )
+      []
 
 -- | Automatically write "reification" and "interpretation" instances for an
 -- effect type and its associated class of monads.
@@ -51,17 +175,8 @@ import Language.Haskell.TH.Datatype
 -- - a constraint that implies @MonadBar b (AST ops)@: That is the reason for
 --   the constraint @EffectInject (MonadBarEffect b) ops@. This macro assumes
 --   that the only way for an 'AST' to become a @MonadX@ for some @X@ is to
---   contain the correct effect type @MonadXEffect@. That is we employ a
---
--- __naming convention__: The effect type corresponding to the class @X@ is
--- called @XEffect@. For example, 'MonadError' corresponds to
--- 'MonadErrorEffect'.
---
--- while we're at it, there's another
---
--- __naming convention__: The names of the constructors of @XEffect@ must be
--- exactly the names of the methods of the class @X@, just starting with an
--- upper-case letter.
+--   contain the correct effect type @MonadXEffect@. That is, we employ the same
+--   naming conventions as explained at 'defineEffectType'.
 --
 -- 2.  the "interpretation" instance
 --
@@ -78,13 +193,7 @@ import Language.Haskell.TH.Datatype
 makeEffect :: Name -> Name -> Q [Dec]
 makeEffect className effectName = do
   ClassI (ClassD ctx _ vars _ _) _ <- reify className
-  let names =
-        map
-          ( \case
-              PlainTV x _ -> x
-              KindedTV x _ _ -> x
-          )
-          vars
+  let names = nameFromTyVarBndr <$> vars
       -- The context of the class definition (i.e. its constraints, as a
       -- function of the type variables used. The list of 'Name's containss all
       -- of the "extra" type variables, and the singular 'Name' is the name of
@@ -520,6 +629,13 @@ lowerFirst = mkName . lowerFirstString . nameBase
     lowerFirstString (c : cs) = toLower c : cs
     lowerFirstString [] = error "empty name. This can't happen unless I wrote some very weird TemplateHaskell."
 
+-- | Transform a name so that the first letter is upper case.
+upperFirst :: Name -> Name
+upperFirst = mkName . upperFirstString . nameBase
+  where
+    upperFirstString (c : cs) = toUpper c : cs
+    upperFirstString [] = error "empty name. This can't happen unless I wrote some very weird TemplateHaskell."
+
 -- | Get the corresponding effect name for the name of a class. The naming
 -- scheme is that @X@ will correspond to @XEffect@.
 mkEffectName :: Name -> Name
@@ -532,3 +648,16 @@ mapMaybeM f (x : xs) = do
   case my of
     Nothing -> mapMaybeM f xs
     Just y -> (y :) <$> mapMaybeM f xs
+
+-- | From a type variable binder, extract the name of the variable.
+nameFromTyVarBndr :: TyVarBndr flag -> Name
+nameFromTyVarBndr =
+  \case
+    PlainTV x _ -> x
+    KindedTV x _ _ -> x
+
+-- | destructure a type of the form @a -> b -> c -> ... -> x@ into a list like
+-- @[a,b,c,...x]@.
+destructFunctionType :: Type -> [Type]
+destructFunctionType (AppT (AppT ArrowT l) r) = destructFunctionType l ++ [r]
+destructFunctionType x = [x]
