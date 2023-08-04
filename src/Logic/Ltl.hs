@@ -48,6 +48,7 @@ module Logic.Ltl
     Ltl (..),
     somewhere,
     everywhere,
+    there,
 
     -- * Deploying 'Ltl' formulas
     LtlAST,
@@ -137,6 +138,10 @@ somewhere a = LtlTruth `LtlUntil` LtlAtom a
 -- | Apply an atomic modification to all actions.
 everywhere :: a -> Ltl a
 everywhere a = LtlFalsity `LtlRelease` LtlAtom a
+
+there :: Integer -> a -> Ltl a
+there 0 a = LtlAtom a
+there n a = LtlNext $ there (n - 1) a
 
 -- | Internal: The effect type corresponding to 'modifyLtl'.
 data LtlEffect mod (m :: Type -> Type) a where

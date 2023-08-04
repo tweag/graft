@@ -28,9 +28,6 @@ import Effect.Fail.Passthrough ()
 import Effect.TH
 import Language.Haskell.TH (varT)
 import Logic.Ltl
-import qualified Test.Tasty as Tasty
-import Test.Tasty.HUnit ((@=?))
-import qualified Test.Tasty.HUnit as Tasty
 
 -- * Example domain and implementation
 
@@ -48,7 +45,7 @@ class (MonadFail m) => MonadKeyValue k v m where
 -- From this type class, we can write a few test cases,
 -- corresponding to a serie of actions over key-value-store.
 
-swapTrace :: (MonadKeyValue String Integer m) => m ()
+swapTrace :: (MonadKeyValue String Integer m) => m (Integer, Integer)
 swapTrace = do
   storeValue "a" 1
   storeValue "b" 2
@@ -56,30 +53,18 @@ swapTrace = do
   Just b <- getValue @_ @Integer "b"
   storeValue "a" b
   storeValue "b" a
+  Just a' <- getValue @_ @Integer "a"
+  Just b' <- getValue @_ @Integer "b"
+  return (a', b')
 
-deleteTrace :: (MonadKeyValue String Integer m) => m ()
+deleteTrace :: (MonadKeyValue String Integer m) => m Integer
 deleteTrace = do
   storeValue "a" 1
+  storeValue "b" 2
   deleteValue @_ @Integer "a"
   storeValue "a" 2
-
-helloTrace123 :: (MonadKeyValue Integer String m) => m ()
-helloTrace123 = do
-  storeValue 1 "Hello "
-  storeValue 2 "my "
-  storeValue 3 "friend"
-
-helloTrace111 :: (MonadKeyValue Integer String m) => m ()
-helloTrace111 = do
-  storeValue 1 "Hello "
-  storeValue 1 "my "
-  storeValue 1 "friend"
-
-bugTrace :: (MonadKeyValue Integer String m) => m ()
-bugTrace = do
-  storeValue 1 "a"
-  deleteValue @_ @String 1
-  storeValue 1 "b"
+  Just a <- getValue @_ @Integer "a"
+  return a
 
 -- $doc
 -- What we'll test is an implementation of 'MonadKeyValue'. We'll implement it
@@ -191,20 +176,18 @@ makeInterpretation
 -- $doc
 -- The module "Logic.Ltl" implements one way to turn the effect system into a
 -- testing tool. Its idea is to change the interpretaion of an 'AST' by
--- applying single-step modifications the actions it contains. A formula in an
+-- applying single-step modifications to some actions it contains. A formula in an
 -- LTL-like language determines when to apply the single-step modifications.
 --
 -- So, we first need a type of single-step modifications. These have no
 -- intrinsic meaning, but will only be explained by the 'InterpretLtl'
 -- instance.
 
-data SingleStepMod = ConcatIfReplace
-
 data RenameMod k where
   Rename :: (k -> k) -> RenameMod k
 
-instance Semigroup (RenameMod k) where
-  (Rename f) <> (Rename g) = Rename $ f . g
+data StoreNoOverride where
+  DontOverride :: StoreNoOverride
 
 -- $doc
 -- The evaluation of 'Ltl' formulas sometimes makes it necessary to try
@@ -212,8 +195,11 @@ instance Semigroup (RenameMod k) where
 -- describes how they should combine. (In our example, it's very simple,
 -- because there is only one 'SingleStepMod', namely 'ConcatIfReplace'.)
 
-instance Semigroup SingleStepMod where
-  a <> _ = a
+instance Semigroup (RenameMod k) where
+  (Rename f) <> (Rename g) = Rename $ f . g
+
+instance Semigroup StoreNoOverride where
+  _ <> _ = DontOverride
 
 -- $doc
 -- The 'InterpretLtl' instance is the heart of this while operation, since it
@@ -239,14 +225,14 @@ instance Semigroup SingleStepMod where
 -- at the @n@-th step may depend on information we know only after having run
 -- (and modified) the first @n-1@ steps.
 
-instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (KeyValueEffect k v) where
-  interpretLtl (StoreValue key val) = Apply $ \ConcatIfReplace -> do
+instance (MonadKeyValue k v m) => InterpretLtl StoreNoOverride m (KeyValueEffect k v) where
+  interpretLtl (StoreValue key nVal) = Apply $ \_ -> do
     -- the type application is needed here to get around the otherwise
     -- ambiguous type @v@:
-    mv <- getValue @k @v key
-    case mv of
-      Just oldVal -> storeValue key (oldVal <> val) >> return (Just ())
-      Nothing -> return Nothing
+    val <- getValue @k @v key
+    case val of
+      Nothing -> storeValue key nVal >> return (Just ())
+      Just _ -> return (Just ())
   interpretLtl _ = Ignore
 
 instance (MonadKeyValue k v m) => InterpretLtl (RenameMod k) m (KeyValueEffect k v) where
@@ -304,9 +290,6 @@ interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST 
 
 -- $doc
 -- By for the most commonly used 'Ltl' formula is 'somewhere'. The 'LtlAST'
---
--- > somewhere x (act1 >> act2 >> act3)
---
 -- describes the three traces you get by applying @x@ to @act1@, @act2@, and
 -- @act3@, while leaving the other actions unmodified. Only traces where @x@
 -- was /successfully/ applied will be returned by 'interpretLTLAST', though. This means
@@ -316,10 +299,13 @@ interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST 
 -- >>> exampleSomewhere1
 -- []
 
-exampleSomewhere1 :: [((), Map Integer String)]
-exampleSomewhere1 =
+appendNew :: RenameMod String
+appendNew = Rename (++ "new")
+
+exampleSomewhereSwap :: [((Integer, Integer), Map String Integer)]
+exampleSomewhereSwap =
   interpretAndRun mempty $
-    modifyLtl (somewhere ConcatIfReplace) helloTrace123
+    modifyLtl (somewhere appendNew) swapTrace
 
 -- $doc
 -- In the next example, we'll expect two results, because there are two
@@ -338,10 +324,10 @@ exampleSomewhere1 =
 -- >>> exampleSomewhere2
 -- [((),fromList [(1,"friend")]),((),fromList [(1,"my friend")])]
 
-exampleSomewhere2 :: [((), Map Integer String)]
-exampleSomewhere2 =
+exampleSomewhereDelete :: [(Integer, Map String Integer)]
+exampleSomewhereDelete =
   interpretAndRun mempty $
-    modifyLtl (somewhere ConcatIfReplace) helloTrace111
+    modifyLtl (somewhere appendNew) deleteTrace
 
 -- $doc
 -- Another very commonly used 'Ltl' formula is 'everywhere'. It applies the
@@ -350,34 +336,37 @@ exampleSomewhere2 =
 -- This means that our next example will again return the empty list, since
 -- 'ConcatIfReplace' isn't applicable on the first 'storeValue'.
 --
--- >>> exampleEverywhere1
--- []
+-- >>> exampleEverywhereCorrect
+-- [(1,2)]
 
-exampleEverywhere1 :: [((), Map Integer String)]
-exampleEverywhere1 =
-  interpretAndRun mempty $
-    modifyLtl (everywhere ConcatIfReplace) helloTrace111
+exampleEverywhereCorrect :: [(Integer, Integer)]
+exampleEverywhereCorrect =
+  fst <$> interpretAndRun mempty (modifyLtl (everywhere DontOverride) swapTrace)
+
+-- $doc
+--
+-- >>> exampleEverywhereBug
+-- [1]
+
+exampleEverywhereBug :: [Integer]
+exampleEverywhereBug =
+  fst <$> interpretAndRun mempty (modifyLtl (everywhere DontOverride) deleteTrace)
 
 -- $doc
 -- Note that, unlike 'somewhere', 'everywhere' doesn't imply that any
 -- modification is applied. Applying 'everywhere' to an empty trace is
 -- successful, and returns one result:
 --
--- >>> exampleEverywhere2
+-- >>> exampleEverywhereEmpty
 -- [((),fromList [])]
 
-exampleEverywhere2 :: [((), Map Integer String)]
-exampleEverywhere2 =
+exampleEverywhereEmpty :: [((), Map String Integer)]
+exampleEverywhereEmpty =
   interpretAndRun mempty $
-    modifyLtl (everywhere ConcatIfReplace) $
+    modifyLtl (everywhere appendNew) $
       return ()
 
-exampleEverywhere3 :: [((), Map String Integer)]
-exampleEverywhere3 =
-  interpretAndRun mempty $
-    modifyLtl (everywhere $ Rename @String (++ "New")) swapTrace
-
--- ** Custom 'Ltl' formulas
+-- ** 'there'
 
 -- $doc
 -- We can make the modification applicable, and return the expected @"Hello my
@@ -387,37 +376,17 @@ exampleEverywhere3 =
 -- >>> exampleCustom1
 -- [((),fromList [(1,"Hello my friend")])]
 
-exampleCustom1 :: [((), Map Integer String)]
-exampleCustom1 =
-  interpretAndRun mempty $
-    modifyLtl (LtlNext . everywhere $ ConcatIfReplace) helloTrace111
+exampleThereEmpty :: [Integer]
+exampleThereEmpty =
+  fst <$> interpretAndRun mempty (modifyLtl (there 4 appendNew) deleteTrace)
+
+exampleThereBug :: [Integer]
+exampleThereBug =
+  fst <$> interpretAndRun mempty (modifyLtl (there 3 DontOverride) deleteTrace)
+
+-- ** Custom 'Ltl' formulas
 
 -- $doc
 -- There are many possibilities for custom formulas. Please refer to the
 -- documentation
 -- of 'Ltl'.
-
--- * \"Finding\" a bug
-
--- $doc
--- Remember the mistake we introduced in the implementation of 'MonadKeyValue'
--- for 'KeyValueT'? We "accidentally" implemented 'deleteValue' as a no-op.
--- This means that, by using 'deleteValue' before re-storing a value, we
--- /should/ make 'ConcatIfReplace' inapplicable. The following simple test
--- finds this bug.
---
--- >>> Tasty.defaultMain exampleBug
--- deleteValue before re-store: FAIL
---   ./Examples/Ltl/Simple.hs:353:
---   expected: []
---    but got: [((),fromList [(1,"ab")])]
--- 1 out of 1 tests failed (0.00s)
--- *** Exception: ExitFailure 1
-
-exampleBug :: Tasty.TestTree
-exampleBug =
-  Tasty.testCase "deleteValue before re-store" $
-    []
-      @=? interpretAndRun
-        mempty
-        (modifyLtl (somewhere ConcatIfReplace) bugTrace)
