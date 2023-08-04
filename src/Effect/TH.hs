@@ -659,5 +659,5 @@ nameFromTyVarBndr =
 -- | destructure a type of the form @a -> b -> c -> ... -> x@ into a list like
 -- @[a,b,c,...x]@.
 destructFunctionType :: Type -> [Type]
-destructFunctionType (AppT (AppT ArrowT l) r) = destructFunctionType l ++ [r]
+destructFunctionType (AppT (AppT ArrowT l) r) = l : destructFunctionType r
 destructFunctionType x = [x]
