@@ -21,34 +21,33 @@
 </span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.State</span></span><span>
 </span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
 </span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
-</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.html"><span class="hs-identifier">Effect</span></a></span><span>
-</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.TH.html"><span class="hs-identifier">Effect.TH</span></a></span><span>
-</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Logic.Ltl.html"><span class="hs-identifier">Logic.Ltl</span></a></span><span>
-</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Test.Tasty</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Tasty</span></span><span>
-</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Test.Tasty.HUnit</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-operator">(@=?)</span></span><span class="hs-special">)</span><span>
-</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Test.Tasty.HUnit</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Tasty</span></span><span>
-</span><span id="line-30"></span><span>
-</span><span id="line-31"></span><span class="annot"><span class="hs-comment">-- * Example domain and implementation</span></span><span>
-</span><span id="line-32"></span><span>
-</span><span id="line-33"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-34"></span><span class="hs-comment">-- It's easiest to use this library if you have a type class of monads that</span><span>
-</span><span id="line-35"></span><span class="hs-comment">-- captures the behaviour you want to test. For the sake of this tutorial, let's</span><span>
-</span><span id="line-36"></span><span class="hs-comment">-- take a key-value-store.</span><span>
-</span><span id="line-37"></span><span>
-</span><span id="line-38"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679171862"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MonadKeyValue"><span class="annot"><a href="Examples.Ltl.Simple.html#MonadKeyValue"><span class="hs-identifier hs-var">MonadKeyValue</span></a></span></span><span> </span><span id="local-6989586621679171860"><span class="annot"><a href="#local-6989586621679171860"><span class="hs-identifier hs-type">k</span></a></span></span><span> </span><span id="local-6989586621679171861"><span class="annot"><a href="#local-6989586621679171861"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span id="local-6989586621679171862"><span class="annot"><a href="#local-6989586621679171862"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-39"></span><span>  </span><span id="storeValue"><span class="annot"><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-type">storeValue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679171860"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679171861"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679171862"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-40"></span><span>  </span><span id="getValue"><span class="annot"><a href="Examples.Ltl.Simple.html#getValue"><span class="hs-identifier hs-type">getValue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679171860"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679171862"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679171861"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-41"></span><span>  </span><span id="deleteValue"><span class="annot"><a href="Examples.Ltl.Simple.html#deleteValue"><span class="hs-identifier hs-type">deleteValue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679171860"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679171862"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-42"></span><span>
-</span><span id="line-43"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-44"></span><span class="hs-comment">-- What we'll test is an implementation of 'MonadKeyValue'. We'll implement it</span><span>
-</span><span id="line-45"></span><span class="hs-comment">-- very simply, but note that the implementation of 'deleteValue' is wrong: we</span><span>
-</span><span id="line-46"></span><span class="hs-comment">-- never delete anything from the store. We'll &quot;find&quot; this mistake later on.</span><span>
-</span><span id="line-47"></span><span>
-</span><span id="line-48"></span><span class="hs-keyword">type</span><span> </span><span id="KeyValueT"><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueT"><span class="hs-identifier hs-var">KeyValueT</span></a></span></span><span> </span><span id="local-6989586621679172147"><span class="annot"><a href="#local-6989586621679172147"><span class="hs-identifier hs-type">k</span></a></span></span><span> </span><span id="local-6989586621679172148"><span class="annot"><a href="#local-6989586621679172148"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679172147"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679172148"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-49"></span><span>
-</span><span id="line-50"></span><span id="local-6989586621679171863"><span id="local-6989586621679171864"><span id="local-6989586621679171865"><span id="local-6989586621679171866"><span class="annot"><a href="Examples.Ltl.Simple.html#runKeyValueT"><span class="hs-identifier hs-type">runKeyValueT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679171863"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171864"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueT"><span class="hs-identifier hs-type">KeyValueT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171863"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171864"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171865"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171866"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679171865"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679171866"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679171863"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171864"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
-</span><span id="line-51"></span><span id="runKeyValueT"><span class="annot"><span class="annottext">runKeyValueT :: forall k v (m :: * -&gt; *) a.
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.TH.html"><span class="hs-identifier">Effect.TH</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Logic.Ltl.html"><span class="hs-identifier">Logic.Ltl</span></a></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Test.Tasty</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Tasty</span></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Test.Tasty.HUnit</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-operator">(@=?)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Test.Tasty.HUnit</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Tasty</span></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="annot"><span class="hs-comment">-- * Example domain and implementation</span></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- It's easiest to use this library if you have a type class of monads that</span><span>
+</span><span id="line-34"></span><span class="hs-comment">-- captures the behaviour you want to test. For the sake of this tutorial, let's</span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- take a key-value-store.</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">class</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679179715"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MonadKeyValue"><span class="annot"><a href="Examples.Ltl.Simple.html#MonadKeyValue"><span class="hs-identifier hs-var">MonadKeyValue</span></a></span></span><span> </span><span id="local-6989586621679179711"><span class="annot"><a href="#local-6989586621679179711"><span class="hs-identifier hs-type">k</span></a></span></span><span> </span><span id="local-6989586621679179712"><span class="annot"><a href="#local-6989586621679179712"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span id="local-6989586621679179715"><span class="annot"><a href="#local-6989586621679179715"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-38"></span><span>  </span><span id="storeValue"><span class="annot"><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-type">storeValue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679179711"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679179712"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679179715"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>  </span><span id="getValue"><span class="annot"><a href="Examples.Ltl.Simple.html#getValue"><span class="hs-identifier hs-type">getValue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679179711"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679179715"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679179712"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>  </span><span id="deleteValue"><span class="annot"><a href="Examples.Ltl.Simple.html#deleteValue"><span class="hs-identifier hs-type">deleteValue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679179711"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679179715"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- What we'll test is an implementation of 'MonadKeyValue'. We'll implement it</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- very simply, but note that the implementation of 'deleteValue' is wrong: we</span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- never delete anything from the store. We'll &quot;find&quot; this mistake later on.</span><span>
+</span><span id="line-46"></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">type</span><span> </span><span id="KeyValueT"><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueT"><span class="hs-identifier hs-var">KeyValueT</span></a></span></span><span> </span><span id="local-6989586621679179991"><span class="annot"><a href="#local-6989586621679179991"><span class="hs-identifier hs-type">k</span></a></span></span><span> </span><span id="local-6989586621679179992"><span class="annot"><a href="#local-6989586621679179992"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679179991"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179992"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span id="local-6989586621679179716"><span id="local-6989586621679179717"><span id="local-6989586621679179718"><span id="local-6989586621679179719"><span class="annot"><a href="Examples.Ltl.Simple.html#runKeyValueT"><span class="hs-identifier hs-type">runKeyValueT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679179716"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179717"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueT"><span class="hs-identifier hs-type">KeyValueT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179716"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179717"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179718"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179719"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679179718"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679179719"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679179716"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179717"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-50"></span><span id="runKeyValueT"><span class="annot"><span class="annottext">runKeyValueT :: forall k v (m :: * -&gt; *) a.
 Map k v -&gt; KeyValueT k v m a -&gt; m (a, Map k v)
 </span><a href="Examples.Ltl.Simple.html#runKeyValueT"><span class="hs-identifier hs-var hs-var">runKeyValueT</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(KeyValueT k v m a -&gt; Map k v -&gt; m (a, Map k v))
 -&gt; Map k v -&gt; KeyValueT k v m a -&gt; m (a, Map k v)
@@ -56,12 +55,12 @@ forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
 </span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">KeyValueT k v m a -&gt; Map k v -&gt; m (a, Map k v)
 forall s (m :: * -&gt; *) a. StateT s m a -&gt; s -&gt; m (a, s)
 </span><span class="hs-identifier hs-var">runStateT</span></span><span>
-</span><span id="line-52"></span><span>
-</span><span id="line-53"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679171884"><span id="local-6989586621679171885"><span id="local-6989586621679171886"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679171884"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679171885"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#MonadKeyValue"><span class="hs-identifier hs-type">MonadKeyValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171884"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171886"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueT"><span class="hs-identifier hs-type">KeyValueT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171884"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171886"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171885"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-54"></span><span>  </span><span id="local-6989586621679172165"><span class="annot"><span class="annottext">storeValue :: k -&gt; v -&gt; KeyValueT k v m ()
-</span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var hs-var hs-var hs-var">storeValue</span></a></span></span><span> </span><span id="local-6989586621679172166"><span class="annot"><span class="annottext">k
-</span><a href="#local-6989586621679172166"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span id="local-6989586621679172167"><span class="annot"><span class="annottext">v
-</span><a href="#local-6989586621679172167"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Map k v -&gt; Map k v) -&gt; KeyValueT k v m ()
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679179737"><span id="local-6989586621679179738"><span id="local-6989586621679179739"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679179737"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679179738"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#MonadKeyValue"><span class="hs-identifier hs-type">MonadKeyValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179737"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179739"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueT"><span class="hs-identifier hs-type">KeyValueT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179737"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179739"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179738"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-53"></span><span>  </span><span id="local-6989586621679180009"><span class="annot"><span class="annottext">storeValue :: k -&gt; v -&gt; KeyValueT k v m ()
+</span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var hs-var hs-var hs-var">storeValue</span></a></span></span><span> </span><span id="local-6989586621679180010"><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621679180010"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span id="local-6989586621679180011"><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679180011"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Map k v -&gt; Map k v) -&gt; KeyValueT k v m ()
 forall s (m :: * -&gt; *). MonadState s m =&gt; (s -&gt; s) -&gt; m ()
 </span><span class="hs-identifier hs-var">modify</span></span><span> </span><span class="annot"><span class="annottext">((Map k v -&gt; Map k v) -&gt; KeyValueT k v m ())
 -&gt; (Map k v -&gt; Map k v) -&gt; KeyValueT k v m ()
@@ -69,11 +68,11 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">k -&gt; v -&gt; Map k v -&gt; Map k v
 forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
 </span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">k
-</span><a href="#local-6989586621679172166"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">v
-</span><a href="#local-6989586621679172167"><span class="hs-identifier hs-var">v</span></a></span><span>
-</span><span id="line-55"></span><span>  </span><span id="local-6989586621679172172"><span class="annot"><span class="annottext">getValue :: k -&gt; KeyValueT k v m (Maybe v)
-</span><a href="Examples.Ltl.Simple.html#getValue"><span class="hs-identifier hs-var hs-var hs-var hs-var">getValue</span></a></span></span><span> </span><span id="local-6989586621679172173"><span class="annot"><span class="annottext">k
-</span><a href="#local-6989586621679172173"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Map k v -&gt; Maybe v) -&gt; KeyValueT k v m (Maybe v)
+</span><a href="#local-6989586621679180010"><span class="hs-identifier hs-var">k</span></a></span><span> </span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679180011"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-54"></span><span>  </span><span id="local-6989586621679180016"><span class="annot"><span class="annottext">getValue :: k -&gt; KeyValueT k v m (Maybe v)
+</span><a href="Examples.Ltl.Simple.html#getValue"><span class="hs-identifier hs-var hs-var hs-var hs-var">getValue</span></a></span></span><span> </span><span id="local-6989586621679180017"><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621679180017"><span class="hs-identifier hs-var">k</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Map k v -&gt; Maybe v) -&gt; KeyValueT k v m (Maybe v)
 forall s (m :: * -&gt; *) a. MonadState s m =&gt; (s -&gt; a) -&gt; m a
 </span><span class="hs-identifier hs-var">gets</span></span><span> </span><span class="annot"><span class="annottext">((Map k v -&gt; Maybe v) -&gt; KeyValueT k v m (Maybe v))
 -&gt; (Map k v -&gt; Maybe v) -&gt; KeyValueT k v m (Maybe v)
@@ -81,153 +80,158 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">k -&gt; Map k v -&gt; Maybe v
 forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">k
-</span><a href="#local-6989586621679172173"><span class="hs-identifier hs-var">k</span></a></span><span>
-</span><span id="line-56"></span><span>  </span><span id="local-6989586621679172177"><span class="annot"><span class="annottext">deleteValue :: k -&gt; KeyValueT k v m ()
+</span><a href="#local-6989586621679180017"><span class="hs-identifier hs-var">k</span></a></span><span>
+</span><span id="line-55"></span><span>  </span><span id="local-6989586621679180021"><span class="annot"><span class="annottext">deleteValue :: k -&gt; KeyValueT k v m ()
 </span><a href="Examples.Ltl.Simple.html#deleteValue"><span class="hs-identifier hs-var hs-var hs-var hs-var">deleteValue</span></a></span></span><span> </span><span class="annot"><span class="annottext">k
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; KeyValueT k v m ()
 forall a. a -&gt; StateT (Map k v) m a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-57"></span><span>
-</span><span id="line-58"></span><span class="annot"><span class="hs-comment">-- * Using the effect system</span></span><span>
-</span><span id="line-59"></span><span>
-</span><span id="line-60"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-61"></span><span class="hs-comment">-- This library based on a custom effect system. The central type is @'AST' ops</span><span>
-</span><span id="line-62"></span><span class="hs-comment">-- a@. It describes abstract syntax trees of monadic computations which use</span><span>
-</span><span id="line-63"></span><span class="hs-comment">-- operations from the list @ops@ of /effect types/, and return an @a@. Such</span><span>
-</span><span id="line-64"></span><span class="hs-comment">-- 'AST's will be /interpreted/ in various ways to obtain interesting test</span><span>
-</span><span id="line-65"></span><span class="hs-comment">-- cases.</span><span>
-</span><span id="line-66"></span><span class="hs-comment">--</span><span>
-</span><span id="line-67"></span><span class="hs-comment">-- So, we'll have to write an effect type for the key-value store. The</span><span>
-</span><span id="line-68"></span><span class="hs-comment">-- constructors of that effect type will correspond to the methods of the</span><span>
-</span><span id="line-69"></span><span class="hs-comment">-- class 'MonadKeyValue'. We can think of them as abstract representations that</span><span>
-</span><span id="line-70"></span><span class="hs-comment">-- stand for the methods.</span><span>
-</span><span id="line-71"></span><span class="hs-comment">--</span><span>
-</span><span id="line-72"></span><span class="hs-comment">-- The kind of effect types is</span><span>
-</span><span id="line-73"></span><span class="hs-comment">--</span><span>
-</span><span id="line-74"></span><span class="hs-comment">-- &gt; Effect = (Type -&gt; Type) -&gt; Type -&gt; Type</span><span>
-</span><span id="line-75"></span><span class="hs-comment">--</span><span>
-</span><span id="line-76"></span><span class="hs-comment">-- The @(Type -&gt; Type)@ parameter doesn't interest us here; it is the &quot;nesting&quot;</span><span>
-</span><span id="line-77"></span><span class="hs-comment">-- monad used for higher order effects. The second parameter is the return type</span><span>
-</span><span id="line-78"></span><span class="hs-comment">-- of the method.</span><span>
-</span><span id="line-79"></span><span>
-</span><span id="line-80"></span><span class="hs-keyword">data</span><span> </span><span id="KeyValueEffect"><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueEffect"><span class="hs-identifier hs-var">KeyValueEffect</span></a></span></span><span> </span><span id="local-6989586621679171856"><span class="annot"><a href="#local-6989586621679171856"><span class="hs-identifier hs-type">k</span></a></span></span><span> </span><span id="local-6989586621679171857"><span class="annot"><a href="#local-6989586621679171857"><span class="hs-identifier hs-type">v</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Effect.Internal.html#Effect"><span class="hs-identifier hs-type">Effect</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-81"></span><span>  </span><span id="local-6989586621679171925"><span id="local-6989586621679171926"><span id="local-6989586621679171927"><span id="StoreValue"><span class="annot"><a href="Examples.Ltl.Simple.html#StoreValue"><span class="hs-identifier hs-var">StoreValue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679171925"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679171926"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueEffect"><span class="hs-identifier hs-type">KeyValueEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171925"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171926"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171927"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span><span>
-</span><span id="line-82"></span><span>  </span><span id="local-6989586621679171919"><span id="local-6989586621679171920"><span id="local-6989586621679171921"><span id="GetValue"><span class="annot"><a href="Examples.Ltl.Simple.html#GetValue"><span class="hs-identifier hs-var">GetValue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679171919"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueEffect"><span class="hs-identifier hs-type">KeyValueEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171919"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171920"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171921"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679171920"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span></span></span></span><span>
-</span><span id="line-83"></span><span>  </span><span id="local-6989586621679171922"><span id="local-6989586621679171923"><span id="local-6989586621679171924"><span id="DeleteValue"><span class="annot"><a href="Examples.Ltl.Simple.html#DeleteValue"><span class="hs-identifier hs-var">DeleteValue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679171922"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueEffect"><span class="hs-identifier hs-type">KeyValueEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171922"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171923"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171924"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span><span>
-</span><span id="line-84"></span><span>
-</span><span id="line-85"></span><span id="local-6989586621679171856"><span id="local-6989586621679171857"><span id="local-6989586621679171858"><span id="local-6989586621679171916"><span id="local-6989586621679172185"><span id="local-6989586621679172192"><span id="local-6989586621679172195"><span id="local-6989586621679172198"><span class="hs-identifier">makeEffect</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadKeyValue</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">KeyValueEffect</span></span></span></span></span></span></span></span></span><span>
-</span><span id="line-86"></span><span>
-</span><span id="line-87"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-88"></span><span class="hs-comment">-- If the constructor names of 'KeyValueEffect' are the method names of</span><span>
-</span><span id="line-89"></span><span class="hs-comment">-- 'MonadKeyValue' (starting with an upper case letter) and the types match,</span><span>
-</span><span id="line-90"></span><span class="hs-comment">-- the Template Haskell macro 'makeEffect' can be used to generate two instance</span><span>
-</span><span id="line-91"></span><span class="hs-comment">-- definitions:</span><span>
-</span><span id="line-92"></span><span class="hs-comment">--</span><span>
-</span><span id="line-93"></span><span class="hs-comment">-- The &quot;reification&quot; instance</span><span>
-</span><span id="line-94"></span><span class="hs-comment">--</span><span>
-</span><span id="line-95"></span><span class="hs-comment">-- &gt; instance (EffectInject (KeyValueEffect k v) ops) =&gt; MonadKeyValue k v (AST ops) where</span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><span class="hs-comment">-- * Using the effect system</span></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- This library based on a custom effect system. The central type is @'AST' ops</span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- a@. It describes abstract syntax trees of monadic computations which use</span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- operations from the list @ops@ of /effect types/, and return an @a@. Such</span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- 'AST's will be /interpreted/ in various ways to obtain interesting test</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- cases.</span><span>
+</span><span id="line-65"></span><span class="hs-comment">--</span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- So, we'll have to write an effect type for the key-value store. The</span><span>
+</span><span id="line-67"></span><span class="hs-comment">-- constructors of that effect type will correspond to the methods of the</span><span>
+</span><span id="line-68"></span><span class="hs-comment">-- class 'MonadKeyValue'. We can think of them as abstract representations that</span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- stand for the methods.</span><span>
+</span><span id="line-70"></span><span class="hs-comment">--</span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- The kind of effect types is</span><span>
+</span><span id="line-72"></span><span class="hs-comment">--</span><span>
+</span><span id="line-73"></span><span class="hs-comment">-- &gt; Effect = (Type -&gt; Type) -&gt; Type -&gt; Type</span><span>
+</span><span id="line-74"></span><span class="hs-comment">--</span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- The @(Type -&gt; Type)@ parameter doesn't interest us here; it is the &quot;nesting&quot;</span><span>
+</span><span id="line-76"></span><span class="hs-comment">-- monad used for higher order effects. The second parameter is the return type</span><span>
+</span><span id="line-77"></span><span class="hs-comment">-- of the method.</span><span>
+</span><span id="line-78"></span><span class="hs-comment">--</span><span>
+</span><span id="line-79"></span><span class="hs-comment">-- There's a macro that will write such an effect type for us, and give it the</span><span>
+</span><span id="line-80"></span><span class="hs-comment">-- name @MonadKeyValueEffect@:</span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span id="MonadKeyValueEffect"><span id="local-6989586621679179711"><span id="local-6989586621679179712"><span id="local-6989586621679179715"><span id="StoreValue"><span id="GetValue"><span id="DeleteValue"><span class="hs-identifier">defineEffectType</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadKeyValue</span></span></span></span></span></span></span></span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-85"></span><span class="hs-comment">-- Now, we have to make the rest of the machinery aware that we want to use the</span><span>
+</span><span id="line-86"></span><span class="hs-comment">-- effect type we just defined as the abtract representation for</span><span>
+</span><span id="line-87"></span><span class="hs-comment">-- @MonadKeyValue@:</span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span id="local-6989586621679179711"><span id="local-6989586621679179712"><span id="local-6989586621679179713"><span id="local-6989586621679179769"><span id="local-6989586621679180029"><span id="local-6989586621679180036"><span id="local-6989586621679180039"><span id="local-6989586621679180042"><span class="hs-identifier">makeEffect</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadKeyValue</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadKeyValueEffect</span></span></span></span></span></span></span></span></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- If the constructor names of 'MonadKeyValueEffect' are the method names of</span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- 'MonadKeyValue' (starting with an upper case letter) and the types match,</span><span>
+</span><span id="line-94"></span><span class="hs-comment">-- the Template Haskell macro 'makeEffect' will generate two instance</span><span>
+</span><span id="line-95"></span><span class="hs-comment">-- definitions:</span><span>
 </span><span id="line-96"></span><span class="hs-comment">--</span><span>
-</span><span id="line-97"></span><span class="hs-comment">-- says that, if @KeyValueEffect k v@ is an element of the list of effects</span><span>
-</span><span id="line-98"></span><span class="hs-comment">-- @ops@, then an 'AST' that uses the effect list @ops@ is an instance of</span><span>
-</span><span id="line-99"></span><span class="hs-comment">-- @MonadKeyValue k v@. This will allow us to write 'AST's using the familiar</span><span>
-</span><span id="line-100"></span><span class="hs-comment">-- syntax of 'MonadKeyValue'.</span><span>
-</span><span id="line-101"></span><span class="hs-comment">--</span><span>
-</span><span id="line-102"></span><span class="hs-comment">-- The &quot;interpretation&quot; instance</span><span>
-</span><span id="line-103"></span><span class="hs-comment">--</span><span>
-</span><span id="line-104"></span><span class="hs-comment">-- &gt; instance (MonadKeyValue k v m) =&gt; InterpretEffect m (KeyValueEffect k v) where</span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- The &quot;reification&quot; instance</span><span>
+</span><span id="line-98"></span><span class="hs-comment">--</span><span>
+</span><span id="line-99"></span><span class="hs-comment">-- &gt; instance (EffectInject (MonadKeyValueEffect k v) ops) =&gt; MonadKeyValue k v (AST ops) where</span><span>
+</span><span id="line-100"></span><span class="hs-comment">--</span><span>
+</span><span id="line-101"></span><span class="hs-comment">-- says that, if @MonadKeyValueEffect k v@ is an element of the list of effects</span><span>
+</span><span id="line-102"></span><span class="hs-comment">-- @ops@, then an 'AST' that uses the effect list @ops@ is an instance of</span><span>
+</span><span id="line-103"></span><span class="hs-comment">-- @MonadKeyValue k v@. This will allow us to write 'AST's using the familiar</span><span>
+</span><span id="line-104"></span><span class="hs-comment">-- syntax of 'MonadKeyValue'.</span><span>
 </span><span id="line-105"></span><span class="hs-comment">--</span><span>
-</span><span id="line-106"></span><span class="hs-comment">-- says that the @KeyValueEffect k v@ can be interpreted into any</span><span>
-</span><span id="line-107"></span><span class="hs-comment">-- @MonadKeyValue k v@.</span><span>
-</span><span id="line-108"></span><span class="hs-comment">--</span><span>
-</span><span id="line-109"></span><span class="hs-comment">-- If you have to add extra constraints to the instances, you can use the more</span><span>
-</span><span id="line-110"></span><span class="hs-comment">-- flexible macros 'makeReification' and 'makeInterpretation'.</span><span>
-</span><span id="line-111"></span><span class="hs-comment">--</span><span>
+</span><span id="line-106"></span><span class="hs-comment">-- The &quot;interpretation&quot; instance</span><span>
+</span><span id="line-107"></span><span class="hs-comment">--</span><span>
+</span><span id="line-108"></span><span class="hs-comment">-- &gt; instance (MonadKeyValue k v m) =&gt; InterpretEffect m (MonadKeyValueEffect k v) where</span><span>
+</span><span id="line-109"></span><span class="hs-comment">--</span><span>
+</span><span id="line-110"></span><span class="hs-comment">-- says that the @MonadKeyValueEffect k v@ can be interpreted into any</span><span>
+</span><span id="line-111"></span><span class="hs-comment">-- @MonadKeyValue k v@.</span><span>
 </span><span id="line-112"></span><span class="hs-comment">--</span><span>
-</span><span id="line-113"></span><span class="hs-comment">-- If all effects in an 'AST' have a suitable 'InterpretEffect' instance,</span><span>
-</span><span id="line-114"></span><span class="hs-comment">-- you'll be able to interpret the complete 'AST' with functions like</span><span>
-</span><span id="line-115"></span><span class="hs-comment">-- 'interpretAST'. So, what we've accomplished up to now is just as in any</span><span>
-</span><span id="line-116"></span><span class="hs-comment">-- other effect system: we have a single monad 'AST' that is parametrised on</span><span>
-</span><span id="line-117"></span><span class="hs-comment">-- the effect(s) you want to use, and an &quot;interpetation&quot; function that turns</span><span>
-</span><span id="line-118"></span><span class="hs-comment">-- the &quot;staged&quot; computations in 'AST's into actual computations in your domain</span><span>
-</span><span id="line-119"></span><span class="hs-comment">-- of interest.</span><span>
-</span><span id="line-120"></span><span class="hs-comment">--</span><span>
-</span><span id="line-121"></span><span class="hs-comment">-- At the very least, 'makeEffect' and friends will need the following language</span><span>
-</span><span id="line-122"></span><span class="hs-comment">-- extensions:</span><span>
-</span><span id="line-123"></span><span class="hs-comment">--</span><span>
-</span><span id="line-124"></span><span class="hs-comment">-- &gt; {-# LANGUAGE ConstraintKinds #-}</span><span>
-</span><span id="line-125"></span><span class="hs-comment">-- &gt; {-# LANGUAGE FlexibleContexts #-}</span><span>
-</span><span id="line-126"></span><span class="hs-comment">-- &gt; {-# LANGUAGE FlexibleInstances #-}</span><span>
-</span><span id="line-127"></span><span class="hs-comment">-- &gt; {-# LANGUAGE KindSignatures #-}</span><span>
-</span><span id="line-128"></span><span class="hs-comment">-- &gt; {-# LANGUAGE MultiParamTypeClasses #-}</span><span>
-</span><span id="line-129"></span><span class="hs-comment">-- &gt; {-# LANGUAGE TemplateHaskell #-}</span><span>
-</span><span id="line-130"></span><span class="hs-comment">--</span><span>
-</span><span id="line-131"></span><span class="hs-comment">-- For effect types with parameters (like @k@ and @v@ in 'KeyValueEffect',</span><span>
-</span><span id="line-132"></span><span class="hs-comment">-- you'll also need</span><span>
-</span><span id="line-133"></span><span class="hs-comment">--</span><span>
-</span><span id="line-134"></span><span class="hs-comment">-- &gt; {-# LANGUAGE ScopedTypeVariables #-}</span><span>
-</span><span id="line-135"></span><span class="hs-comment">-- &gt; {-# LANGUAGE TypeApplications #-}</span><span>
-</span><span id="line-136"></span><span class="hs-comment">--</span><span>
-</span><span id="line-137"></span><span class="hs-comment">-- There are scenarios where you might also need 'UndecidableInstances' but</span><span>
-</span><span id="line-138"></span><span class="hs-comment">-- we'll not discuss these here.</span><span>
-</span><span id="line-139"></span><span>
-</span><span id="line-140"></span><span class="annot"><span class="hs-comment">-- * Defining a type of single-step modifications</span></span><span>
-</span><span id="line-141"></span><span>
-</span><span id="line-142"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-143"></span><span class="hs-comment">-- The module &quot;Logic.Ltl&quot; implements one way to turn the effect system into a</span><span>
-</span><span id="line-144"></span><span class="hs-comment">-- testing tool. Its idea is to change the interpretaion of an 'AST' by</span><span>
-</span><span id="line-145"></span><span class="hs-comment">-- applying single-step modifications the actions it contains. A formula in an</span><span>
-</span><span id="line-146"></span><span class="hs-comment">-- LTL-like language determines when to apply the single-step modifications.</span><span>
-</span><span id="line-147"></span><span class="hs-comment">--</span><span>
-</span><span id="line-148"></span><span class="hs-comment">-- So, we first need a type of single-step modifications. These have no</span><span>
-</span><span id="line-149"></span><span class="hs-comment">-- intrinsic meaning, but will only be explained by the 'InterpretLtl'</span><span>
-</span><span id="line-150"></span><span class="hs-comment">-- instance.</span><span>
-</span><span id="line-151"></span><span>
-</span><span id="line-152"></span><span class="hs-keyword">data</span><span> </span><span id="SingleStepMod"><span class="annot"><a href="Examples.Ltl.Simple.html#SingleStepMod"><span class="hs-identifier hs-var">SingleStepMod</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ConcatIfReplace"><span class="annot"><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span></span><span>
-</span><span id="line-153"></span><span>
-</span><span id="line-154"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-155"></span><span class="hs-comment">-- The evaluation of 'Ltl' formulas sometimes makes it necessary to try</span><span>
-</span><span id="line-156"></span><span class="hs-comment">-- applying two 'SingleStepMod's on the same step. The 'Semigroup' instance</span><span>
-</span><span id="line-157"></span><span class="hs-comment">-- describes how they should combine. (In our example, it's very simple,</span><span>
-</span><span id="line-158"></span><span class="hs-comment">-- because there is only one 'SingleStepMod', namely 'ConcatIfReplace'.)</span><span>
-</span><span id="line-159"></span><span>
-</span><span id="line-160"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679172225"><span id="local-6989586621679172229"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#SingleStepMod"><span class="hs-identifier hs-type">SingleStepMod</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-161"></span><span>  </span><span id="local-6989586621679172234"><span class="annot"><span class="annottext">SingleStepMod
-</span><a href="#local-6989586621679172234"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679172235"><span class="annot"><span class="annottext">&lt;&gt; :: SingleStepMod -&gt; SingleStepMod -&gt; SingleStepMod
+</span><span id="line-113"></span><span class="hs-comment">-- If you have to add extra constraints to the instances, you can use the more</span><span>
+</span><span id="line-114"></span><span class="hs-comment">-- flexible macros 'makeReification' and 'makeInterpretation'.</span><span>
+</span><span id="line-115"></span><span class="hs-comment">--</span><span>
+</span><span id="line-116"></span><span class="hs-comment">--</span><span>
+</span><span id="line-117"></span><span class="hs-comment">-- If all effects in an 'AST' have a suitable 'InterpretEffect' instance,</span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- you'll be able to interpret the complete 'AST' with functions like</span><span>
+</span><span id="line-119"></span><span class="hs-comment">-- 'interpretAST'. So, what we've accomplished up to now is just as in any</span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- other effect system: we have a single monad 'AST' that is parametrised on</span><span>
+</span><span id="line-121"></span><span class="hs-comment">-- the effect(s) you want to use, and an &quot;interpetation&quot; function that turns</span><span>
+</span><span id="line-122"></span><span class="hs-comment">-- the &quot;staged&quot; computations in 'AST's into actual computations in your domain</span><span>
+</span><span id="line-123"></span><span class="hs-comment">-- of interest.</span><span>
+</span><span id="line-124"></span><span class="hs-comment">--</span><span>
+</span><span id="line-125"></span><span class="hs-comment">-- At the very least, 'makeEffect' and friends will need the following language</span><span>
+</span><span id="line-126"></span><span class="hs-comment">-- extensions:</span><span>
+</span><span id="line-127"></span><span class="hs-comment">--</span><span>
+</span><span id="line-128"></span><span class="hs-comment">-- &gt; {-# LANGUAGE ConstraintKinds #-}</span><span>
+</span><span id="line-129"></span><span class="hs-comment">-- &gt; {-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-130"></span><span class="hs-comment">-- &gt; {-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-131"></span><span class="hs-comment">-- &gt; {-# LANGUAGE KindSignatures #-}</span><span>
+</span><span id="line-132"></span><span class="hs-comment">-- &gt; {-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-133"></span><span class="hs-comment">-- &gt; {-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><span id="line-134"></span><span class="hs-comment">--</span><span>
+</span><span id="line-135"></span><span class="hs-comment">-- For effect types with parameters (like @k@ and @v@ in 'MonadKeyValueEffect',</span><span>
+</span><span id="line-136"></span><span class="hs-comment">-- you'll also need</span><span>
+</span><span id="line-137"></span><span class="hs-comment">--</span><span>
+</span><span id="line-138"></span><span class="hs-comment">-- &gt; {-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-139"></span><span class="hs-comment">-- &gt; {-# LANGUAGE TypeApplications #-}</span><span>
+</span><span id="line-140"></span><span class="hs-comment">--</span><span>
+</span><span id="line-141"></span><span class="hs-comment">-- There are scenarios where you might also need 'UndecidableInstances' but</span><span>
+</span><span id="line-142"></span><span class="hs-comment">-- we'll not discuss these here.</span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span class="annot"><span class="hs-comment">-- * Defining a type of single-step modifications</span></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-147"></span><span class="hs-comment">-- The module &quot;Logic.Ltl&quot; implements one way to turn the effect system into a</span><span>
+</span><span id="line-148"></span><span class="hs-comment">-- testing tool. Its idea is to change the interpretaion of an 'AST' by</span><span>
+</span><span id="line-149"></span><span class="hs-comment">-- applying single-step modifications the actions it contains. A formula in an</span><span>
+</span><span id="line-150"></span><span class="hs-comment">-- LTL-like language determines when to apply the single-step modifications.</span><span>
+</span><span id="line-151"></span><span class="hs-comment">--</span><span>
+</span><span id="line-152"></span><span class="hs-comment">-- So, we first need a type of single-step modifications. These have no</span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- intrinsic meaning, but will only be explained by the 'InterpretLtl'</span><span>
+</span><span id="line-154"></span><span class="hs-comment">-- instance.</span><span>
+</span><span id="line-155"></span><span>
+</span><span id="line-156"></span><span class="hs-keyword">data</span><span> </span><span id="SingleStepMod"><span class="annot"><a href="Examples.Ltl.Simple.html#SingleStepMod"><span class="hs-identifier hs-var">SingleStepMod</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ConcatIfReplace"><span class="annot"><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span></span><span>
+</span><span id="line-157"></span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- The evaluation of 'Ltl' formulas sometimes makes it necessary to try</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- applying two 'SingleStepMod's on the same step. The 'Semigroup' instance</span><span>
+</span><span id="line-161"></span><span class="hs-comment">-- describes how they should combine. (In our example, it's very simple,</span><span>
+</span><span id="line-162"></span><span class="hs-comment">-- because there is only one 'SingleStepMod', namely 'ConcatIfReplace'.)</span><span>
+</span><span id="line-163"></span><span>
+</span><span id="line-164"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679180068"><span id="local-6989586621679180072"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#SingleStepMod"><span class="hs-identifier hs-type">SingleStepMod</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-165"></span><span>  </span><span id="local-6989586621679180077"><span class="annot"><span class="annottext">SingleStepMod
+</span><a href="#local-6989586621679180077"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679180078"><span class="annot"><span class="annottext">&lt;&gt; :: SingleStepMod -&gt; SingleStepMod -&gt; SingleStepMod
 </span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="annot"><span class="annottext">SingleStepMod
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SingleStepMod
-</span><a href="#local-6989586621679172234"><span class="hs-identifier hs-var">a</span></a></span><span>
-</span><span id="line-162"></span><span>
-</span><span id="line-163"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-164"></span><span class="hs-comment">-- The 'InterpretLtl' instance is the heart of this while operation, since it</span><span>
-</span><span id="line-165"></span><span class="hs-comment">-- describes how we to apply 'SingleStepMod's to 'KeyValueEffect's. We</span><span>
-</span><span id="line-166"></span><span class="hs-comment">-- have to write a function</span><span>
-</span><span id="line-167"></span><span class="hs-comment">--</span><span>
-</span><span id="line-168"></span><span class="hs-comment">-- &gt; interpretLtl :: KeyValueEffect k v dummy a -&gt; SingleStepMod -&gt; m (Maybe a)</span><span>
-</span><span id="line-169"></span><span class="hs-comment">--</span><span>
-</span><span id="line-170"></span><span class="hs-comment">-- which describes for each 'KeyValueEffect' if and how it is modified by each</span><span>
-</span><span id="line-171"></span><span class="hs-comment">-- modification. If the modification applies, it should return 'Just',</span><span>
-</span><span id="line-172"></span><span class="hs-comment">-- otherwise 'Nothing'. The @dummy@ type argument to 'KeyValueEffect' isn't</span><span>
-</span><span id="line-173"></span><span class="hs-comment">-- interesting to us here, it'll only be relevant for higer-order effects.</span><span>
-</span><span id="line-174"></span><span class="hs-comment">--</span><span>
-</span><span id="line-175"></span><span class="hs-comment">-- In our example, we make it so that the meaning of 'ConcatIfReplace' is: &quot;If</span><span>
-</span><span id="line-176"></span><span class="hs-comment">-- you see a @'StoreValue' key value@ and there's already some @oldValue@ for</span><span>
-</span><span id="line-177"></span><span class="hs-comment">-- that @key@ in the store, don't just store @value@, store @oldValue &lt;&gt;</span><span>
-</span><span id="line-178"></span><span class="hs-comment">-- newValue@.&quot;</span><span>
-</span><span id="line-179"></span><span class="hs-comment">--</span><span>
-</span><span id="line-180"></span><span class="hs-comment">-- Note that this meaning of 'ConcatIfReplace' depends on the state of the</span><span>
-</span><span id="line-181"></span><span class="hs-comment">-- store. Herein lies a strength of this framework: what we're doing is really</span><span>
-</span><span id="line-182"></span><span class="hs-comment">-- more general than generating a list of 'AST's and evaluating them in a</span><span>
-</span><span id="line-183"></span><span class="hs-comment">-- second step. The parameters and applicability of the modification we apply</span><span>
-</span><span id="line-184"></span><span class="hs-comment">-- at the @n@-th step may depend on information we know only after having run</span><span>
-</span><span id="line-185"></span><span class="hs-comment">-- (and modified) the first @n-1@ steps.</span><span>
-</span><span id="line-186"></span><span>
-</span><span id="line-187"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679171944"><span id="local-6989586621679171945"><span id="local-6989586621679171946"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679171944"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#MonadKeyValue"><span class="hs-identifier hs-type">MonadKeyValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171945"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171944"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171946"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Logic.Ltl.html#InterpretLtl"><span class="hs-identifier hs-type">InterpretLtl</span></a></span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#SingleStepMod"><span class="hs-identifier hs-type">SingleStepMod</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171946"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueEffect"><span class="hs-identifier hs-type">KeyValueEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171945"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171944"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-188"></span><span>  </span><span id="local-6989586621679172242"><span class="annot"><span class="annottext">interpretLtl :: forall (dummy :: * -&gt; *) a.
-KeyValueEffect k v dummy a -&gt; LtlInterp SingleStepMod m a
-</span><a href="#local-6989586621679172242"><span class="hs-identifier hs-var hs-var hs-var hs-var">interpretLtl</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.Simple.html#StoreValue"><span class="hs-identifier hs-type">StoreValue</span></a></span><span> </span><span id="local-6989586621679172252"><span class="annot"><span class="annottext">k
-</span><a href="#local-6989586621679172252"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span id="local-6989586621679172253"><span class="annot"><span class="annottext">v
-</span><a href="#local-6989586621679172253"><span class="hs-identifier hs-var">val</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(SingleStepMod -&gt; m (Maybe a)) -&gt; LtlInterp SingleStepMod m a
+</span><a href="#local-6989586621679180077"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-168"></span><span class="hs-comment">-- The 'InterpretLtl' instance is the heart of this while operation, since it</span><span>
+</span><span id="line-169"></span><span class="hs-comment">-- describes how we to apply 'SingleStepMod's to 'MonadKeyValueEffect's. We</span><span>
+</span><span id="line-170"></span><span class="hs-comment">-- have to write a function</span><span>
+</span><span id="line-171"></span><span class="hs-comment">--</span><span>
+</span><span id="line-172"></span><span class="hs-comment">-- &gt; interpretLtl :: MonadKeyValueEffect k v dummy a -&gt; SingleStepMod -&gt; m (Maybe a)</span><span>
+</span><span id="line-173"></span><span class="hs-comment">--</span><span>
+</span><span id="line-174"></span><span class="hs-comment">-- which describes for each 'MonadKeyValueEffect' if and how it is modified by each</span><span>
+</span><span id="line-175"></span><span class="hs-comment">-- modification. If the modification applies, it should return 'Just',</span><span>
+</span><span id="line-176"></span><span class="hs-comment">-- otherwise 'Nothing'. The @dummy@ type argument to 'MonadKeyValueEffect' isn't</span><span>
+</span><span id="line-177"></span><span class="hs-comment">-- interesting to us here, it'll only be relevant for higer-order effects.</span><span>
+</span><span id="line-178"></span><span class="hs-comment">--</span><span>
+</span><span id="line-179"></span><span class="hs-comment">-- In our example, we make it so that the meaning of 'ConcatIfReplace' is: &quot;If</span><span>
+</span><span id="line-180"></span><span class="hs-comment">-- you see a @'StoreValue' key value@ and there's already some @oldValue@ for</span><span>
+</span><span id="line-181"></span><span class="hs-comment">-- that @key@ in the store, don't just store @value@, store @oldValue &lt;&gt;</span><span>
+</span><span id="line-182"></span><span class="hs-comment">-- newValue@.&quot;</span><span>
+</span><span id="line-183"></span><span class="hs-comment">--</span><span>
+</span><span id="line-184"></span><span class="hs-comment">-- Note that this meaning of 'ConcatIfReplace' depends on the state of the</span><span>
+</span><span id="line-185"></span><span class="hs-comment">-- store. Herein lies a strength of this framework: what we're doing is really</span><span>
+</span><span id="line-186"></span><span class="hs-comment">-- more general than generating a list of 'AST's and evaluating them in a</span><span>
+</span><span id="line-187"></span><span class="hs-comment">-- second step. The parameters and applicability of the modification we apply</span><span>
+</span><span id="line-188"></span><span class="hs-comment">-- at the @n@-th step may depend on information we know only after having run</span><span>
+</span><span id="line-189"></span><span class="hs-comment">-- (and modified) the first @n-1@ steps.</span><span>
+</span><span id="line-190"></span><span>
+</span><span id="line-191"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679179788"><span id="local-6989586621679179789"><span id="local-6989586621679179790"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679179788"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#MonadKeyValue"><span class="hs-identifier hs-type">MonadKeyValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179789"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179788"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179790"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Logic.Ltl.html#InterpretLtl"><span class="hs-identifier hs-type">InterpretLtl</span></a></span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#SingleStepMod"><span class="hs-identifier hs-type">SingleStepMod</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179790"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.Simple.html#MonadKeyValueEffect"><span class="hs-identifier hs-type">MonadKeyValueEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179789"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179788"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-192"></span><span>  </span><span id="local-6989586621679180085"><span class="annot"><span class="annottext">interpretLtl :: forall (dummy :: * -&gt; *) a.
+MonadKeyValueEffect k v dummy a -&gt; LtlInterp SingleStepMod m a
+</span><a href="#local-6989586621679180085"><span class="hs-identifier hs-var hs-var hs-var hs-var">interpretLtl</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Ltl.Simple.html#StoreValue"><span class="hs-identifier hs-type">StoreValue</span></a></span><span> </span><span id="local-6989586621679180095"><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621679180095"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span id="local-6989586621679180096"><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679180096"><span class="hs-identifier hs-var">val</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(SingleStepMod -&gt; m (Maybe a)) -&gt; LtlInterp SingleStepMod m a
 forall mod (m :: * -&gt; *) a.
 (mod -&gt; m (Maybe a)) -&gt; LtlInterp mod m a
 </span><a href="Logic.Ltl.html#Apply"><span class="hs-identifier hs-var">Apply</span></a></span><span> </span><span class="annot"><span class="annottext">((SingleStepMod -&gt; m (Maybe a)) -&gt; LtlInterp SingleStepMod m a)
@@ -235,23 +239,23 @@ forall mod (m :: * -&gt; *) a.
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="annot"><span class="annottext">SingleStepMod
 </span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-189"></span><span>    </span><span class="hs-comment">-- the type application is needed here to get around the otherwise</span><span>
-</span><span id="line-190"></span><span>    </span><span class="hs-comment">-- ambiguous type @v@:</span><span>
-</span><span id="line-191"></span><span>    </span><span id="local-6989586621679172255"><span class="annot"><span class="annottext">Maybe v
-</span><a href="#local-6989586621679172255"><span class="hs-identifier hs-var">mv</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; m (Maybe v)
-</span><a href="Examples.Ltl.Simple.html#getValue"><span class="hs-identifier hs-var">getValue</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679171945"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679171944"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><span class="annottext">k
-</span><a href="#local-6989586621679172252"><span class="hs-identifier hs-var">key</span></a></span><span>
-</span><span id="line-192"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe v
-</span><a href="#local-6989586621679172255"><span class="hs-identifier hs-var">mv</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-193"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679172256"><span class="annot"><span class="annottext">v
-</span><a href="#local-6989586621679172256"><span class="hs-identifier hs-var">oldVal</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">k -&gt; v -&gt; m ()
+</span><span id="line-193"></span><span>    </span><span class="hs-comment">-- the type application is needed here to get around the otherwise</span><span>
+</span><span id="line-194"></span><span>    </span><span class="hs-comment">-- ambiguous type @v@:</span><span>
+</span><span id="line-195"></span><span>    </span><span id="local-6989586621679180098"><span class="annot"><span class="annottext">Maybe v
+</span><a href="#local-6989586621679180098"><span class="hs-identifier hs-var">mv</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; m (Maybe v)
+</span><a href="Examples.Ltl.Simple.html#getValue"><span class="hs-identifier hs-var">getValue</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679179789"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="#local-6989586621679179788"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="annot"><span class="annottext">k
+</span><a href="#local-6989586621679180095"><span class="hs-identifier hs-var">key</span></a></span><span>
+</span><span id="line-196"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe v
+</span><a href="#local-6989586621679180098"><span class="hs-identifier hs-var">mv</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-197"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679180099"><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679180099"><span class="hs-identifier hs-var">oldVal</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">k -&gt; v -&gt; m ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">k
-</span><a href="#local-6989586621679172252"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">v
-</span><a href="#local-6989586621679172256"><span class="hs-identifier hs-var">oldVal</span></a></span><span> </span><span class="annot"><span class="annottext">v -&gt; v -&gt; v
+</span><a href="#local-6989586621679180095"><span class="hs-identifier hs-var">key</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">v
+</span><a href="#local-6989586621679180099"><span class="hs-identifier hs-var">oldVal</span></a></span><span> </span><span class="annot"><span class="annottext">v -&gt; v -&gt; v
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">v
-</span><a href="#local-6989586621679172253"><span class="hs-identifier hs-var">val</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m () -&gt; m (Maybe a) -&gt; m (Maybe a)
+</span><a href="#local-6989586621679180096"><span class="hs-identifier hs-var">val</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m () -&gt; m (Maybe a) -&gt; m (Maybe a)
 forall a b. m a -&gt; m b -&gt; m b
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Maybe a -&gt; m (Maybe a)
@@ -260,417 +264,448 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Maybe a
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-194"></span><span>      </span><span class="annot"><span class="annottext">Maybe v
+</span><span id="line-198"></span><span>      </span><span class="annot"><span class="annottext">Maybe v
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe a -&gt; m (Maybe a)
 forall a. a -&gt; m a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Maybe a
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-195"></span><span>  </span><span class="annot"><a href="Logic.Ltl.html#interpretLtl"><span class="hs-identifier hs-var">interpretLtl</span></a></span><span> </span><span class="annot"><span class="annottext">KeyValueEffect k v dummy a
+</span><span id="line-199"></span><span>  </span><span class="annot"><a href="Logic.Ltl.html#interpretLtl"><span class="hs-identifier hs-var">interpretLtl</span></a></span><span> </span><span class="annot"><span class="annottext">MonadKeyValueEffect k v dummy a
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LtlInterp SingleStepMod m a
 forall mod (m :: * -&gt; *) a. LtlInterp mod m a
 </span><a href="Logic.Ltl.html#Ignore"><span class="hs-identifier hs-var">Ignore</span></a></span><span>
-</span><span id="line-196"></span><span>
-</span><span id="line-197"></span><span class="annot"><span class="hs-comment">-- * Interpreting modified 'AST's</span></span><span>
-</span><span id="line-198"></span><span>
-</span><span id="line-199"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-200"></span><span class="hs-comment">--</span><span>
-</span><span id="line-201"></span><span class="hs-comment">-- The module &quot;Logic.Ltl&quot; provides the wrapper type @'LtlAST' mod ops@, which</span><span>
-</span><span id="line-202"></span><span class="hs-comment">-- is an 'AST' in which you'll have access to the function</span><span>
-</span><span id="line-203"></span><span class="hs-comment">--</span><span>
-</span><span id="line-204"></span><span class="hs-comment">-- &gt; modifyLtl :: Ltl mod -&gt; LtlAST mod ops a -&gt; LtlAST mod ops a</span><span>
-</span><span id="line-205"></span><span class="hs-comment">--</span><span>
-</span><span id="line-206"></span><span class="hs-comment">-- This is what makes it possible to deploy composite 'Ltl' modifications: wrap</span><span>
-</span><span id="line-207"></span><span class="hs-comment">-- the part of the computation you want to modify in 'modifyLtl' with the 'Ltl'</span><span>
-</span><span id="line-208"></span><span class="hs-comment">-- formula of your choice.</span><span>
+</span><span id="line-200"></span><span>
+</span><span id="line-201"></span><span class="annot"><span class="hs-comment">-- * Interpreting modified 'AST's</span></span><span>
+</span><span id="line-202"></span><span>
+</span><span id="line-203"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-204"></span><span class="hs-comment">--</span><span>
+</span><span id="line-205"></span><span class="hs-comment">-- The module &quot;Logic.Ltl&quot; provides the wrapper type @'LtlAST' mod ops@, which</span><span>
+</span><span id="line-206"></span><span class="hs-comment">-- is an 'AST' in which you'll have access to the function</span><span>
+</span><span id="line-207"></span><span class="hs-comment">--</span><span>
+</span><span id="line-208"></span><span class="hs-comment">-- &gt; modifyLtl :: Ltl mod -&gt; LtlAST mod ops a -&gt; LtlAST mod ops a</span><span>
 </span><span id="line-209"></span><span class="hs-comment">--</span><span>
-</span><span id="line-210"></span><span class="hs-comment">-- The module also provides</span><span>
-</span><span id="line-211"></span><span class="hs-comment">--</span><span>
-</span><span id="line-212"></span><span class="hs-comment">-- &gt; interpretLtlAST :: forall mod m ops a. (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m ops) =&gt; LtlAST mod ops a -&gt; m a</span><span>
+</span><span id="line-210"></span><span class="hs-comment">-- This is what makes it possible to deploy composite 'Ltl' modifications: wrap</span><span>
+</span><span id="line-211"></span><span class="hs-comment">-- the part of the computation you want to modify in 'modifyLtl' with the 'Ltl'</span><span>
+</span><span id="line-212"></span><span class="hs-comment">-- formula of your choice.</span><span>
 </span><span id="line-213"></span><span class="hs-comment">--</span><span>
-</span><span id="line-214"></span><span class="hs-comment">-- which interprets the @'LtlAST' mod ops@ into any suitable monad @m@. Here,</span><span>
-</span><span id="line-215"></span><span class="hs-comment">-- &quot;suitable&quot; means:</span><span>
-</span><span id="line-216"></span><span class="hs-comment">--</span><span>
-</span><span id="line-217"></span><span class="hs-comment">-- - All of the effects in @ops@ have an 'InterpretLtl mod m' instance (this is</span><span>
-</span><span id="line-218"></span><span class="hs-comment">--   the 'InterpretEffectsLtl' constraint).</span><span>
-</span><span id="line-219"></span><span class="hs-comment">--</span><span>
-</span><span id="line-220"></span><span class="hs-comment">-- - @m@ is a 'MonadPlus'. This is necessary because there might be several</span><span>
-</span><span id="line-221"></span><span class="hs-comment">--   ways to satisfy an 'Ltl' formula. The whole point of using 'Ltl' do describe</span><span>
-</span><span id="line-222"></span><span class="hs-comment">--   modifications of a single trace is to try /all/ of the possible ways to</span><span>
-</span><span id="line-223"></span><span class="hs-comment">--   apply the formula.</span><span>
+</span><span id="line-214"></span><span class="hs-comment">-- The module also provides</span><span>
+</span><span id="line-215"></span><span class="hs-comment">--</span><span>
+</span><span id="line-216"></span><span class="hs-comment">-- &gt; interpretLtlAST :: forall mod m ops a. (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m tags ops) =&gt; LtlAST mod ops a -&gt; m a</span><span>
+</span><span id="line-217"></span><span class="hs-comment">--</span><span>
+</span><span id="line-218"></span><span class="hs-comment">-- which interprets the @'LtlAST' mod ops@ into any suitable monad @m@. Here,</span><span>
+</span><span id="line-219"></span><span class="hs-comment">-- &quot;suitable&quot; means:</span><span>
+</span><span id="line-220"></span><span class="hs-comment">--</span><span>
+</span><span id="line-221"></span><span class="hs-comment">-- - All of the effects in @ops@ have one of the following three instances:</span><span>
+</span><span id="line-222"></span><span class="hs-comment">--</span><span>
+</span><span id="line-223"></span><span class="hs-comment">--     - @InterpretLtl mod m@ (this is what we have here)</span><span>
 </span><span id="line-224"></span><span class="hs-comment">--</span><span>
-</span><span id="line-225"></span><span class="hs-comment">-- Using 'interpretLtlAST', we can write a convenience function that will</span><span>
-</span><span id="line-226"></span><span class="hs-comment">-- interpret an 'LtlAST' of 'KeyValueEffect's and return the final return value</span><span>
-</span><span id="line-227"></span><span class="hs-comment">-- and state of the store:</span><span>
-</span><span id="line-228"></span><span>
-</span><span id="line-229"></span><span id="local-6989586621679171955"><span id="local-6989586621679171956"><span id="local-6989586621679171957"><span class="annot"><a href="Examples.Ltl.Simple.html#interpretAndRun"><span class="hs-identifier hs-type">interpretAndRun</span></a></span><span> </span><span class="hs-glyph">::</span><span>
-</span><span id="line-230"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679171955"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679171956"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-231"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679171956"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171955"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-232"></span><span>  </span><span class="annot"><a href="Logic.Ltl.html#LtlAST"><span class="hs-identifier hs-type">LtlAST</span></a></span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#SingleStepMod"><span class="hs-identifier hs-type">SingleStepMod</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><a href="Examples.Ltl.Simple.html#KeyValueEffect"><span class="hs-identifier hs-type">KeyValueEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171956"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171955"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679171957"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-233"></span><span>  </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679171957"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679171956"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679171955"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
-</span><span id="line-234"></span><span id="interpretAndRun"><span class="annot"><span class="annottext">interpretAndRun :: forall v k a.
+</span><span id="line-225"></span><span class="hs-comment">--     - @InterpretLtlHigherOrder mod m@ (this is for higher order effect</span><span>
+</span><span id="line-226"></span><span class="hs-comment">--       types, we're not interested in that here)</span><span>
+</span><span id="line-227"></span><span class="hs-comment">--</span><span>
+</span><span id="line-228"></span><span class="hs-comment">--     - @InterpretEffectStateful (Const [Ltl mod]) m@ (this is a low-level</span><span>
+</span><span id="line-229"></span><span class="hs-comment">--       class used to implement the LTL framework itself, and we're /not at all/</span><span>
+</span><span id="line-230"></span><span class="hs-comment">--       interested in it here)</span><span>
+</span><span id="line-231"></span><span class="hs-comment">--</span><span>
+</span><span id="line-232"></span><span class="hs-comment">-- - @m@ is a 'MonadPlus'. This is necessary because there might be several</span><span>
+</span><span id="line-233"></span><span class="hs-comment">--   ways to satisfy an 'Ltl' formula. The whole point of using 'Ltl' do describe</span><span>
+</span><span id="line-234"></span><span class="hs-comment">--   modifications of a single trace is to try /all/ of the possible ways to</span><span>
+</span><span id="line-235"></span><span class="hs-comment">--   apply the formula.</span><span>
+</span><span id="line-236"></span><span class="hs-comment">--</span><span>
+</span><span id="line-237"></span><span class="hs-comment">-- Using 'interpretLtlAST', we can write a convenience function that will</span><span>
+</span><span id="line-238"></span><span class="hs-comment">-- interpret an 'LtlAST' of 'MonadKeyValueEffect's and return the final return value</span><span>
+</span><span id="line-239"></span><span class="hs-comment">-- and state of the store:</span><span>
+</span><span id="line-240"></span><span class="hs-comment">--</span><span>
+</span><span id="line-241"></span><span class="hs-comment">-- Note how we type-apply 'interpretLtlAST' to alist of &quot;tags&quot; of kind</span><span>
+</span><span id="line-242"></span><span class="hs-comment">-- 'LtlInstanceKind': These tags speficy, in order, which of the three</span><span>
+</span><span id="line-243"></span><span class="hs-comment">-- instances described above we expect the effects to have.</span><span>
+</span><span id="line-244"></span><span>
+</span><span id="line-245"></span><span id="local-6989586621679179799"><span id="local-6989586621679179800"><span id="local-6989586621679179801"><span class="annot"><a href="Examples.Ltl.Simple.html#interpretAndRun"><span class="hs-identifier hs-type">interpretAndRun</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-246"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679179799"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ord</span></span><span> </span><span class="annot"><a href="#local-6989586621679179800"><span class="hs-identifier hs-type">k</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-247"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679179800"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179799"><span class="hs-identifier hs-type">v</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-248"></span><span>  </span><span class="annot"><a href="Logic.Ltl.html#LtlAST"><span class="hs-identifier hs-type">LtlAST</span></a></span><span> </span><span class="annot"><a href="Examples.Ltl.Simple.html#SingleStepMod"><span class="hs-identifier hs-type">SingleStepMod</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><a href="Examples.Ltl.Simple.html#MonadKeyValueEffect"><span class="hs-identifier hs-type">MonadKeyValueEffect</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179800"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179799"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679179801"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-249"></span><span>  </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679179801"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="#local-6989586621679179800"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679179799"><span class="hs-identifier hs-type">v</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span></span></span></span><span>
+</span><span id="line-250"></span><span id="interpretAndRun"><span class="annot"><span class="annottext">interpretAndRun :: forall v k a.
 (Monoid v, Ord k) =&gt;
 Map k v
--&gt; LtlAST SingleStepMod '[KeyValueEffect k v] a -&gt; [(a, Map k v)]
-</span><a href="Examples.Ltl.Simple.html#interpretAndRun"><span class="hs-identifier hs-var hs-var">interpretAndRun</span></a></span></span><span> </span><span id="local-6989586621679172279"><span class="annot"><span class="annottext">Map k v
-</span><a href="#local-6989586621679172279"><span class="hs-identifier hs-var">initialState</span></a></span></span><span> </span><span id="local-6989586621679172280"><span class="annot"><span class="annottext">LtlAST SingleStepMod '[KeyValueEffect k v] a
-</span><a href="#local-6989586621679172280"><span class="hs-identifier hs-var">acts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map k v -&gt; KeyValueT k v [] a -&gt; [(a, Map k v)]
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect k v] a
+-&gt; [(a, Map k v)]
+</span><a href="Examples.Ltl.Simple.html#interpretAndRun"><span class="hs-identifier hs-var hs-var">interpretAndRun</span></a></span></span><span> </span><span id="local-6989586621679180122"><span class="annot"><span class="annottext">Map k v
+</span><a href="#local-6989586621679180122"><span class="hs-identifier hs-var">initialState</span></a></span></span><span> </span><span id="local-6989586621679180123"><span class="annot"><span class="annottext">LtlAST SingleStepMod '[MonadKeyValueEffect k v] a
+</span><a href="#local-6989586621679180123"><span class="hs-identifier hs-var">acts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map k v -&gt; KeyValueT k v [] a -&gt; [(a, Map k v)]
 forall k v (m :: * -&gt; *) a.
 Map k v -&gt; KeyValueT k v m a -&gt; m (a, Map k v)
 </span><a href="Examples.Ltl.Simple.html#runKeyValueT"><span class="hs-identifier hs-var">runKeyValueT</span></a></span><span> </span><span class="annot"><span class="annottext">Map k v
-</span><a href="#local-6989586621679172279"><span class="hs-identifier hs-var">initialState</span></a></span><span> </span><span class="annot"><span class="annottext">(KeyValueT k v [] a -&gt; [(a, Map k v)])
+</span><a href="#local-6989586621679180122"><span class="hs-identifier hs-var">initialState</span></a></span><span> </span><span class="annot"><span class="annottext">(KeyValueT k v [] a -&gt; [(a, Map k v)])
 -&gt; KeyValueT k v [] a -&gt; [(a, Map k v)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">forall (tags :: [LtlInstanceKind]) mod (m :: * -&gt; *)
        (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
 (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m tags ops) =&gt;
 LtlAST mod ops a -&gt; m a
-</span><a href="Logic.Ltl.html#interpretLtlAST"><span class="hs-identifier hs-var">interpretLtlAST</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><a href="Logic.Ltl.html#InterpretLtlTag"><span class="hs-identifier hs-type">InterpretLtlTag</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">LtlAST SingleStepMod '[KeyValueEffect k v] a
-</span><a href="#local-6989586621679172280"><span class="hs-identifier hs-var">acts</span></a></span><span>
-</span><span id="line-235"></span><span>
-</span><span id="line-236"></span><span class="annot"><span class="hs-comment">-- * A few example traces</span></span><span>
-</span><span id="line-237"></span><span>
-</span><span id="line-238"></span><span class="annot"><span class="hs-comment">-- ** 'somewhere' and 'everywhere'</span></span><span>
-</span><span id="line-239"></span><span>
-</span><span id="line-240"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-241"></span><span class="hs-comment">-- By for the most commonly used 'Ltl' formula is 'somewhere'. The 'LtlAST'</span><span>
-</span><span id="line-242"></span><span class="hs-comment">--</span><span>
-</span><span id="line-243"></span><span class="hs-comment">-- &gt; somewhere x (act1 &gt;&gt; act2 &gt;&gt; act3)</span><span>
-</span><span id="line-244"></span><span class="hs-comment">--</span><span>
-</span><span id="line-245"></span><span class="hs-comment">-- describes the three traces you get by applying @x@ to @act1@, @act2@, and</span><span>
-</span><span id="line-246"></span><span class="hs-comment">-- @act3@, while leaving the other actions unmodified. Only traces where @x@</span><span>
-</span><span id="line-247"></span><span class="hs-comment">-- was /successfully/ will be returned by 'interpretLTLAST', though. This means</span><span>
-</span><span id="line-248"></span><span class="hs-comment">-- that our first example will return an empty list, since 'ConcatIfReplace'</span><span>
-</span><span id="line-249"></span><span class="hs-comment">-- never applies (as we never 'storeValue' for a key that's already present).</span><span>
-</span><span id="line-250"></span><span class="hs-comment">--</span><span>
-</span><span id="line-251"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleSomewhere1</span><span>
-</span><span id="line-252"></span><span class="hs-comment">-- []</span><span>
+</span><a href="Logic.Ltl.html#interpretLtlAST"><span class="hs-identifier hs-var">interpretLtlAST</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><a href="Logic.Ltl.html#InterpretLtlTag"><span class="hs-identifier hs-type">InterpretLtlTag</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">LtlAST SingleStepMod '[MonadKeyValueEffect k v] a
+</span><a href="#local-6989586621679180123"><span class="hs-identifier hs-var">acts</span></a></span><span>
+</span><span id="line-251"></span><span>
+</span><span id="line-252"></span><span class="annot"><span class="hs-comment">-- * A few example traces</span></span><span>
 </span><span id="line-253"></span><span>
-</span><span id="line-254"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleSomewhere1"><span class="hs-identifier hs-type">exampleSomewhere1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-255"></span><span id="exampleSomewhere1"><span class="annot"><span class="annottext">exampleSomewhere1 :: [((), Map Int String)]
+</span><span id="line-254"></span><span class="annot"><span class="hs-comment">-- ** 'somewhere' and 'everywhere'</span></span><span>
+</span><span id="line-255"></span><span>
+</span><span id="line-256"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-257"></span><span class="hs-comment">-- By for the most commonly used 'Ltl' formula is 'somewhere'. The 'LtlAST'</span><span>
+</span><span id="line-258"></span><span class="hs-comment">--</span><span>
+</span><span id="line-259"></span><span class="hs-comment">-- &gt; somewhere x (act1 &gt;&gt; act2 &gt;&gt; act3)</span><span>
+</span><span id="line-260"></span><span class="hs-comment">--</span><span>
+</span><span id="line-261"></span><span class="hs-comment">-- describes the three traces you get by applying @x@ to @act1@, @act2@, and</span><span>
+</span><span id="line-262"></span><span class="hs-comment">-- @act3@, while leaving the other actions unmodified. Only traces where @x@</span><span>
+</span><span id="line-263"></span><span class="hs-comment">-- was /successfully/ will be returned by 'interpretLTLAST', though. This means</span><span>
+</span><span id="line-264"></span><span class="hs-comment">-- that our first example will return an empty list, since 'ConcatIfReplace'</span><span>
+</span><span id="line-265"></span><span class="hs-comment">-- never applies (as we never 'storeValue' for a key that's already present).</span><span>
+</span><span id="line-266"></span><span class="hs-comment">--</span><span>
+</span><span id="line-267"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleSomewhere1</span><span>
+</span><span id="line-268"></span><span class="hs-comment">-- []</span><span>
+</span><span id="line-269"></span><span>
+</span><span id="line-270"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleSomewhere1"><span class="hs-identifier hs-type">exampleSomewhere1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-271"></span><span id="exampleSomewhere1"><span class="annot"><span class="annottext">exampleSomewhere1 :: [((), Map Int String)]
 </span><a href="Examples.Ltl.Simple.html#exampleSomewhere1"><span class="hs-identifier hs-var hs-var">exampleSomewhere1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-256"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-272"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall v k a.
 (Monoid v, Ord k) =&gt;
 Map k v
--&gt; LtlAST SingleStepMod '[KeyValueEffect k v] a -&gt; [(a, Map k v)]
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect k v] a
+-&gt; [(a, Map k v)]
 </span><a href="Examples.Ltl.Simple.html#interpretAndRun"><span class="hs-identifier hs-var">interpretAndRun</span></a></span><span> </span><span class="annot"><span class="annottext">Map Int String
 forall a. Monoid a =&gt; a
-</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
  -&gt; [((), Map Int String)])
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-257"></span><span>    </span><span class="annot"><span class="annottext">Ltl SingleStepMod
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-273"></span><span>    </span><span class="annot"><span class="annottext">Ltl SingleStepMod
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall mod (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
 Ltl mod -&gt; LtlAST mod ops a -&gt; LtlAST mod ops a
 </span><a href="Logic.Ltl.html#modifyLtl"><span class="hs-identifier hs-var">modifyLtl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SingleStepMod -&gt; Ltl SingleStepMod
 forall a. a -&gt; Ltl a
 </span><a href="Logic.Ltl.html#somewhere"><span class="hs-identifier hs-var">somewhere</span></a></span><span> </span><span class="annot"><span class="annottext">SingleStepMod
-</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
- -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ())
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+ -&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ())
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-258"></span><span>      </span><span class="hs-keyword">do</span><span>
-</span><span id="line-259"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-274"></span><span>      </span><span class="hs-keyword">do</span><span>
+</span><span id="line-275"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Hello &quot;</span></span><span>
-</span><span id="line-260"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-276"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;my &quot;</span></span><span>
-</span><span id="line-261"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-277"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">3</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;friend&quot;</span></span><span>
-</span><span id="line-262"></span><span>
-</span><span id="line-263"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-264"></span><span class="hs-comment">-- In the next example, we'll expect two results, because there are two</span><span>
-</span><span id="line-265"></span><span class="hs-comment">-- positions in which 'ConcatIfReplace' applies, namely the second and third</span><span>
-</span><span id="line-266"></span><span class="hs-comment">-- 'storeValue'. Let's explain the two results:</span><span>
-</span><span id="line-267"></span><span class="hs-comment">--</span><span>
-</span><span id="line-268"></span><span class="hs-comment">-- - If we apply 'ConcatIfReplace' to the second 'storeValue', the store will</span><span>
-</span><span id="line-269"></span><span class="hs-comment">--   hold @\&quot;Hello\&quot;@ for key @1@, so we'll store @\&quot;Hello my\&quot;@. However, this is</span><span>
-</span><span id="line-270"></span><span class="hs-comment">--   invisible in the result, because the third 'storeValue' will overwrite this</span><span>
-</span><span id="line-271"></span><span class="hs-comment">--   with &quot;friend&quot;.</span><span>
-</span><span id="line-272"></span><span class="hs-comment">--</span><span>
-</span><span id="line-273"></span><span class="hs-comment">-- - If we apply 'ConcatIfReplace' to the third 'storeValue', the store will hold</span><span>
-</span><span id="line-274"></span><span class="hs-comment">--   @\&quot;my\&quot;@ at key @1@, so we'll store @\&quot;my friend\&quot;@. Since there are no more</span><span>
-</span><span id="line-275"></span><span class="hs-comment">--   'storeValue' operations after that, that's also what we see in the result.</span><span>
-</span><span id="line-276"></span><span class="hs-comment">--</span><span>
-</span><span id="line-277"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleSomewhere2</span><span>
-</span><span id="line-278"></span><span class="hs-comment">-- [((),fromList [(1,&quot;friend&quot;)]),((),fromList [(1,&quot;my friend&quot;)])]</span><span>
-</span><span id="line-279"></span><span>
-</span><span id="line-280"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleSomewhere2"><span class="hs-identifier hs-type">exampleSomewhere2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-281"></span><span id="exampleSomewhere2"><span class="annot"><span class="annottext">exampleSomewhere2 :: [((), Map Int String)]
+</span><span id="line-278"></span><span>
+</span><span id="line-279"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-280"></span><span class="hs-comment">-- In the next example, we'll expect two results, because there are two</span><span>
+</span><span id="line-281"></span><span class="hs-comment">-- positions in which 'ConcatIfReplace' applies, namely the second and third</span><span>
+</span><span id="line-282"></span><span class="hs-comment">-- 'storeValue'. Let's explain the two results:</span><span>
+</span><span id="line-283"></span><span class="hs-comment">--</span><span>
+</span><span id="line-284"></span><span class="hs-comment">-- - If we apply 'ConcatIfReplace' to the second 'storeValue', the store will</span><span>
+</span><span id="line-285"></span><span class="hs-comment">--   hold @\&quot;Hello\&quot;@ for key @1@, so we'll store @\&quot;Hello my\&quot;@. However, this is</span><span>
+</span><span id="line-286"></span><span class="hs-comment">--   invisible in the result, because the third 'storeValue' will overwrite this</span><span>
+</span><span id="line-287"></span><span class="hs-comment">--   with &quot;friend&quot;.</span><span>
+</span><span id="line-288"></span><span class="hs-comment">--</span><span>
+</span><span id="line-289"></span><span class="hs-comment">-- - If we apply 'ConcatIfReplace' to the third 'storeValue', the store will hold</span><span>
+</span><span id="line-290"></span><span class="hs-comment">--   @\&quot;my\&quot;@ at key @1@, so we'll store @\&quot;my friend\&quot;@. Since there are no more</span><span>
+</span><span id="line-291"></span><span class="hs-comment">--   'storeValue' operations after that, that's also what we see in the result.</span><span>
+</span><span id="line-292"></span><span class="hs-comment">--</span><span>
+</span><span id="line-293"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleSomewhere2</span><span>
+</span><span id="line-294"></span><span class="hs-comment">-- [((),fromList [(1,&quot;friend&quot;)]),((),fromList [(1,&quot;my friend&quot;)])]</span><span>
+</span><span id="line-295"></span><span>
+</span><span id="line-296"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleSomewhere2"><span class="hs-identifier hs-type">exampleSomewhere2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-297"></span><span id="exampleSomewhere2"><span class="annot"><span class="annottext">exampleSomewhere2 :: [((), Map Int String)]
 </span><a href="Examples.Ltl.Simple.html#exampleSomewhere2"><span class="hs-identifier hs-var hs-var">exampleSomewhere2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-282"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-298"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall v k a.
 (Monoid v, Ord k) =&gt;
 Map k v
--&gt; LtlAST SingleStepMod '[KeyValueEffect k v] a -&gt; [(a, Map k v)]
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect k v] a
+-&gt; [(a, Map k v)]
 </span><a href="Examples.Ltl.Simple.html#interpretAndRun"><span class="hs-identifier hs-var">interpretAndRun</span></a></span><span> </span><span class="annot"><span class="annottext">Map Int String
 forall a. Monoid a =&gt; a
-</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
  -&gt; [((), Map Int String)])
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-283"></span><span>    </span><span class="annot"><span class="annottext">Ltl SingleStepMod
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-299"></span><span>    </span><span class="annot"><span class="annottext">Ltl SingleStepMod
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall mod (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
 Ltl mod -&gt; LtlAST mod ops a -&gt; LtlAST mod ops a
 </span><a href="Logic.Ltl.html#modifyLtl"><span class="hs-identifier hs-var">modifyLtl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SingleStepMod -&gt; Ltl SingleStepMod
 forall a. a -&gt; Ltl a
 </span><a href="Logic.Ltl.html#somewhere"><span class="hs-identifier hs-var">somewhere</span></a></span><span> </span><span class="annot"><span class="annottext">SingleStepMod
-</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
- -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ())
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+ -&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ())
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-284"></span><span>      </span><span class="hs-keyword">do</span><span>
-</span><span id="line-285"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-300"></span><span>      </span><span class="hs-keyword">do</span><span>
+</span><span id="line-301"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Hello &quot;</span></span><span>
-</span><span id="line-286"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-302"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;my &quot;</span></span><span>
-</span><span id="line-287"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-303"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;friend&quot;</span></span><span>
-</span><span id="line-288"></span><span>
-</span><span id="line-289"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-290"></span><span class="hs-comment">-- Another very commonly used 'Ltl' formula is 'everywhere'. It applies the</span><span>
-</span><span id="line-291"></span><span class="hs-comment">-- given single-step modification to every action in the 'AST'.</span><span>
-</span><span id="line-292"></span><span class="hs-comment">--</span><span>
-</span><span id="line-293"></span><span class="hs-comment">-- This means that our next example will again return the empty list, since</span><span>
-</span><span id="line-294"></span><span class="hs-comment">-- 'ConcatIfReplace' isn't applicable on the first 'storeValue'.</span><span>
-</span><span id="line-295"></span><span class="hs-comment">--</span><span>
-</span><span id="line-296"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleEverywhere1</span><span>
-</span><span id="line-297"></span><span class="hs-comment">-- []</span><span>
-</span><span id="line-298"></span><span>
-</span><span id="line-299"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleEverywhere1"><span class="hs-identifier hs-type">exampleEverywhere1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-300"></span><span id="exampleEverywhere1"><span class="annot"><span class="annottext">exampleEverywhere1 :: [((), Map Int String)]
+</span><span id="line-304"></span><span>
+</span><span id="line-305"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-306"></span><span class="hs-comment">-- Another very commonly used 'Ltl' formula is 'everywhere'. It applies the</span><span>
+</span><span id="line-307"></span><span class="hs-comment">-- given single-step modification to every action in the 'AST'.</span><span>
+</span><span id="line-308"></span><span class="hs-comment">--</span><span>
+</span><span id="line-309"></span><span class="hs-comment">-- This means that our next example will again return the empty list, since</span><span>
+</span><span id="line-310"></span><span class="hs-comment">-- 'ConcatIfReplace' isn't applicable on the first 'storeValue'.</span><span>
+</span><span id="line-311"></span><span class="hs-comment">--</span><span>
+</span><span id="line-312"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleEverywhere1</span><span>
+</span><span id="line-313"></span><span class="hs-comment">-- []</span><span>
+</span><span id="line-314"></span><span>
+</span><span id="line-315"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleEverywhere1"><span class="hs-identifier hs-type">exampleEverywhere1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-316"></span><span id="exampleEverywhere1"><span class="annot"><span class="annottext">exampleEverywhere1 :: [((), Map Int String)]
 </span><a href="Examples.Ltl.Simple.html#exampleEverywhere1"><span class="hs-identifier hs-var hs-var">exampleEverywhere1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-301"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-317"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall v k a.
 (Monoid v, Ord k) =&gt;
 Map k v
--&gt; LtlAST SingleStepMod '[KeyValueEffect k v] a -&gt; [(a, Map k v)]
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect k v] a
+-&gt; [(a, Map k v)]
 </span><a href="Examples.Ltl.Simple.html#interpretAndRun"><span class="hs-identifier hs-var">interpretAndRun</span></a></span><span> </span><span class="annot"><span class="annottext">Map Int String
 forall a. Monoid a =&gt; a
-</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
  -&gt; [((), Map Int String)])
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-302"></span><span>    </span><span class="annot"><span class="annottext">Ltl SingleStepMod
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-318"></span><span>    </span><span class="annot"><span class="annottext">Ltl SingleStepMod
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall mod (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
 Ltl mod -&gt; LtlAST mod ops a -&gt; LtlAST mod ops a
 </span><a href="Logic.Ltl.html#modifyLtl"><span class="hs-identifier hs-var">modifyLtl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SingleStepMod -&gt; Ltl SingleStepMod
 forall a. a -&gt; Ltl a
 </span><a href="Logic.Ltl.html#everywhere"><span class="hs-identifier hs-var">everywhere</span></a></span><span> </span><span class="annot"><span class="annottext">SingleStepMod
-</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
- -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ())
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+ -&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ())
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-303"></span><span>      </span><span class="hs-keyword">do</span><span>
-</span><span id="line-304"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-319"></span><span>      </span><span class="hs-keyword">do</span><span>
+</span><span id="line-320"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Hello &quot;</span></span><span>
-</span><span id="line-305"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-321"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;my &quot;</span></span><span>
-</span><span id="line-306"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-322"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;friend&quot;</span></span><span>
-</span><span id="line-307"></span><span>
-</span><span id="line-308"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-309"></span><span class="hs-comment">-- Note that, unlike 'somewhere', 'everywhere' doesn't imply that any</span><span>
-</span><span id="line-310"></span><span class="hs-comment">-- modification is applied. Applying 'everywhere' to an empty trace is</span><span>
-</span><span id="line-311"></span><span class="hs-comment">-- successful, and returns one result:</span><span>
-</span><span id="line-312"></span><span class="hs-comment">--</span><span>
-</span><span id="line-313"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleEverywhere2</span><span>
-</span><span id="line-314"></span><span class="hs-comment">-- [((),fromList [])]</span><span>
-</span><span id="line-315"></span><span>
-</span><span id="line-316"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleEverywhere2"><span class="hs-identifier hs-type">exampleEverywhere2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-317"></span><span id="exampleEverywhere2"><span class="annot"><span class="annottext">exampleEverywhere2 :: [((), Map Int String)]
+</span><span id="line-323"></span><span>
+</span><span id="line-324"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-325"></span><span class="hs-comment">-- Note that, unlike 'somewhere', 'everywhere' doesn't imply that any</span><span>
+</span><span id="line-326"></span><span class="hs-comment">-- modification is applied. Applying 'everywhere' to an empty trace is</span><span>
+</span><span id="line-327"></span><span class="hs-comment">-- successful, and returns one result:</span><span>
+</span><span id="line-328"></span><span class="hs-comment">--</span><span>
+</span><span id="line-329"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleEverywhere2</span><span>
+</span><span id="line-330"></span><span class="hs-comment">-- [((),fromList [])]</span><span>
+</span><span id="line-331"></span><span>
+</span><span id="line-332"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleEverywhere2"><span class="hs-identifier hs-type">exampleEverywhere2</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-333"></span><span id="exampleEverywhere2"><span class="annot"><span class="annottext">exampleEverywhere2 :: [((), Map Int String)]
 </span><a href="Examples.Ltl.Simple.html#exampleEverywhere2"><span class="hs-identifier hs-var hs-var">exampleEverywhere2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-318"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-334"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall v k a.
 (Monoid v, Ord k) =&gt;
 Map k v
--&gt; LtlAST SingleStepMod '[KeyValueEffect k v] a -&gt; [(a, Map k v)]
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect k v] a
+-&gt; [(a, Map k v)]
 </span><a href="Examples.Ltl.Simple.html#interpretAndRun"><span class="hs-identifier hs-var">interpretAndRun</span></a></span><span> </span><span class="annot"><span class="annottext">Map Int String
 forall a. Monoid a =&gt; a
-</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
  -&gt; [((), Map Int String)])
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-319"></span><span>    </span><span class="annot"><span class="annottext">Ltl SingleStepMod
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-335"></span><span>    </span><span class="annot"><span class="annottext">Ltl SingleStepMod
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall mod (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
 Ltl mod -&gt; LtlAST mod ops a -&gt; LtlAST mod ops a
 </span><a href="Logic.Ltl.html#modifyLtl"><span class="hs-identifier hs-var">modifyLtl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SingleStepMod -&gt; Ltl SingleStepMod
 forall a. a -&gt; Ltl a
 </span><a href="Logic.Ltl.html#everywhere"><span class="hs-identifier hs-var">everywhere</span></a></span><span> </span><span class="annot"><span class="annottext">SingleStepMod
-</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
- -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ())
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+ -&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ())
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-320"></span><span>      </span><span class="annot"><span class="annottext">() -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-336"></span><span>      </span><span class="annot"><span class="annottext">() -&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall a.
 a
 -&gt; Fixpoint
      Freer
      (JoinedEffects
-        '[LtlEffect SingleStepMod, KeyValueEffect Int String])
+        '[LtlEffect SingleStepMod, MonadKeyValueEffect Int String])
      a
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-321"></span><span>
-</span><span id="line-322"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-323"></span><span class="hs-comment">-- We can make the modification applicable, and return the expected @&quot;Hello my</span><span>
-</span><span id="line-324"></span><span class="hs-comment">-- friend&quot;@  at key @1@, if we only apply 'everywhere' after the first action:</span><span>
-</span><span id="line-325"></span><span class="hs-comment">--</span><span>
-</span><span id="line-326"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleEverywhere3</span><span>
-</span><span id="line-327"></span><span class="hs-comment">-- [((),fromList [(1,&quot;Hello my friend&quot;)])]</span><span>
-</span><span id="line-328"></span><span>
-</span><span id="line-329"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleEverywhere3"><span class="hs-identifier hs-type">exampleEverywhere3</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-330"></span><span id="exampleEverywhere3"><span class="annot"><span class="annottext">exampleEverywhere3 :: [((), Map Int String)]
+</span><span id="line-337"></span><span>
+</span><span id="line-338"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-339"></span><span class="hs-comment">-- We can make the modification applicable, and return the expected @&quot;Hello my</span><span>
+</span><span id="line-340"></span><span class="hs-comment">-- friend&quot;@  at key @1@, if we only apply 'everywhere' after the first action:</span><span>
+</span><span id="line-341"></span><span class="hs-comment">--</span><span>
+</span><span id="line-342"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleEverywhere3</span><span>
+</span><span id="line-343"></span><span class="hs-comment">-- [((),fromList [(1,&quot;Hello my friend&quot;)])]</span><span>
+</span><span id="line-344"></span><span>
+</span><span id="line-345"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleEverywhere3"><span class="hs-identifier hs-type">exampleEverywhere3</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-346"></span><span id="exampleEverywhere3"><span class="annot"><span class="annottext">exampleEverywhere3 :: [((), Map Int String)]
 </span><a href="Examples.Ltl.Simple.html#exampleEverywhere3"><span class="hs-identifier hs-var hs-var">exampleEverywhere3</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-331"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-347"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall v k a.
 (Monoid v, Ord k) =&gt;
 Map k v
--&gt; LtlAST SingleStepMod '[KeyValueEffect k v] a -&gt; [(a, Map k v)]
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect k v] a
+-&gt; [(a, Map k v)]
 </span><a href="Examples.Ltl.Simple.html#interpretAndRun"><span class="hs-identifier hs-var">interpretAndRun</span></a></span><span> </span><span class="annot"><span class="annottext">Map Int String
 forall a. Monoid a =&gt; a
-</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
  -&gt; [((), Map Int String)])
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-332"></span><span>    </span><span class="hs-keyword">do</span><span>
-</span><span id="line-333"></span><span>      </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-348"></span><span>    </span><span class="hs-keyword">do</span><span>
+</span><span id="line-349"></span><span>      </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Hello &quot;</span></span><span>
-</span><span id="line-334"></span><span>      </span><span class="annot"><span class="annottext">Ltl SingleStepMod
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-350"></span><span>      </span><span class="annot"><span class="annottext">Ltl SingleStepMod
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall mod (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
 Ltl mod -&gt; LtlAST mod ops a -&gt; LtlAST mod ops a
 </span><a href="Logic.Ltl.html#modifyLtl"><span class="hs-identifier hs-var">modifyLtl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SingleStepMod -&gt; Ltl SingleStepMod
 forall a. a -&gt; Ltl a
 </span><a href="Logic.Ltl.html#everywhere"><span class="hs-identifier hs-var">everywhere</span></a></span><span> </span><span class="annot"><span class="annottext">SingleStepMod
-</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
- -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ())
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+ -&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ())
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-335"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-351"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;my &quot;</span></span><span>
-</span><span id="line-336"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-352"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;friend&quot;</span></span><span>
-</span><span id="line-337"></span><span>
-</span><span id="line-338"></span><span class="annot"><span class="hs-comment">-- ** Custom 'Ltl' formulas</span></span><span>
-</span><span id="line-339"></span><span>
-</span><span id="line-340"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-341"></span><span class="hs-comment">-- Another way to make the 'everywhere' example work is by using a custom 'Ltl'</span><span>
-</span><span id="line-342"></span><span class="hs-comment">-- formula: instead of applying 'ConcatIfReplace' on every action, let's only</span><span>
-</span><span id="line-343"></span><span class="hs-comment">-- start applying at the second action using @'LtlNext' . 'everywhere'@.</span><span>
-</span><span id="line-344"></span><span class="hs-comment">--</span><span>
-</span><span id="line-345"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleCustom1</span><span>
-</span><span id="line-346"></span><span class="hs-comment">-- [((),fromList [(1,&quot;Hello my friend&quot;)])]</span><span>
-</span><span id="line-347"></span><span>
-</span><span id="line-348"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleCustom1"><span class="hs-identifier hs-type">exampleCustom1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-349"></span><span id="exampleCustom1"><span class="annot"><span class="annottext">exampleCustom1 :: [((), Map Int String)]
+</span><span id="line-353"></span><span>
+</span><span id="line-354"></span><span class="annot"><span class="hs-comment">-- ** Custom 'Ltl' formulas</span></span><span>
+</span><span id="line-355"></span><span>
+</span><span id="line-356"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-357"></span><span class="hs-comment">-- Another way to make the 'everywhere' example work is by using a custom 'Ltl'</span><span>
+</span><span id="line-358"></span><span class="hs-comment">-- formula: instead of applying 'ConcatIfReplace' on every action, let's only</span><span>
+</span><span id="line-359"></span><span class="hs-comment">-- start applying at the second action using @'LtlNext' . 'everywhere'@.</span><span>
+</span><span id="line-360"></span><span class="hs-comment">--</span><span>
+</span><span id="line-361"></span><span class="hs-comment">-- &gt;&gt;&gt; exampleCustom1</span><span>
+</span><span id="line-362"></span><span class="hs-comment">-- [((),fromList [(1,&quot;Hello my friend&quot;)])]</span><span>
+</span><span id="line-363"></span><span>
+</span><span id="line-364"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleCustom1"><span class="hs-identifier hs-type">exampleCustom1</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-365"></span><span id="exampleCustom1"><span class="annot"><span class="annottext">exampleCustom1 :: [((), Map Int String)]
 </span><a href="Examples.Ltl.Simple.html#exampleCustom1"><span class="hs-identifier hs-var hs-var">exampleCustom1</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-350"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-366"></span><span>  </span><span class="annot"><span class="annottext">Map Int String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall v k a.
 (Monoid v, Ord k) =&gt;
 Map k v
--&gt; LtlAST SingleStepMod '[KeyValueEffect k v] a -&gt; [(a, Map k v)]
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect k v] a
+-&gt; [(a, Map k v)]
 </span><a href="Examples.Ltl.Simple.html#interpretAndRun"><span class="hs-identifier hs-var">interpretAndRun</span></a></span><span> </span><span class="annot"><span class="annottext">Map Int String
 forall a. Monoid a =&gt; a
-</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
  -&gt; [((), Map Int String)])
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 -&gt; [((), Map Int String)]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-351"></span><span>    </span><span class="annot"><span class="annottext">Ltl SingleStepMod
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-367"></span><span>    </span><span class="annot"><span class="annottext">Ltl SingleStepMod
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall mod (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
 Ltl mod -&gt; LtlAST mod ops a -&gt; LtlAST mod ops a
 </span><a href="Logic.Ltl.html#modifyLtl"><span class="hs-identifier hs-var">modifyLtl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Ltl SingleStepMod -&gt; Ltl SingleStepMod
@@ -686,109 +721,114 @@ forall a. a -&gt; Ltl a
 -&gt; SingleStepMod -&gt; Ltl SingleStepMod
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">SingleStepMod
-</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Int String] ()
- -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ())
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+ -&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ())
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-352"></span><span>      </span><span class="hs-keyword">do</span><span>
-</span><span id="line-353"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-368"></span><span>      </span><span class="hs-keyword">do</span><span>
+</span><span id="line-369"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Hello &quot;</span></span><span>
-</span><span id="line-354"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-370"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;my &quot;</span></span><span>
-</span><span id="line-355"></span><span>        </span><span class="annot"><span class="annottext">Int
--&gt; String -&gt; LtlAST SingleStepMod '[KeyValueEffect Int String] ()
+</span><span id="line-371"></span><span>        </span><span class="annot"><span class="annottext">Int
+-&gt; String
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Int String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;friend&quot;</span></span><span>
-</span><span id="line-356"></span><span>
-</span><span id="line-357"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-358"></span><span class="hs-comment">-- There are many possibilities for custom formulas. Please refer to the</span><span>
-</span><span id="line-359"></span><span class="hs-comment">-- documentation</span><span>
-</span><span id="line-360"></span><span class="hs-comment">-- of 'Ltl'.</span><span>
-</span><span id="line-361"></span><span>
-</span><span id="line-362"></span><span class="annot"><span class="hs-comment">-- * \&quot;Finding\&quot; a bug</span></span><span>
-</span><span id="line-363"></span><span>
-</span><span id="line-364"></span><span class="hs-comment">-- $doc</span><span>
-</span><span id="line-365"></span><span class="hs-comment">-- Remember the mistake we introduced in the implementation of 'MonadKeyValue'</span><span>
-</span><span id="line-366"></span><span class="hs-comment">-- for 'KeyValueT'? We &quot;accidentally&quot; implemented 'deleteValue' as a no-op.</span><span>
-</span><span id="line-367"></span><span class="hs-comment">-- This means that, by using 'deleteValue' before re-storing a value, we</span><span>
-</span><span id="line-368"></span><span class="hs-comment">-- /should/ make 'ConcatIfReplace' inapplicable. The following simple test</span><span>
-</span><span id="line-369"></span><span class="hs-comment">-- finds this bug.</span><span>
-</span><span id="line-370"></span><span class="hs-comment">--</span><span>
-</span><span id="line-371"></span><span class="hs-comment">-- &gt;&gt;&gt; Tasty.defaultMain exampleBug</span><span>
-</span><span id="line-372"></span><span class="hs-comment">-- deleteValue before re-store: FAIL</span><span>
-</span><span id="line-373"></span><span class="hs-comment">--   ./Examples/Ltl/Simple.hs:353:</span><span>
-</span><span id="line-374"></span><span class="hs-comment">--   expected: []</span><span>
-</span><span id="line-375"></span><span class="hs-comment">--    but got: [((),fromList [(1,&quot;ab&quot;)])]</span><span>
-</span><span id="line-376"></span><span class="hs-comment">-- 1 out of 1 tests failed (0.00s)</span><span>
-</span><span id="line-377"></span><span class="hs-comment">-- *** Exception: ExitFailure 1</span><span>
-</span><span id="line-378"></span><span>
-</span><span id="line-379"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleBug"><span class="hs-identifier hs-type">exampleBug</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Tasty.TestTree</span></span><span>
-</span><span id="line-380"></span><span id="exampleBug"><span class="annot"><span class="annottext">exampleBug :: TestTree
+</span><span id="line-372"></span><span>
+</span><span id="line-373"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-374"></span><span class="hs-comment">-- There are many possibilities for custom formulas. Please refer to the</span><span>
+</span><span id="line-375"></span><span class="hs-comment">-- documentation</span><span>
+</span><span id="line-376"></span><span class="hs-comment">-- of 'Ltl'.</span><span>
+</span><span id="line-377"></span><span>
+</span><span id="line-378"></span><span class="annot"><span class="hs-comment">-- * \&quot;Finding\&quot; a bug</span></span><span>
+</span><span id="line-379"></span><span>
+</span><span id="line-380"></span><span class="hs-comment">-- $doc</span><span>
+</span><span id="line-381"></span><span class="hs-comment">-- Remember the mistake we introduced in the implementation of 'MonadKeyValue'</span><span>
+</span><span id="line-382"></span><span class="hs-comment">-- for 'KeyValueT'? We &quot;accidentally&quot; implemented 'deleteValue' as a no-op.</span><span>
+</span><span id="line-383"></span><span class="hs-comment">-- This means that, by using 'deleteValue' before re-storing a value, we</span><span>
+</span><span id="line-384"></span><span class="hs-comment">-- /should/ make 'ConcatIfReplace' inapplicable. The following simple test</span><span>
+</span><span id="line-385"></span><span class="hs-comment">-- finds this bug.</span><span>
+</span><span id="line-386"></span><span class="hs-comment">--</span><span>
+</span><span id="line-387"></span><span class="hs-comment">-- &gt;&gt;&gt; Tasty.defaultMain exampleBug</span><span>
+</span><span id="line-388"></span><span class="hs-comment">-- deleteValue before re-store: FAIL</span><span>
+</span><span id="line-389"></span><span class="hs-comment">--   ./Examples/Ltl/Simple.hs:353:</span><span>
+</span><span id="line-390"></span><span class="hs-comment">--   expected: []</span><span>
+</span><span id="line-391"></span><span class="hs-comment">--    but got: [((),fromList [(1,&quot;ab&quot;)])]</span><span>
+</span><span id="line-392"></span><span class="hs-comment">-- 1 out of 1 tests failed (0.00s)</span><span>
+</span><span id="line-393"></span><span class="hs-comment">-- *** Exception: ExitFailure 1</span><span>
+</span><span id="line-394"></span><span>
+</span><span id="line-395"></span><span class="annot"><a href="Examples.Ltl.Simple.html#exampleBug"><span class="hs-identifier hs-type">exampleBug</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Tasty.TestTree</span></span><span>
+</span><span id="line-396"></span><span id="exampleBug"><span class="annot"><span class="annottext">exampleBug :: TestTree
 </span><a href="Examples.Ltl.Simple.html#exampleBug"><span class="hs-identifier hs-var hs-var">exampleBug</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-381"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; Assertion -&gt; TestTree
+</span><span id="line-397"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; Assertion -&gt; TestTree
 </span><span class="hs-identifier hs-var">Tasty.testCase</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;deleteValue before re-store&quot;</span></span><span> </span><span class="annot"><span class="annottext">(Assertion -&gt; TestTree) -&gt; Assertion -&gt; TestTree
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-382"></span><span>    </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-383"></span><span>      </span><span class="annot"><span class="annottext">[((), Map Integer String)]
+</span><span id="line-398"></span><span>    </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-399"></span><span>      </span><span class="annot"><span class="annottext">[((), Map Integer String)]
 -&gt; [((), Map Integer String)] -&gt; Assertion
 forall a. (Eq a, Show a, HasCallStack) =&gt; a -&gt; a -&gt; Assertion
 </span><span class="hs-operator hs-var">@=?</span></span><span> </span><span class="annot"><span class="annottext">Map Integer String
--&gt; LtlAST SingleStepMod '[KeyValueEffect Integer String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Integer String] ()
 -&gt; [((), Map Integer String)]
 forall v k a.
 (Monoid v, Ord k) =&gt;
 Map k v
--&gt; LtlAST SingleStepMod '[KeyValueEffect k v] a -&gt; [(a, Map k v)]
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect k v] a
+-&gt; [(a, Map k v)]
 </span><a href="Examples.Ltl.Simple.html#interpretAndRun"><span class="hs-identifier hs-var">interpretAndRun</span></a></span><span>
-</span><span id="line-384"></span><span>        </span><span class="annot"><span class="annottext">Map Integer String
+</span><span id="line-400"></span><span>        </span><span class="annot"><span class="annottext">Map Integer String
 forall a. Monoid a =&gt; a
 </span><span class="hs-identifier hs-var">mempty</span></span><span>
-</span><span id="line-385"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Ltl SingleStepMod
--&gt; LtlAST SingleStepMod '[KeyValueEffect Integer String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Integer String] ()
+</span><span id="line-401"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Ltl SingleStepMod
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Integer String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Integer String] ()
 forall mod (ops :: [(* -&gt; *) -&gt; * -&gt; *]) a.
 Ltl mod -&gt; LtlAST mod ops a -&gt; LtlAST mod ops a
 </span><a href="Logic.Ltl.html#modifyLtl"><span class="hs-identifier hs-var">modifyLtl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SingleStepMod -&gt; Ltl SingleStepMod
 forall a. a -&gt; Ltl a
 </span><a href="Logic.Ltl.html#somewhere"><span class="hs-identifier hs-var">somewhere</span></a></span><span> </span><span class="annot"><span class="annottext">SingleStepMod
-</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[KeyValueEffect Integer String] ()
- -&gt; LtlAST SingleStepMod '[KeyValueEffect Integer String] ())
--&gt; LtlAST SingleStepMod '[KeyValueEffect Integer String] ()
--&gt; LtlAST SingleStepMod '[KeyValueEffect Integer String] ()
+</span><a href="Examples.Ltl.Simple.html#ConcatIfReplace"><span class="hs-identifier hs-var">ConcatIfReplace</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(LtlAST SingleStepMod '[MonadKeyValueEffect Integer String] ()
+ -&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Integer String] ())
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Integer String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Integer String] ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
-</span><span id="line-386"></span><span>            </span><span class="hs-keyword">do</span><span>
-</span><span id="line-387"></span><span>              </span><span class="annot"><span class="annottext">Integer
+</span><span id="line-402"></span><span>            </span><span class="hs-keyword">do</span><span>
+</span><span id="line-403"></span><span>              </span><span class="annot"><span class="annottext">Integer
 -&gt; String
--&gt; LtlAST SingleStepMod '[KeyValueEffect Integer String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Integer String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;a&quot;</span></span><span>
-</span><span id="line-388"></span><span>              </span><span class="annot"><span class="annottext">Integer -&gt; LtlAST SingleStepMod '[KeyValueEffect Integer String] ()
+</span><span id="line-404"></span><span>              </span><span class="annot"><span class="annottext">Integer
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Integer String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#deleteValue"><span class="hs-identifier hs-var">deleteValue</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
 </span><span class="hs-number">1</span></span><span>
-</span><span id="line-389"></span><span>              </span><span class="annot"><span class="annottext">Integer
+</span><span id="line-405"></span><span>              </span><span class="annot"><span class="annottext">Integer
 -&gt; String
--&gt; LtlAST SingleStepMod '[KeyValueEffect Integer String] ()
+-&gt; LtlAST SingleStepMod '[MonadKeyValueEffect Integer String] ()
 forall k v (m :: * -&gt; *). MonadKeyValue k v m =&gt; k -&gt; v -&gt; m ()
 </span><a href="Examples.Ltl.Simple.html#storeValue"><span class="hs-identifier hs-var">storeValue</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
 </span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;b&quot;</span></span><span>
-</span><span id="line-390"></span><span>        </span><span class="hs-special">)</span><span>
-</span><span id="line-391"></span></pre></body></html>
+</span><span id="line-406"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-407"></span></pre></body></html>
