@@ -22,19 +22,17 @@ module Examples.Ltl.Simple where
 import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Effect
 import Effect.Fail
 import Effect.Fail.Passthrough ()
 import Effect.TH
-import Language.Haskell.TH (varT)
 import Logic.Ltl
 
 -- * Example domain and implementation
 
 -- $doc
--- It's easiest to use this library if you have a type class of monads that
--- captures the behaviour you want to test. For the sake of this tutorial, let's
--- take a key-value-store.
+-- To use this library, you need a type class of monads that captures
+-- the behaviour you want to test. For the sake of this tutorial,
+-- let's take a key-value-store.
 
 class (MonadFail m) => MonadKeyValue k v m where
   storeValue :: k -> v -> m ()
@@ -42,8 +40,8 @@ class (MonadFail m) => MonadKeyValue k v m where
   deleteValue :: k -> m ()
 
 -- $doc
--- From this type class, we can write a few test cases,
--- corresponding to a serie of actions over key-value-store.
+-- From this type class, we can write a few test cases, corresponding
+-- to a serie of actions over key-value-store.
 
 swapTrace :: (MonadKeyValue String Integer m) => m (Integer, Integer)
 swapTrace = do
@@ -67,9 +65,10 @@ deleteTrace = do
   return a
 
 -- $doc
--- What we'll test is an implementation of 'MonadKeyValue'. We'll implement it
--- very simply, but note that the implementation of 'deleteValue' is wrong: we
--- never delete anything from the store. We'll "find" this mistake later on.
+-- What we'll test is an implementation of 'MonadKeyValue'. We'll
+-- implement it very simply, but note that the implementation of
+-- 'deleteValue' is wrong: we never delete anything from the
+-- store. We'll "find" this mistake later on.
 
 type KeyValueT k v = StateT (Map k v)
 
@@ -84,106 +83,44 @@ instance (Ord k, MonadFail m) => MonadKeyValue k v (KeyValueT k v m) where
 -- * Using the effect system
 
 -- $doc
--- This library based on a custom effect system. The central type is @'AST' ops
--- a@. It describes abstract syntax trees of monadic computations which use
--- operations from the list @ops@ of /effect types/, and return an @a@. Such
--- 'AST's will be /interpreted/ in various ways to obtain interesting test
--- cases.
---
--- So, we'll have to write an effect type for the key-value store. The
--- constructors of that effect type will correspond to the methods of the
--- class 'MonadKeyValue'. We can think of them as abstract representations that
--- stand for the methods.
---
--- The kind of effect types is
---
--- > Effect = (Type -> Type) -> Type -> Type
---
--- The @(Type -> Type)@ parameter doesn't interest us here; it is the "nesting"
--- monad used for higher order effects. The second parameter is the return type
--- of the method.
---
--- There's a macro that will write such an effect type for us, and give it the
--- name @MonadKeyValueEffect@:
+-- This library based on a custom effect system. There's a macro that
+-- will write such an effect type for us, and give it the name
+-- @MonadKeyValueEffect@:
 
 defineEffectType ''MonadKeyValue
 
 -- $doc
--- Now, we have to make the rest of the machinery aware that we want to use the
--- effect type we just defined as the abtract representation for
--- @MonadKeyValue@:
+-- Now, we have to make the rest of the machinery aware that we want
+-- to use the effect type we just defined as the abtract
+-- representation for @MonadKeyValue@:
 
 makeEffect ''MonadKeyValue ''MonadKeyValueEffect
-
--- $doc
--- If the constructor names of 'MonadKeyValueEffect' are the method names of
--- 'MonadKeyValue' (starting with an upper case letter) and the types match,
--- the Template Haskell macro 'makeEffect' will generate two instance
--- definitions:
---
--- The "reification" instance
---
--- > instance (EffectInject (MonadKeyValueEffect k v) ops) => MonadKeyValue k v (AST ops) where
---
--- says that, if @MonadKeyValueEffect k v@ is an element of the list of effects
--- @ops@, then an 'AST' that uses the effect list @ops@ is an instance of
--- @MonadKeyValue k v@. This will allow us to write 'AST's using the familiar
--- syntax of 'MonadKeyValue'.
---
--- The "interpretation" instance
---
--- > instance (MonadKeyValue k v m) => InterpretEffect m (MonadKeyValueEffect k v) where
---
--- says that the @MonadKeyValueEffect k v@ can be interpreted into any
--- @MonadKeyValue k v@.
---
--- If you have to add extra constraints to the instances, you can use the more
--- flexible macros 'makeReification' and 'makeInterpretation'.
---
---
--- If all effects in an 'AST' have a suitable 'InterpretEffect' instance,
--- you'll be able to interpret the complete 'AST' with functions like
--- 'interpretAST'. So, what we've accomplished up to now is just as in any
--- other effect system: we have a single monad 'AST' that is parametrised on
--- the effect(s) you want to use, and an "interpetation" function that turns
--- the "staged" computations in 'AST's into actual computations in your domain
--- of interest.
---
--- At the very least, 'makeEffect' and friends will need the following language
--- extensions:
---
--- > {-# LANGUAGE ConstraintKinds #-}
--- > {-# LANGUAGE FlexibleContexts #-}
--- > {-# LANGUAGE FlexibleInstances #-}
--- > {-# LANGUAGE KindSignatures #-}
--- > {-# LANGUAGE MultiParamTypeClasses #-}
--- > {-# LANGUAGE TemplateHaskell #-}
---
--- For effect types with parameters (like @k@ and @v@ in 'MonadKeyValueEffect',
--- you'll also need
---
--- > {-# LANGUAGE ScopedTypeVariables #-}
--- > {-# LANGUAGE TypeApplications #-}
---
--- There are scenarios where you might also need 'UndecidableInstances' but
--- we'll not discuss these here.
 
 -- * Defining a type of single-step modifications
 
 -- $doc
--- The module "Logic.Ltl" implements one way to turn the effect system into a
--- testing tool. Its idea is to change the interpretaion of an 'AST' by
--- applying single-step modifications to some actions it contains. A formula in an
--- LTL-like language determines when to apply the single-step modifications.
+-- The testing method provided by this library consists in applying
+-- single steps modifications to abstract representations of the
+-- domain (the effects). These modifications can then be deployed at
+-- various steps in traces of actions.
 --
--- So, we first need a type of single-step modifications. These have no
--- intrinsic meaning, but will only be explained by the 'InterpretLtl'
--- instance.
+-- So, we first need a type of single-step modifications. These have
+-- no intrinsic meaning, as a semantics will be given through means of
+-- interpreting them over the domain actions. However, their name and
+-- type can give hints as to how they will be interpreted later on.
+--
+-- Here we propose a type of modification which will both render
+-- possible to ignore stores when overriding an existing value, and to
+-- rename a key in various operations.
 
 data KeyValueMod k = KeyValueMod
   { toIgnoreOverride :: Bool,
     transformation :: k -> k
   }
+
+-- $doc
+-- We propose two smart constructors, one for creating a modification
+-- that transforms names solely, the other that only ignore overrides.
 
 renameKey :: (k -> k) -> KeyValueMod k
 renameKey f = KeyValueMod {toIgnoreOverride = False, transformation = f}
@@ -191,14 +128,22 @@ renameKey f = KeyValueMod {toIgnoreOverride = False, transformation = f}
 noStoreOverride :: KeyValueMod k
 noStoreOverride = KeyValueMod {toIgnoreOverride = True, transformation = id}
 
--- $doc
--- The evaluation of 'Ltl' formulas sometimes makes it necessary to try
--- applying two 'SingleStepMod's on the same step. The 'Semigroup' instance
--- describes how they should combine. (In our example, it's very simple,
--- because there is only one 'SingleStepMod', namely 'ConcatIfReplace'.)
+-- * Using Logic.Ltl to deploy single step in time
 
--- TODO write something about commutativity
--- copy warning for LtlAnd
+-- $doc
+-- The module "Logic.Ltl" implements one way to turn the effect system
+-- into a testing tool by deploying single step modification in
+-- time. A formula in an LTL-like language determines when to apply
+-- the single-step modifications.
+--
+-- The evaluation of 'Ltl' formulas sometimes makes it necessary to
+-- try applying two 'SingleStepMod's on the same step. The 'Semigroup'
+-- instance describes how they should combine. Note that this
+-- combination will not necessarily be commutative.
+--
+-- In our example, this instance is straighforward. If one of the two
+-- requires to ignore override, then the result will as well. In
+-- addition, modifications over key will be functionally composed.
 
 instance Semigroup (KeyValueMod k) where
   mod1 <> mod2 =
@@ -208,30 +153,18 @@ instance Semigroup (KeyValueMod k) where
       }
 
 -- $doc
--- The 'InterpretLtl' instance is the heart of this while operation, since it
--- describes how we to apply 'SingleStepMod's to 'MonadKeyValueEffect's. We
--- have to write a function
+-- The 'InterpretLtl' instance is the heart of this whole operation,
+-- since it describes how we to apply our single steps modifications
+-- to our effects.  Thanks to our @defineEffectType macro, we have
+-- access to abstract representation of actions, which are their
+-- capitalized versions on which we can case split.  This function
+-- will return @Nothing whenever the modification fails (does not
+-- apply).
 --
--- > interpretLtl :: MonadKeyValueEffect k v dummy a -> SingleStepMod -> m (Maybe a)
---
--- which describes for each 'MonadKeyValueEffect' if and how it is modified by each
--- modification. If the modification applies, it should return 'Just',
--- otherwise 'Nothing'. The @dummy@ type argument to 'MonadKeyValueEffect' isn't
--- interesting to us here, it'll only be relevant for higer-order effects.
---
--- In our example, we make it so that the meaning of 'ConcatIfReplace' is: "If
--- you see a @'StoreValue' key value@ and there's already some @oldValue@ for
--- that @key@ in the store, don't just store @value@, store @oldValue <>
--- newValue@."
---
--- Note that this meaning of 'ConcatIfReplace' depends on the state of the
--- store. Herein lies a strength of this framework: what we're doing is really
--- more general than generating a list of 'AST's and evaluating them in a
--- second step. The parameters and applicability of the modification we apply
--- at the @n@-th step may depend on information we know only after having run
--- (and modified) the first @n-1@ steps.
+-- In our case, we apply the transformation whenever required, and
+-- replace stores with noOp when required.
 
-instance (MonadKeyValue k v m) => InterpretLtl (KeyValueMod k) m (KeyValueEffect k v) where
+instance (MonadKeyValue k v m) => InterpretLtl (KeyValueMod k) m (MonadKeyValueEffect k v) where
   interpretLtl (StoreValue key nVal) = Apply $ \modif -> do
     val <- getValue @k @v key
     case (val, toIgnoreOverride modif) of
@@ -293,10 +226,11 @@ instance (MonadKeyValue k v m) => InterpretLtl (KeyValueMod k) m (KeyValueEffect
 
 interpretAndRun ::
   (Ord k, InterpretLtl (KeyValueMod k) (KeyValueT k v []) (MonadKeyValueEffect k v)) =>
-  Map k v ->
-  LtlAST (KeyValueMod k) '[MonadKeyValueEffect k v, FailEffect] a ->
+  Ltl (KeyValueMod k) ->
+  LtlAST (KeyValueMod k) '[MonadKeyValueEffect k v, MonadFailEffect] a ->
   [(a, Map k v)]
-interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST @'[InterpretLtlTag, InterpretEffectStatefulTag] acts
+interpretAndRun formula =
+  runKeyValueT mempty . interpretLtlAST @'[InterpretLtlTag, InterpretEffectStatefulTag] . modifyLtl formula
 
 -- * A few example traces
 
@@ -318,8 +252,7 @@ appendNew = renameKey (++ "new")
 
 exampleSomewhereSwap :: [((Integer, Integer), Map String Integer)]
 exampleSomewhereSwap =
-  interpretAndRun mempty $
-    modifyLtl (somewhere noStoreOverride) swapTrace
+  interpretAndRun (somewhere noStoreOverride) swapTrace
 
 -- $doc
 -- In the next example, we'll expect two results, because there are two
@@ -340,8 +273,7 @@ exampleSomewhereSwap =
 
 exampleSomewhereDelete :: [(Integer, Map String Integer)]
 exampleSomewhereDelete =
-  interpretAndRun mempty $
-    modifyLtl (somewhere noStoreOverride) deleteTrace
+  interpretAndRun (somewhere noStoreOverride) deleteTrace
 
 -- $doc
 -- Another very commonly used 'Ltl' formula is 'everywhere'. It applies the
@@ -355,7 +287,7 @@ exampleSomewhereDelete =
 
 exampleEverywhereCorrect :: [(Integer, Integer)]
 exampleEverywhereCorrect =
-  fst <$> interpretAndRun mempty (modifyLtl (everywhere noStoreOverride) swapTrace)
+  fst <$> interpretAndRun (everywhere noStoreOverride) swapTrace
 
 -- $doc
 --
@@ -364,7 +296,7 @@ exampleEverywhereCorrect =
 
 exampleEverywhereBug :: [Integer]
 exampleEverywhereBug =
-  fst <$> interpretAndRun mempty (modifyLtl (everywhere noStoreOverride) deleteTrace)
+  fst <$> interpretAndRun (everywhere noStoreOverride) deleteTrace
 
 -- $doc
 -- Note that, unlike 'somewhere', 'everywhere' doesn't imply that any
@@ -376,9 +308,7 @@ exampleEverywhereBug =
 
 exampleEverywhereEmpty :: [((), Map String Integer)]
 exampleEverywhereEmpty =
-  interpretAndRun mempty $
-    modifyLtl (everywhere appendNew) $
-      return ()
+  interpretAndRun (everywhere appendNew) (return ())
 
 -- ** 'there'
 
@@ -392,14 +322,14 @@ exampleEverywhereEmpty =
 
 exampleThereEmpty :: [Integer]
 exampleThereEmpty =
-  fst <$> interpretAndRun mempty (modifyLtl (there 4 appendNew) deleteTrace)
+  fst <$> interpretAndRun (there 4 appendNew) deleteTrace
 
 -- >>> exampleThereBug
 -- [1]
 
 exampleThereBug :: [Integer]
 exampleThereBug =
-  fst <$> interpretAndRun mempty (modifyLtl (there 3 noStoreOverride) deleteTrace)
+  fst <$> interpretAndRun (there 3 noStoreOverride) deleteTrace
 
 -- ** Custom 'Ltl' formulas
 
