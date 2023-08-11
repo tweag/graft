@@ -224,12 +224,12 @@ instance (MonadKeyValue k v m) => InterpretLtl (KeyValueMod k) m (MonadKeyValueE
 -- 'LtlInstanceKind': These tags speficy, in order, which of the three
 -- instances described above we expect the effects to have.
 
-interpretAndRun ::
+modifyInterpretAndRun ::
   (Ord k, InterpretLtl (KeyValueMod k) (KeyValueT k v []) (MonadKeyValueEffect k v)) =>
   Ltl (KeyValueMod k) ->
   LtlAST (KeyValueMod k) '[MonadKeyValueEffect k v, MonadFailEffect] a ->
   [(a, Map k v)]
-interpretAndRun formula =
+modifyInterpretAndRun formula =
   runKeyValueT mempty . interpretLtlAST @'[InterpretLtlTag, InterpretEffectStatefulTag] . modifyLtl formula
 
 -- * A few example traces
@@ -237,66 +237,58 @@ interpretAndRun formula =
 -- ** 'somewhere' and 'everywhere'
 
 -- $doc
--- By for the most commonly used 'Ltl' formula is 'somewhere'. The 'LtlAST'
--- describes the three traces you get by applying @x@ to @act1@, @act2@, and
--- @act3@, while leaving the other actions unmodified. Only traces where @x@
--- was /successfully/ applied will be returned by 'interpretLTLAST', though. This means
--- that our first example will return an empty list, since 'ConcatIfReplace'
--- never applies (as we never 'storeValue' for a key that's already present).
+-- By far the most commonly used 'Ltl' formula is 'somewhere'. The
+-- 'LtlAST' describes the three traces you get by applying @x@ to
+-- @act1@, @act2@, and @act3@, while leaving the other actions
+-- unmodified. Only traces where @x@ was /successfully/ applied will
+-- be returned by 'interpretLTLAST'.
+--
+-- Considering the following example, we expect to have 2 traces (one
+-- for each of the overrides) where both "a" and "b" share the same
+-- value.
 --
 -- >>> exampleSomewhereSwap
--- [((1,1),fromList [("a",1),("anew",2),("b",1)]),((2,2),fromList [("a",2),("b",2),("bnew",1)])]
-
-appendNew :: KeyValueMod String
-appendNew = renameKey (++ "new")
+-- [((1,1),fromList [("a",1),("b",1)]),((2,2),fromList [("a",2),("b",2)])]
 
 exampleSomewhereSwap :: [((Integer, Integer), Map String Integer)]
-exampleSomewhereSwap =
-  interpretAndRun (somewhere noStoreOverride) swapTrace
+exampleSomewhereSwap = modifyInterpretAndRun (somewhere noStoreOverride) swapTrace
 
 -- $doc
--- In the next example, we'll expect two results, because there are two
--- positions in which 'ConcatIfReplace' applies, namely the second and third
--- 'storeValue'. Let's explain the two results:
---
--- - If we apply 'ConcatIfReplace' to the second 'storeValue', the store will
---   hold @\"Hello\"@ for key @1@, so we'll store @\"Hello my\"@. However, this is
---   invisible in the result, because the third 'storeValue' will overwrite this
---   with "friend".
---
--- - If we apply 'ConcatIfReplace' to the third 'storeValue', the store will hold
---   @\"my\"@ at key @1@, so we'll store @\"my friend\"@. Since there are no more
---   'storeValue' operations after that, that's also what we see in the result.
+-- In the next example, we expect the modification never to apply as
+-- there should be no override. However, it applies because our
+-- implementation of @deleteKey does not actually delete anything. We
+-- have discovered our first bug!
 --
 -- >>> exampleSomewhereDelete
--- [(2,fromList [("a",2),("anew",1),("b",2)]),(2,fromList [("a",2),("bnew",2)]),(2,fromList [("a",2),("b",2)]),(1,fromList [("a",1),("anew",2),("b",2)])]
+-- [(1,fromList [("a",1),("b",2)])]
 
 exampleSomewhereDelete :: [(Integer, Map String Integer)]
 exampleSomewhereDelete =
-  interpretAndRun (somewhere noStoreOverride) deleteTrace
+  modifyInterpretAndRun (somewhere noStoreOverride) deleteTrace
 
 -- $doc
--- Another very commonly used 'Ltl' formula is 'everywhere'. It applies the
--- given single-step modification to every action in the 'AST'.
+-- Another very commonly used 'Ltl' formula is 'everywhere'. It must
+-- apply the given single-step modification to every action in the
+-- 'AST'. If it is not applicable somewhere, then there will be no
+-- output trace. This is the case when assuming all the stores in
+-- @swapTrace are all overrides.
 --
--- This means that our next example will again return the empty list, since
--- 'ConcatIfReplace' isn't applicable on the first 'storeValue'.
---
--- >>> exampleEverywhereCorrect
--- [(1,2)]
+-- >>> exampleEverywhereSwap
+-- []
 
-exampleEverywhereCorrect :: [(Integer, Integer)]
-exampleEverywhereCorrect =
-  fst <$> interpretAndRun (everywhere noStoreOverride) swapTrace
+exampleEverywhereSwap :: [(Integer, Integer)]
+exampleEverywhereSwap =
+  fst <$> modifyInterpretAndRun (everywhere noStoreOverride) swapTrace
 
 -- $doc
+-- Here is an example where the modification successfully applies everywhere.
 --
--- >>> exampleEverywhereBug
--- [1]
+-- >>> exampleEverywhereDelete
+-- [(2,fromList [("anew",2),("bnew",2)])]
 
-exampleEverywhereBug :: [Integer]
-exampleEverywhereBug =
-  fst <$> interpretAndRun (everywhere noStoreOverride) deleteTrace
+exampleEverywhereDelete :: [(Integer, Map String Integer)]
+exampleEverywhereDelete =
+  modifyInterpretAndRun (everywhere $ renameKey (++ "new")) deleteTrace
 
 -- $doc
 -- Note that, unlike 'somewhere', 'everywhere' doesn't imply that any
@@ -308,32 +300,37 @@ exampleEverywhereBug =
 
 exampleEverywhereEmpty :: [((), Map String Integer)]
 exampleEverywhereEmpty =
-  interpretAndRun (everywhere appendNew) (return ())
+  modifyInterpretAndRun (everywhere noStoreOverride) (return ())
 
 -- ** 'there'
 
 -- $doc
--- We can make the modification applicable, and return the expected @"Hello my
--- friend"@ at key @1@, if we only apply 'everywhere' after the first action:
--- This requires a custom formula using @'LtlNext' which starts on next step.
+-- In addition to @somewhere and @everywhere, it is also possible to
+-- require the application of a modification at a specific position in
+-- a trace using @there.
 --
 -- >>> exampleThereEmpty
--- []
+-- [(1,fromList [("a",1),("anew",2),("b",2)])]
 
-exampleThereEmpty :: [Integer]
+exampleThereEmpty :: [(Integer, Map String Integer)]
 exampleThereEmpty =
-  fst <$> interpretAndRun (there 4 appendNew) deleteTrace
-
--- >>> exampleThereBug
--- [1]
-
-exampleThereBug :: [Integer]
-exampleThereBug =
-  fst <$> interpretAndRun (there 3 noStoreOverride) deleteTrace
+  modifyInterpretAndRun (there 3 $ renameKey (++ "new")) deleteTrace
 
 -- ** Custom 'Ltl' formulas
 
 -- $doc
--- There are many possibilities for custom formulas. Please refer to the
--- documentation
--- of 'Ltl'.
+-- Finally, it is possible to create formulas by hand using the Ltl
+-- constructors. In this example, we add "new" to the key of the two
+-- first instructions of @deleteTrace
+--
+-- >>> exampleCustom
+-- [(2,fromList [("a",2),("anew",1),("bnew",2)])]
+
+exampleCustom :: [(Integer, Map String Integer)]
+exampleCustom =
+  modifyInterpretAndRun
+    ( LtlAnd
+        (LtlAtom $ renameKey (++ "new"))
+        (LtlNext $ LtlAtom $ renameKey (++ "new"))
+    )
+    deleteTrace
