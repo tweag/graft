@@ -12,11 +12,7 @@
 module Effect.State where
 
 import Control.Monad.State
-import Data.Kind
 import Effect.TH
 
-data StateEffect s (m :: Type -> Type) a where
-  Put :: s -> StateEffect s m ()
-  Get :: StateEffect s m s
-
-makeEffect ''MonadState ''StateEffect
+defineEffectType ''MonadState
+makeEffect ''MonadState ''MonadStateEffect

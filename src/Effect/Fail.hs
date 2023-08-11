@@ -7,13 +7,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Effect.Fail where
 
-import Effect
 import Effect.TH
 
-data FailEffect :: Effect where
-  Fail :: String -> FailEffect m a
+defineEffectType ''MonadFail
 
-makeEffect ''MonadFail ''FailEffect
+makeEffect ''MonadFail ''MonadFailEffect
