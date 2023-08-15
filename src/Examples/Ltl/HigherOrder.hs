@@ -25,7 +25,6 @@ import Effect.Error
 import Effect.Error.Passthrough ()
 import Effect.TH
 import Examples.Ltl.Simple
-import Language.Haskell.TH (varT)
 import Logic.Ltl
 
 -- $doc
@@ -84,35 +83,8 @@ instance
       Just b ->
         when (truthy @v b) $ acts >> while @k @v test acts
 
--- TODO after merging PR#2: replace the following up to (***) with
---
--- > defineEffectType ''MonadMiniLang
--- > makeEffect ''MonadMiniLang ''MonadMiniLangEffect
---
--- and reference the explanation in the first tutorial
---
-
-data MiniLangEffect k v :: Effect where
-  IfThenElse :: k -> m a -> m a -> MiniLangEffect k v m a
-  While :: k -> m () -> MiniLangEffect k v m ()
-
-makeReification
-  ( \[k, v] ops ->
-      [t|
-        ( Truthy $(varT v),
-          EffectInject (KeyValueEffect $(varT k) $(varT v)) $(varT ops)
-        )
-        |]
-  )
-  ''MonadMiniLang
-  ''MiniLangEffect
-
-makeInterpretation
-  (\_ _ -> [t|()|])
-  ''MonadMiniLang
-  ''MiniLangEffect
-
--- (***)
+defineEffectType ''MonadMiniLang
+makeEffect ''MonadMiniLang ''MonadMiniLangEffect
 
 -- $doc
 -- For our little programming language, let's have booleans and integers, and
@@ -140,7 +112,7 @@ instance Truthy MiniLangValue where
 --
 -- TODO: explain it really thoroughly.
 
-instance (MonadMiniLang String MiniLangValue m) => InterpretLtlHigherOrder x m (MiniLangEffect String MiniLangValue) where
+instance (MonadMiniLang String MiniLangValue m) => InterpretLtlHigherOrder x m (MonadMiniLangEffect String MiniLangValue) where
   interpretLtlHigherOrder (IfThenElse cond l r) = Nested $
     \evalAST ltls -> do
       ifThenElse @String @MiniLangValue
@@ -218,7 +190,7 @@ data Tweak k = Rename (k -> Maybe k)
 instance Semigroup (Tweak k) where
   Rename f <> Rename g = Rename $ \key -> (f =<< g key) <|> g key <|> f key
 
-instance (MonadKeyValue k v m) => InterpretLtl (Tweak k) m (KeyValueEffect k v) where
+instance (MonadKeyValue k v m) => InterpretLtl (Tweak k) m (MonadKeyValueEffect k v) where
   interpretLtl (GetValue key) = Apply $ \(Rename f) -> case f key of
     Nothing -> return Nothing
     Just key' -> Just <$> getValue key'
@@ -233,9 +205,9 @@ interpretAndRunMiniLang ::
   Map String MiniLangValue ->
   LtlAST
     (Tweak String)
-    '[ ErrorEffect MiniLangError,
-       KeyValueEffect String MiniLangValue,
-       MiniLangEffect String MiniLangValue
+    '[ MonadErrorEffect MiniLangError,
+       MonadKeyValueEffect String MiniLangValue,
+       MonadMiniLangEffect String MiniLangValue
      ]
     a ->
   [(Either MiniLangError a, Map String MiniLangValue)]

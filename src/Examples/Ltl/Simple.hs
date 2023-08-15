@@ -21,7 +21,6 @@ module Examples.Ltl.Simple where
 import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Effect
 import Effect.TH
 import Logic.Ltl
 import qualified Test.Tasty as Tasty
@@ -76,34 +75,39 @@ instance (Ord k, Monad m) => MonadKeyValue k v (KeyValueT k v m) where
 -- The @(Type -> Type)@ parameter doesn't interest us here; it is the "nesting"
 -- monad used for higher order effects. The second parameter is the return type
 -- of the method.
+--
+-- There's a macro that will write such an effect type for us, and give it the
+-- name @MonadKeyValueEffect@:
 
-data KeyValueEffect k v :: Effect where
-  StoreValue :: k -> v -> KeyValueEffect k v m ()
-  GetValue :: k -> KeyValueEffect k v m (Maybe v)
-  DeleteValue :: k -> KeyValueEffect k v m ()
-
-makeEffect ''MonadKeyValue ''KeyValueEffect
+defineEffectType ''MonadKeyValue
 
 -- $doc
--- If the constructor names of 'KeyValueEffect' are the method names of
+-- Now, we have to make the rest of the machinery aware that we want to use the
+-- effect type we just defined as the abtract representation for
+-- @MonadKeyValue@:
+
+makeEffect ''MonadKeyValue ''MonadKeyValueEffect
+
+-- $doc
+-- If the constructor names of 'MonadKeyValueEffect' are the method names of
 -- 'MonadKeyValue' (starting with an upper case letter) and the types match,
--- the Template Haskell macro 'makeEffect' can be used to generate two instance
+-- the Template Haskell macro 'makeEffect' will generate two instance
 -- definitions:
 --
 -- The "reification" instance
 --
--- > instance (EffectInject (KeyValueEffect k v) ops) => MonadKeyValue k v (AST ops) where
+-- > instance (EffectInject (MonadKeyValueEffect k v) ops) => MonadKeyValue k v (AST ops) where
 --
--- says that, if @KeyValueEffect k v@ is an element of the list of effects
+-- says that, if @MonadKeyValueEffect k v@ is an element of the list of effects
 -- @ops@, then an 'AST' that uses the effect list @ops@ is an instance of
 -- @MonadKeyValue k v@. This will allow us to write 'AST's using the familiar
 -- syntax of 'MonadKeyValue'.
 --
 -- The "interpretation" instance
 --
--- > instance (MonadKeyValue k v m) => InterpretEffect m (KeyValueEffect k v) where
+-- > instance (MonadKeyValue k v m) => InterpretEffect m (MonadKeyValueEffect k v) where
 --
--- says that the @KeyValueEffect k v@ can be interpreted into any
+-- says that the @MonadKeyValueEffect k v@ can be interpreted into any
 -- @MonadKeyValue k v@.
 --
 -- If you have to add extra constraints to the instances, you can use the more
@@ -128,7 +132,7 @@ makeEffect ''MonadKeyValue ''KeyValueEffect
 -- > {-# LANGUAGE MultiParamTypeClasses #-}
 -- > {-# LANGUAGE TemplateHaskell #-}
 --
--- For effect types with parameters (like @k@ and @v@ in 'KeyValueEffect',
+-- For effect types with parameters (like @k@ and @v@ in 'MonadKeyValueEffect',
 -- you'll also need
 --
 -- > {-# LANGUAGE ScopedTypeVariables #-}
@@ -162,14 +166,14 @@ instance Semigroup SingleStepMod where
 
 -- $doc
 -- The 'InterpretLtl' instance is the heart of this while operation, since it
--- describes how we to apply 'SingleStepMod's to 'KeyValueEffect's. We
+-- describes how we to apply 'SingleStepMod's to 'MonadKeyValueEffect's. We
 -- have to write a function
 --
--- > interpretLtl :: KeyValueEffect k v dummy a -> SingleStepMod -> m (Maybe a)
+-- > interpretLtl :: MonadKeyValueEffect k v dummy a -> SingleStepMod -> m (Maybe a)
 --
--- which describes for each 'KeyValueEffect' if and how it is modified by each
+-- which describes for each 'MonadKeyValueEffect' if and how it is modified by each
 -- modification. If the modification applies, it should return 'Just',
--- otherwise 'Nothing'. The @dummy@ type argument to 'KeyValueEffect' isn't
+-- otherwise 'Nothing'. The @dummy@ type argument to 'MonadKeyValueEffect' isn't
 -- interesting to us here, it'll only be relevant for higer-order effects.
 --
 -- In our example, we make it so that the meaning of 'ConcatIfReplace' is: "If
@@ -184,7 +188,7 @@ instance Semigroup SingleStepMod where
 -- at the @n@-th step may depend on information we know only after having run
 -- (and modified) the first @n-1@ steps.
 
-instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (KeyValueEffect k v) where
+instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (MonadKeyValueEffect k v) where
   interpretLtl (StoreValue key val) = Apply $ \ConcatIfReplace -> do
     -- the type application is needed here to get around the otherwise
     -- ambiguous type @v@:
@@ -209,13 +213,21 @@ instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (Key
 --
 -- The module also provides
 --
--- > interpretLtlAST :: forall mod m ops a. (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m ops) => LtlAST mod ops a -> m a
+-- > interpretLtlAST :: forall mod m ops a. (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m tags ops) => LtlAST mod ops a -> m a
 --
 -- which interprets the @'LtlAST' mod ops@ into any suitable monad @m@. Here,
 -- "suitable" means:
 --
--- - All of the effects in @ops@ have an 'InterpretLtl mod m' instance (this is
---   the 'InterpretEffectsLtl' constraint).
+-- - All of the effects in @ops@ have one of the following three instances:
+--
+--     - @InterpretLtl mod m@ (this is what we have here)
+--
+--     - @InterpretLtlHigherOrder mod m@ (this is for higher order effect
+--       types, we're not interested in that here)
+--
+--     - @InterpretEffectStateful (Const [Ltl mod]) m@ (this is a low-level
+--       class used to implement the LTL framework itself, and we're /not at all/
+--       interested in it here)
 --
 -- - @m@ is a 'MonadPlus'. This is necessary because there might be several
 --   ways to satisfy an 'Ltl' formula. The whole point of using 'Ltl' do describe
@@ -223,13 +235,17 @@ instance (Semigroup v, MonadKeyValue k v m) => InterpretLtl SingleStepMod m (Key
 --   apply the formula.
 --
 -- Using 'interpretLtlAST', we can write a convenience function that will
--- interpret an 'LtlAST' of 'KeyValueEffect's and return the final return value
+-- interpret an 'LtlAST' of 'MonadKeyValueEffect's and return the final return value
 -- and state of the store:
+--
+-- Note how we type-apply 'interpretLtlAST' to alist of "tags" of kind
+-- 'LtlInstanceKind': These tags speficy, in order, which of the three
+-- instances described above we expect the effects to have.
 
 interpretAndRun ::
   (Monoid v, Ord k) =>
   Map k v ->
-  LtlAST SingleStepMod '[KeyValueEffect k v] a ->
+  LtlAST SingleStepMod '[MonadKeyValueEffect k v] a ->
   [(a, Map k v)]
 interpretAndRun initialState acts = runKeyValueT initialState $ interpretLtlAST @'[InterpretLtlTag] acts
 

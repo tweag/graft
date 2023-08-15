@@ -10,10 +10,10 @@ import Control.Monad.Writer
 import Effect
 import Effect.Writer
 
--- | A "passthough" instance for 'WriterEffect's: Modifications are applied
+-- | A "passthough" instance for 'MonadWriterEffect's: Modifications are applied
 -- in all nested positions of 'Listen' and 'Pass', but don't actually change the
--- semantics of any 'WriterEffect'.
-instance (MonadWriter e m) => InterpretEffectStateful x m (WriterEffect e) where
+-- semantics of any 'MonadWriterEffect'.
+instance (MonadWriter e m) => InterpretEffectStateful x m (MonadWriterEffect e) where
   interpretEffectStateful interpret x (Listen acts) = do
     ((a, x'), w) <- listen . interpret x $ acts
     return ((a, w), x')
