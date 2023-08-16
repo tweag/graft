@@ -238,7 +238,7 @@ data LtlInterpHigherOrder (mod :: Type) (m :: Type -> Type) (ops :: [Effect]) (a
 
 -- | Used to signify which instance is to be used for a specific effect in the
 -- 'InterpretEffectsLtl' class.
-data LtlInstanceKind = InterpretLtlTag | InterpretLtlHigherOrderTag | InterpretEffectStatefulTag
+data LtlInstanceKind = InterpretModTag | InterpretLtlHigherOrderTag | InterpretEffectStatefulTag
 
 -- | Internal: A reification of the 'InterpretEffectsLtl' constraint. This
 -- works, because matching on the constructors will bring the constraint on the
@@ -249,7 +249,7 @@ data InterpretEffectsLtlConstraintList (mod :: Type) (m :: Type -> Type) (tags :
   InterpretEffectsLtlFirstorder ::
     (InterpretEffect m op, InterpretMod mod m op) =>
     InterpretEffectsLtlConstraintList mod m tags ops ->
-    InterpretEffectsLtlConstraintList mod m (InterpretLtlTag ': tags) (op ': ops)
+    InterpretEffectsLtlConstraintList mod m (InterpretModTag ': tags) (op ': ops)
   InterpretEffectsLtlHigherorder ::
     (InterpretEffect m op, InterpretLtlHigherOrder mod m op) =>
     InterpretEffectsLtlConstraintList mod m tags ops ->
@@ -269,7 +269,7 @@ class InterpretEffectsLtl (mod :: Type) (m :: Type -> Type) (tags :: [LtlInstanc
 instance InterpretEffectsLtl mod m '[] '[] where
   interpretEffectsLtl = InterpretEffectsLtlNil
 
-instance (InterpretEffect m op, InterpretMod mod m op, InterpretEffectsLtl mod m tags ops) => InterpretEffectsLtl mod m (InterpretLtlTag ': tags) (op ': ops) where
+instance (InterpretEffect m op, InterpretMod mod m op, InterpretEffectsLtl mod m tags ops) => InterpretEffectsLtl mod m (InterpretModTag ': tags) (op ': ops) where
   interpretEffectsLtl = InterpretEffectsLtlFirstorder interpretEffectsLtl
 
 instance (InterpretEffect m op, InterpretLtlHigherOrder mod m op, InterpretEffectsLtl mod m tags ops) => InterpretEffectsLtl mod m (InterpretLtlHigherOrderTag ': tags) (op ': ops) where
