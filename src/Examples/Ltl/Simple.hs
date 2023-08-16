@@ -19,11 +19,13 @@
 -- - combining several different effects in one test scenario.
 module Examples.Ltl.Simple where
 
+import Control.Applicative
+import Control.Monad.Except
 import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Effect.Fail
-import Effect.Fail.Passthrough ()
+import Effect.Error
+import Effect.Error.Passthrough ()
 import Effect.TH
 import Logic.Ltl
 
@@ -34,35 +36,37 @@ import Logic.Ltl
 -- the behaviour you want to test. For the sake of this tutorial,
 -- let's take a key-value-store.
 
-class (MonadFail m) => MonadKeyValue k v m where
-  storeValue :: k -> v -> m ()
-  getValue :: k -> m (Maybe v)
-  deleteValue :: k -> m ()
+data KeyValueError where
+  GetValueError :: String -> KeyValueError
+
+class (Monad m) => MonadKeyValue m where
+  storeValue :: String -> Integer -> m ()
+  getValue :: String -> m Integer
+  deleteValue :: String -> m ()
 
 -- $doc
 -- From this type class, we can write a few test cases, corresponding
 -- to a serie of actions over key-value-store.
 
-swapTrace :: (MonadKeyValue String Integer m) => m (Integer, Integer)
+swapTrace :: (MonadKeyValue m) => m (Integer, Integer)
 swapTrace = do
   storeValue "a" 1
   storeValue "b" 2
-  Just a <- getValue @_ @Integer "a"
-  Just b <- getValue @_ @Integer "b"
+  a <- getValue "a"
+  b <- getValue "b"
   storeValue "a" b
   storeValue "b" a
-  Just a' <- getValue @_ @Integer "a"
-  Just b' <- getValue @_ @Integer "b"
+  a' <- getValue "a"
+  b' <- getValue "b"
   return (a', b')
 
-deleteTrace :: (MonadKeyValue String Integer m) => m Integer
+deleteTrace :: (MonadKeyValue m) => m Integer
 deleteTrace = do
   storeValue "a" 1
   storeValue "b" 2
-  deleteValue @_ @Integer "a"
+  deleteValue "a"
   storeValue "a" 2
-  Just a <- getValue @_ @Integer "a"
-  return a
+  getValue "a"
 
 -- $doc
 -- What we'll test is an implementation of 'MonadKeyValue'. We'll
@@ -70,14 +74,18 @@ deleteTrace = do
 -- 'deleteValue' is wrong: we never delete anything from the
 -- store. We'll "find" this mistake later on.
 
-type KeyValueT k v = StateT (Map k v)
+type KeyValueT m = ExceptT KeyValueError (StateT (Map String Integer) m)
 
-runKeyValueT :: Map k v -> KeyValueT k v m a -> m (a, Map k v)
-runKeyValueT = flip runStateT
+runKeyValueT :: Map String Integer -> KeyValueT m a -> m (Either KeyValueError a, Map String Integer)
+runKeyValueT s0 = (`runStateT` s0) . runExceptT
 
-instance (Ord k, MonadFail m) => MonadKeyValue k v (KeyValueT k v m) where
+instance (Monad m) => MonadKeyValue (KeyValueT m) where
   storeValue k v = modify $ Map.insert k v
-  getValue k = gets $ Map.lookup k
+  getValue k = do
+    m <- get
+    case Map.lookup k m of
+      Nothing -> throwError $ GetValueError k
+      Just v -> return v
   deleteValue _ = return ()
 
 -- * Using the effect system
@@ -113,19 +121,19 @@ makeEffect ''MonadKeyValue ''MonadKeyValueEffect
 -- possible to ignore stores when overriding an existing value, and to
 -- rename a key in various operations.
 
-data KeyValueMod k = KeyValueMod
+data KeyValueMod = KeyValueMod
   { toIgnoreOverride :: Bool,
-    transformation :: k -> k
+    transformation :: String -> String
   }
 
 -- $doc
 -- We propose two smart constructors, one for creating a modification
 -- that transforms names solely, the other that only ignore overrides.
 
-renameKey :: (k -> k) -> KeyValueMod k
+renameKey :: (String -> String) -> KeyValueMod
 renameKey f = KeyValueMod {toIgnoreOverride = False, transformation = f}
 
-noStoreOverride :: KeyValueMod k
+noStoreOverride :: KeyValueMod
 noStoreOverride = KeyValueMod {toIgnoreOverride = True, transformation = id}
 
 -- * Using Logic.Ltl to deploy single step in time
@@ -145,7 +153,7 @@ noStoreOverride = KeyValueMod {toIgnoreOverride = True, transformation = id}
 -- requires to ignore override, then the result will as well. In
 -- addition, modifications over key will be functionally composed.
 
-instance Semigroup (KeyValueMod k) where
+instance Semigroup KeyValueMod where
   mod1 <> mod2 =
     KeyValueMod
       { toIgnoreOverride = toIgnoreOverride mod1 || toIgnoreOverride mod2,
@@ -164,9 +172,9 @@ instance Semigroup (KeyValueMod k) where
 -- In our case, we apply the transformation whenever required, and
 -- replace stores with noOp when required.
 
-instance (MonadKeyValue k v m) => InterpretLtl (KeyValueMod k) m (MonadKeyValueEffect k v) where
+instance (MonadError KeyValueError m, MonadKeyValue m) => InterpretLtl KeyValueMod m MonadKeyValueEffect where
   interpretLtl (StoreValue key nVal) = Apply $ \modif -> do
-    val <- getValue @k @v key
+    val <- catchError (Just <$> getValue key) (\_ -> return Nothing)
     case (val, toIgnoreOverride modif) of
       (Just _, True) -> return (Just ())
       (Nothing, True) -> return Nothing
@@ -174,11 +182,11 @@ instance (MonadKeyValue k v m) => InterpretLtl (KeyValueMod k) m (MonadKeyValueE
   interpretLtl (DeleteValue key) = Apply $ \modif ->
     if toIgnoreOverride modif
       then return Nothing
-      else deleteValue @k @v (transformation modif key) >> return (Just ())
+      else deleteValue (transformation modif key) >> return (Just ())
   interpretLtl (GetValue key) = Apply $ \modif ->
     if toIgnoreOverride modif
       then return Nothing
-      else Just <$> getValue @k @v (transformation modif key)
+      else Just <$> getValue (transformation modif key)
 
 -- * Interpreting modified 'AST's
 
@@ -224,11 +232,17 @@ instance (MonadKeyValue k v m) => InterpretLtl (KeyValueMod k) m (MonadKeyValueE
 -- 'LtlInstanceKind': These tags speficy, in order, which of the three
 -- instances described above we expect the effects to have.
 
+instance {-# OVERLAPPING #-} Alternative (KeyValueT []) where
+  empty = lift $ lift []
+  ExceptT (StateT a) <|> (ExceptT (StateT b)) = ExceptT $ StateT $ \x -> a x ++ b x
+
+instance {-# OVERLAPPING #-} MonadPlus (KeyValueT [])
+
 modifyInterpretAndRun ::
-  (Ord k, InterpretLtl (KeyValueMod k) (KeyValueT k v []) (MonadKeyValueEffect k v)) =>
-  Ltl (KeyValueMod k) ->
-  LtlAST (KeyValueMod k) '[MonadKeyValueEffect k v, MonadFailEffect] a ->
-  [(a, Map k v)]
+  (InterpretLtl KeyValueMod (KeyValueT []) MonadKeyValueEffect) =>
+  Ltl KeyValueMod ->
+  LtlAST KeyValueMod '[MonadKeyValueEffect, MonadErrorEffect KeyValueError] a ->
+  [(Either KeyValueError a, Map String Integer)]
 modifyInterpretAndRun formula =
   runKeyValueT mempty . interpretLtlAST @'[InterpretLtlTag, InterpretEffectStatefulTag] . modifyLtl formula
 
@@ -250,7 +264,7 @@ modifyInterpretAndRun formula =
 -- >>> exampleSomewhereSwap
 -- [((1,1),fromList [("a",1),("b",1)]),((2,2),fromList [("a",2),("b",2)])]
 
-exampleSomewhereSwap :: [((Integer, Integer), Map String Integer)]
+exampleSomewhereSwap :: [(Either KeyValueError (Integer, Integer), Map String Integer)]
 exampleSomewhereSwap = modifyInterpretAndRun (somewhere noStoreOverride) swapTrace
 
 -- $doc
@@ -262,7 +276,7 @@ exampleSomewhereSwap = modifyInterpretAndRun (somewhere noStoreOverride) swapTra
 -- >>> exampleSomewhereDelete
 -- [(1,fromList [("a",1),("b",2)])]
 
-exampleSomewhereDelete :: [(Integer, Map String Integer)]
+exampleSomewhereDelete :: [(Either KeyValueError Integer, Map String Integer)]
 exampleSomewhereDelete =
   modifyInterpretAndRun (somewhere noStoreOverride) deleteTrace
 
@@ -276,7 +290,7 @@ exampleSomewhereDelete =
 -- >>> exampleEverywhereSwap
 -- []
 
-exampleEverywhereSwap :: [(Integer, Integer)]
+exampleEverywhereSwap :: [Either KeyValueError (Integer, Integer)]
 exampleEverywhereSwap =
   fst <$> modifyInterpretAndRun (everywhere noStoreOverride) swapTrace
 
@@ -286,7 +300,7 @@ exampleEverywhereSwap =
 -- >>> exampleEverywhereDelete
 -- [(2,fromList [("anew",2),("bnew",2)])]
 
-exampleEverywhereDelete :: [(Integer, Map String Integer)]
+exampleEverywhereDelete :: [(Either KeyValueError Integer, Map String Integer)]
 exampleEverywhereDelete =
   modifyInterpretAndRun (everywhere $ renameKey (++ "new")) deleteTrace
 
@@ -298,7 +312,7 @@ exampleEverywhereDelete =
 -- >>> exampleEverywhereEmpty
 -- [((),fromList [])]
 
-exampleEverywhereEmpty :: [((), Map String Integer)]
+exampleEverywhereEmpty :: [(Either KeyValueError (), Map String Integer)]
 exampleEverywhereEmpty =
   modifyInterpretAndRun (everywhere noStoreOverride) (return ())
 
@@ -312,7 +326,7 @@ exampleEverywhereEmpty =
 -- >>> exampleThereEmpty
 -- [(1,fromList [("a",1),("anew",2),("b",2)])]
 
-exampleThereEmpty :: [(Integer, Map String Integer)]
+exampleThereEmpty :: [(Either KeyValueError Integer, Map String Integer)]
 exampleThereEmpty =
   modifyInterpretAndRun (there 3 $ renameKey (++ "new")) deleteTrace
 
@@ -326,7 +340,7 @@ exampleThereEmpty =
 -- >>> exampleCustom
 -- [(2,fromList [("a",2),("anew",1),("bnew",2)])]
 
-exampleCustom :: [(Integer, Map String Integer)]
+exampleCustom :: [(Either KeyValueError Integer, Map String Integer)]
 exampleCustom =
   modifyInterpretAndRun
     ( LtlAnd
