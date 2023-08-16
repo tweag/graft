@@ -244,7 +244,7 @@ modifyInterpretAndRun ::
   LtlAST KeyValueMod '[MonadKeyValueEffect, MonadErrorEffect KeyValueError] a ->
   [(Either KeyValueError a, Map String Integer)]
 modifyInterpretAndRun formula =
-  runKeyValueT mempty . interpretLtlAST @'[InterpretLtlTag, InterpretEffectStatefulTag] . modifyLtl formula
+  runKeyValueT mempty . interpretLtlASTWithInitialFormulas @'[InterpretLtlTag, InterpretEffectStatefulTag] [formula]
 
 -- * A few example traces
 
@@ -261,8 +261,18 @@ modifyInterpretAndRun formula =
 -- for each of the overrides) where both "a" and "b" share the same
 -- value.
 --
+-- > storeValue "a" 1
+-- > storeValue "b" 2
+-- > a <- getValue "a"
+-- > b <- getValue "b"
+-- > storeValue "a" b   -- replaced by noOp in branch 1
+-- > storeValue "b" a   -- replaced by noOp in branch 2
+-- > a' <- getValue "a"
+-- > b' <- getValue "b"
+--
 -- >>> exampleSomewhereSwap
--- [((1,1),fromList [("a",1),("b",1)]),((2,2),fromList [("a",2),("b",2)])]
+-- [((1,1),fromList [("a",1),("b",1)]),
+--  ((2,2),fromList [("a",2),("b",2)])]
 
 exampleSomewhereSwap :: [(Either KeyValueError (Integer, Integer), Map String Integer)]
 exampleSomewhereSwap = modifyInterpretAndRun (somewhere noStoreOverride) swapTrace
@@ -272,6 +282,12 @@ exampleSomewhereSwap = modifyInterpretAndRun (somewhere noStoreOverride) swapTra
 -- there should be no override. However, it applies because our
 -- implementation of @deleteKey does not actually delete anything. We
 -- have discovered our first bug!
+--
+-- > storeValue "a" 1
+-- > storeValue "b" 2
+-- > deleteValue "a"
+-- > storeValue "a" 2 -- replaced by noOp
+-- > getValue "a"
 --
 -- >>> exampleSomewhereDelete
 -- [(1,fromList [("a",1),("b",2)])]
