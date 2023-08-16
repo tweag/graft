@@ -29,6 +29,7 @@ library
       Logic.Ltl
       Logic.Ltl.TH
       Logic.NextBind
+      Logic.SingleStep
   other-modules:
       Paths_sine_nomine
   hs-source-dirs:

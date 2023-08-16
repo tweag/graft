@@ -28,6 +28,7 @@ import Effect.Error
 import Effect.Error.Passthrough ()
 import Effect.TH
 import Logic.Ltl
+import Logic.SingleStep
 
 -- * Example domain and implementation
 
@@ -161,7 +162,7 @@ instance Semigroup KeyValueMod where
       }
 
 -- $doc
--- The 'InterpretLtl' instance is the heart of this whole operation,
+-- The 'InterpretMod' instance is the heart of this whole operation,
 -- since it describes how we to apply our single steps modifications
 -- to our effects.  Thanks to our @defineEffectType macro, we have
 -- access to abstract representation of actions, which are their
@@ -172,18 +173,18 @@ instance Semigroup KeyValueMod where
 -- In our case, we apply the transformation whenever required, and
 -- replace stores with noOp when required.
 
-instance (MonadError KeyValueError m, MonadKeyValue m) => InterpretLtl KeyValueMod m MonadKeyValueEffect where
-  interpretLtl (StoreValue key nVal) = Apply $ \modif -> do
+instance (MonadError KeyValueError m, MonadKeyValue m) => InterpretMod KeyValueMod m MonadKeyValueEffect where
+  interpretMod (StoreValue key nVal) = Apply $ \modif -> do
     val <- catchError (Just <$> getValue key) (\_ -> return Nothing)
     case (val, toIgnoreOverride modif) of
       (Just _, True) -> return (Just ())
       (Nothing, True) -> return Nothing
       (_, False) -> storeValue (transformation modif key) nVal >> return (Just ())
-  interpretLtl (DeleteValue key) = Apply $ \modif ->
+  interpretMod (DeleteValue key) = Apply $ \modif ->
     if toIgnoreOverride modif
       then return Nothing
       else deleteValue (transformation modif key) >> return (Just ())
-  interpretLtl (GetValue key) = Apply $ \modif ->
+  interpretMod (GetValue key) = Apply $ \modif ->
     if toIgnoreOverride modif
       then return Nothing
       else Just <$> getValue (transformation modif key)
@@ -239,7 +240,7 @@ instance {-# OVERLAPPING #-} Alternative (KeyValueT []) where
 instance {-# OVERLAPPING #-} MonadPlus (KeyValueT [])
 
 modifyInterpretAndRun ::
-  (InterpretLtl KeyValueMod (KeyValueT []) MonadKeyValueEffect) =>
+  (InterpretMod KeyValueMod (KeyValueT []) MonadKeyValueEffect) =>
   Ltl KeyValueMod ->
   LtlAST KeyValueMod '[MonadKeyValueEffect, MonadErrorEffect KeyValueError] a ->
   [(Either KeyValueError a, Map String Integer)]
