@@ -5,7 +5,7 @@ Copyright Tweag I/O 2023
 With `sine-nomine` you can generate variations of sequences of monadic
 actions. These actions can take very general shapes, since the library
 also understands higher-order operations that "nest" sequences of
-actions in one action (like, for example `catchError :: m a -> (e -> m
+actions in one action (like, for example, `catchError :: m a -> (e -> m
 a) -> m a`). The main application is deriving test cases for stateful
 systems by altering regular scenarios in ways that can depend on the
 state.
@@ -27,7 +27,7 @@ tampering with existing actions.
 
 ## An example of the most common workflow
 
-The most common workflow is shocased in our
+The most common workflow is showcased in our
 [Ltl.Simple](./src/Example/Ltl.Simple.hs) tutorial. It resembles the
 following:
 - Capture the behavior of your system through a type class of
@@ -37,7 +37,7 @@ following:
   test cases. These will take the shape of a serie of monadic
   operations, and will likely correspond to "normal" uses of the
   system you're testing. Chances are you're writing such tests anyway.
-- Have the effects associated with you domain automatically generated
+- Have the effects associated with your domain automatically generated
   for you. They will correspond to abtract representation of
   operations which will allow for state-aware modifications.
 - Define a datatype representing the single step modifications to be
@@ -69,7 +69,7 @@ following:
 ## More complex usage
 
 The previous common usage can be extended in many ways:
-* more complexe logics, including custom ones, can be used
+* more complex logics, including custom ones, can be used
 * domains can have nested actions (such as the `Writer` monad) in
   positive positions
 * domains can be extended by other domains
