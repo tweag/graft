@@ -3,12 +3,14 @@
 Copyright Tweag I/O 2023
 
 With `sine-nomine` you can generate variations of sequences of monadic
-actions. These actions can take very general shapes, since the library
-also understands higher-order operations that "nest" sequences of
-actions in one action (like, for example, `catchError :: m a -> (e -> m
-a) -> m a`). The main application is deriving test cases for stateful
+actions. The main application is deriving test cases for stateful
 systems by altering regular scenarios in ways that can depend on the
 state.
+
+The monadic actions can take very general shapes, since the library
+also understands higher-order operations that "nest" sequences of
+actions in one action (like, for example, `catchError :: m a -> (e -> m
+a) -> m a`).
 
 ## Testing stateful monadic systems
 
@@ -51,7 +53,7 @@ following:
   some step may depend on the state reached after the previous
   steps. This means that there's no need to track of the state of the
   system you're testing: You have direct access to it. 
-- Use one of our [Logics](./src/Logic) to describe how to deploy
+- Use one of our "[Logics](./src/Logic)" to describe how to deploy
   single-step modifications throughout the base test cases. This turns
   one base test case into potentially many test cases that have
   single-step modifications applied at strategically chosen
