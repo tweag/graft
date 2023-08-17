@@ -97,9 +97,22 @@ instance (Monad m) => MonadKeyValue (KeyValueT m) where
 -- * Using the effect system
 
 -- $doc
--- This library is based on a custom effect system. Here's a macro that will
--- write an /effect type/ corresponding to 'MonadKeyValue' for us, and give it
--- the name 'MonadKeyValueEffect':
+-- This library is based on a custom effect system. There are a few macros that
+-- will make using it more convenient. You'll at least need the following
+-- language extensions (more extensions might be needed in more complex
+-- scenarios than this tutorial):
+--
+-- > {-# LANGUAGE ConstraintKinds #-}
+-- > {-# LANGUAGE FlexibleContexts #-}
+-- > {-# LANGUAGE FlexibleInstances #-}
+-- > {-# LANGUAGE KindSignatures #-}
+-- > {-# LANGUAGE MultiParamTypeClasses #-}
+-- > {-# LANGUAGE ScopedTypeVariables #-}
+-- > {-# LANGUAGE TemplateHaskell #-}
+-- > {-# LANGUAGE TypeApplications #-}
+--
+-- The first macro will write an /effect type/ corresponding to 'MonadKeyValue'
+-- for us, and give it the name 'MonadKeyValueEffect':
 
 defineEffectType ''MonadKeyValue
 
@@ -124,19 +137,6 @@ defineEffectType ''MonadKeyValue
 -- (type-level) list @ops@ contains @MonadKeyValueEffect@.
 
 makeEffect ''MonadKeyValue ''MonadKeyValueEffect
-
--- $doc
--- In order for the previous two macros to work, you'll at least need the
--- following language extensions:
---
--- > {-# LANGUAGE ConstraintKinds #-}
--- > {-# LANGUAGE FlexibleContexts #-}
--- > {-# LANGUAGE FlexibleInstances #-}
--- > {-# LANGUAGE KindSignatures #-}
--- > {-# LANGUAGE MultiParamTypeClasses #-}
--- > {-# LANGUAGE ScopedTypeVariables #-}
--- > {-# LANGUAGE TemplateHaskell #-}
--- > {-# LANGUAGE TypeApplications #-}
 
 -- * Defining a type of single-step modifications
 
