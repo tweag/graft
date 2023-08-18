@@ -132,9 +132,7 @@ defineEffectType ''MonadKeyValue
 -- flexible ways.
 --
 -- There's also a macro to define some instances that will make this
--- convenient. In particular, the instances it generates will allow us to use
--- the normal syntax of 'MonadKeyValue' in @'AST' ops@, as long as the
--- (type-level) list @ops@ contains @MonadKeyValueEffect@.
+-- convenient.
 
 makeEffect ''MonadKeyValue ''MonadKeyValueEffect
 
@@ -229,8 +227,19 @@ instance Semigroup KeyValueMod where
       }
 
 -- $doc
--- The module "Logic.Ltl" provides the wrapper type @'LtlAST' mod ops@, which
--- is an 'AST' in which you'll have access to the function
+-- The module "Logic.Ltl" provides the wrapper type @'LtlAST' mod ops@.
+-- Here, @ops@ is the list of effect types related to our domain. In our case,
+-- it will have to contain 'MonadKeyValueEffect' and @MonadErrorEffect
+-- KeyValueError@. The Template Haskell macros we used above make it so that
+--
+-- > LtlAST mod '[MonadKeyValueEffect, MonadErrorEffect KeyValueError]
+--
+-- is an instance of 'MonadKeyValue' and @MonadError KeyValueError@. The
+-- parameter @mod@ is the type of single-step modifications; here it is
+-- 'KeyValueMod'.
+--
+-- In addition to all the 'MonadKeyValue' and 'MonadError' functions, the
+-- 'LtlAST' also gives you access to the function
 --
 -- > modifyLtl :: Ltl mod -> LtlAST mod ops a -> LtlAST mod ops a
 --
@@ -238,7 +247,7 @@ instance Semigroup KeyValueMod where
 -- the part of the computation you want to modify in 'modifyLtl' with the 'Ltl'
 -- formula of your choice.
 --
--- The module also provides
+-- The module "Logic.Ltl" also provides
 --
 -- > interpretLtlAST :: forall mod m ops a. (Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m tags ops) => LtlAST mod ops a -> m a
 --
