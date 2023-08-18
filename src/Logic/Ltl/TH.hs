@@ -26,6 +26,7 @@ import GHC.Generics
 import Language.Haskell.TH
 import Language.Haskell.TH.Datatype
 import Logic.Ltl
+import Logic.SingleStep
 
 -- | There are three type classes that are relevant for the API in "Logic.Ltl":
 --
@@ -56,7 +57,7 @@ import Logic.Ltl
 -- current scope.
 makeLtl :: Q [Dec]
 makeLtl = do
-  ClassI _ firstInstances <- reify ''InterpretLtl
+  ClassI _ firstInstances <- reify ''InterpretMod
   ClassI _ higherInstances <- reify ''InterpretLtlHigherOrder
   ClassI _ effectInstances <- reify ''InterpretEffectStateful
   newHigherInstances <-

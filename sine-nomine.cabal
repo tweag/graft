@@ -15,6 +15,8 @@ library
       Effect
       Effect.Error
       Effect.Error.Passthrough
+      Effect.Fail
+      Effect.Fail.Passthrough
       Effect.Internal
       Effect.IO
       Effect.IO.Passthrough
@@ -23,11 +25,11 @@ library
       Effect.THTests
       Effect.Writer
       Effect.Writer.Passthrough
-      Examples.Ltl.HigherOrder
       Examples.Ltl.Simple
       Logic.Ltl
       Logic.Ltl.TH
       Logic.NextBind
+      Logic.SingleStep
   other-modules:
       Paths_sine_nomine
   hs-source-dirs:
