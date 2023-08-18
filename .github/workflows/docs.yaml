@@ -28,9 +28,9 @@ jobs:
               --haddock-hyperlink-source \
               --haddock-quickjump \
               --haddock-html-location="https://hackage.haskell.org/package/$pkg-$version/docs" \
-              sine-nomine
+              graft
             mkdir -p docs
-            cp -rf dist-newstyle/build/*/ghc-*/sine-nomine-*/doc/html/sine-nomine/* docs
+            cp -rf dist-newstyle/build/*/ghc-*/graft-*/doc/html/graft/* docs
           '
       - name: upload docs as an artifact
         uses: actions/upload-artifact@v3
