@@ -16,6 +16,7 @@ import qualified Data.Set as Set
 import Effect
 import Effect.TH
 import Logic.Ltl
+import Logic.SingleStep
 import qualified Test.Tasty as Tasty
 import Test.Tasty.HUnit ((@?=))
 import qualified Test.Tasty.HUnit as Tasty
@@ -41,12 +42,12 @@ type TestModification = Integer -> Integer
 instance {-# OVERLAPPING #-} Semigroup TestModification where
   a <> b = a . b
 
-instance (MonadTest m) => InterpretLtl TestModification m TestEffect where
-  interpretLtl GetInteger = Ignore
-  interpretLtl (EmitInteger i) = Apply $ \f -> emitInteger (f i) >> return (Just ())
+instance (MonadTest m) => InterpretMod TestModification m TestEffect where
+  interpretMod GetInteger = Ignore
+  interpretMod (EmitInteger i) = Apply $ \f -> emitInteger (f i) >> return (Just ())
 
 go :: LtlAST TestModification '[TestEffect] a -> [[Integer]]
-go = execWriterT . interpretLtlAST @'[InterpretLtlTag]
+go = execWriterT . interpretLtlAST @'[InterpretModTag]
 
 nonemptyTraces :: [LtlAST TestModification '[TestEffect] ()]
 nonemptyTraces =

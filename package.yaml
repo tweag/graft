@@ -1,4 +1,4 @@
-name: sine-nomine
+name: graft
 version: 0.0.0
 
 dependencies:
@@ -27,4 +27,4 @@ tests:
   spec:
     main: Main.hs
     source-dirs: ./tests
-    dependencies: sine-nomine
+    dependencies: graft
