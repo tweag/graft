@@ -1,8 +1,8 @@
-# [sine-nomine](https://github.com/tweag/bibliotheca-sine-nomine)
+# [graft](https://github.com/tweag/graft)
 
 Copyright Tweag I/O 2023
 
-With `sine-nomine` you can generate variations of sequences of monadic
+With `graft` you can generate variations of sequences of monadic
 actions. The main application is deriving test cases for stateful
 systems by altering regular scenarios in ways that can depend on the
 state.
@@ -61,7 +61,7 @@ The most common workflow is showcased in our
 ## Documentation
 
 The haddock documentation for current `main` can be seen at
-[tweag.github.io/bibliotheca-sine-nomine](https://tweag.github.io/bibliotheca-sine-nomine).
+[tweag.github.io/graft](https://tweag.github.io/graft).
 We also direct you to the [examples](./src/Examples).
 
 ## Contributing
@@ -72,5 +72,5 @@ packaging checks as pre-commit hooks.
 
 ## License
 
-You are free to copy, modify, and distribute `sine-nomine` under the
+You are free to copy, modify, and distribute `graft` under the
 terms of the MIT license. See [LICENSE](./LICENSE) for details.
