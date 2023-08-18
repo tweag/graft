@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           sine-nomine
+name:           graft
 version:        0.0.0
 license:        MIT
 license-file:   LICENSE
@@ -31,7 +31,7 @@ library
       Logic.NextBind
       Logic.SingleStep
   other-modules:
-      Paths_sine_nomine
+      Paths_graft
   hs-source-dirs:
       ./src
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N8
@@ -55,18 +55,18 @@ test-suite spec
   main-is: Main.hs
   other-modules:
       LtlSpec
-      Paths_sine_nomine
+      Paths_graft
   hs-source-dirs:
       ./tests
   build-depends:
       ansi-terminal
     , base
     , containers
+    , graft
     , inspection-testing
     , mtl
     , parallel
     , random
-    , sine-nomine
     , tasty
     , tasty-hunit
     , template-haskell
