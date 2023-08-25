@@ -33,7 +33,7 @@
 -- - write instances of 'InterpretLtl' (or 'InterpretLtlHigherOrder' for
 --   higher-order effects) that explain how your atomic modifications apply to
 --   your effects,
---
+-- Last reply today at 4:00 PM
 -- - use 'modifyLtl' to apply composite modifications to your trace, and
 --
 -- - use 'interpretLtlAST' to run all modified versions of your trace.
@@ -57,6 +57,8 @@ module Logic.Ltl
     -- * Higher-order effects
     InterpretLtlHigherOrder (..),
     LtlInterpHigherOrder (..),
+    nowLaterList,
+    nowLaterSplit,
 
     -- * Interpreting 'Ltl' modifications
     LtlInstanceKind (..),
@@ -232,7 +234,7 @@ data LtlInterpHigherOrder (mod :: Type) (m :: Type -> Type) (ops :: [Effect]) (a
   Nested ::
     ( (forall b. [Ltl mod] -> AST ops b -> m (b, [Ltl mod])) ->
       [Ltl mod] ->
-      m (a, [Ltl mod])
+      m (Maybe (a, [Ltl mod]))
     ) ->
     LtlInterpHigherOrder mod m ops a
 
@@ -419,11 +421,14 @@ interpretEffectStatefulFromLtlHigherOrder ::
   m (a, Const [Ltl mod] x)
 interpretEffectStatefulFromLtlHigherOrder evalActs (Const ltls) op =
   case interpretLtlHigherOrder op of
-    Nested nestFun ->
-      second Const
-        <$> nestFun
+    Nested nestFun -> do
+      mA <-
+        nestFun
           (\x ast -> second getConst <$> evalActs (Const x) ast)
           ltls
+      case mA of
+        Nothing -> mzero
+        Just (a, ltls') -> return (a, Const ltls')
     Direct direct ->
       msum $
         map
@@ -511,6 +516,25 @@ nowLaterList = joinNowLaters . map nowLater
         | (f, c) <- l,
           (g, cs) <- joinNowLaters ls
       ]
+
+nowLaterSplit ::
+  (Semigroup x, MonadPlus m) =>
+  m a ->
+  (x -> m (Maybe a)) ->
+  [Ltl x] ->
+  m (a, [Ltl x])
+nowLaterSplit defaultBehaviour applyMod formulas =
+  msum $
+    map
+      ( \(now, later) -> case now of
+          Nothing -> (,later) <$> defaultBehaviour
+          Just x -> do
+            mA <- applyMod x
+            case mA of
+              Nothing -> mzero
+              Just a -> return (a, later)
+      )
+      (nowLaterList formulas)
 
 -- | Internal: Straightforward simplification procedure for LTL formulas. This
 -- function knows how 'LtlTruth' and 'LtlFalsity' play with conjunction and
