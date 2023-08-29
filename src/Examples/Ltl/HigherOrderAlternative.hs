@@ -78,19 +78,19 @@ instance Semigroup Tweak where
 
 instance (MonadPlus m, MonadError MiniLangError m, MonadMiniLang m) => InterpretLtlHigherOrder Tweak m MonadMiniLangEffect where
   interpretLtlHigherOrder (Push v) = Direct $ \case
-    Just x -> Apply $
+    Just x -> AttemptModification $
       case onPush x v of
         Just v' -> Just <$> push v'
         Nothing -> return Nothing
-    Nothing -> DontApply
+    Nothing -> SkipModification
   interpretLtlHigherOrder Pop = Direct $ \case
-    Just x -> Apply $ do
+    Just x -> AttemptModification $ do
       v <- pop
       case onPop x v of
         Just v' -> return $ Just v'
         Nothing -> return Nothing
-    Nothing -> DontApply
-  interpretLtlHigherOrder Echo {} = Direct $ const Ignore
+    Nothing -> SkipModification
+  interpretLtlHigherOrder Echo {} = Direct $ const PassModification
   interpretLtlHigherOrder (If_ m1 m2) = Nested $ \evalAST ltls -> do
     v <- pop
     msum $

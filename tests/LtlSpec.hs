@@ -43,9 +43,9 @@ instance {-# OVERLAPPING #-} Semigroup TestModification where
   a <> b = a . b
 
 instance (MonadTest m) => InterpretMod TestModification m TestEffect where
-  interpretMod GetInteger _ = Ignore
-  interpretMod (EmitInteger i) (Just f) = Apply $ emitInteger (f i) >> return (Just ())
-  interpretMod (EmitInteger i) Nothing = DontApply
+  interpretMod GetInteger _ = PassModification
+  interpretMod (EmitInteger i) (Just f) = AttemptModification $ emitInteger (f i) >> return (Just ())
+  interpretMod (EmitInteger i) Nothing = SkipModification
 
 go :: LtlAST TestModification '[TestEffect] a -> [[Integer]]
 go = execWriterT . interpretLtlAST @'[InterpretModTag]
