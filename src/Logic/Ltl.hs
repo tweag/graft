@@ -182,7 +182,7 @@ class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) w
   --
   -- For simple operations that don't \"nest\" other 'AST's, use the
   -- 'Direct' constructor. Its meaning corresponds precisely to the
-  -- 'interpretLtl' function.
+  -- 'interpretMod' function.
   --
   -- For operations that /do/ nest, use the 'Nested' constructor. It needs some
   -- explanation: the stepwise approach based on applying atomic modifications
@@ -191,12 +191,12 @@ class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) w
   -- likely want to use a composite modification while evaluating such nested
   -- 'AST's.
   --
-  -- Composite modifications in the current setting are list of 'Ltl' formulas.
-  -- Each 'modifyLtl' adds another formula to the head of that list, and all
-  -- formulas are evaluated in parallel to the interpretation of the 'AST'.
-  -- (That is: if you don't nest 'modifyLtl's, the list will only ever contain
-  -- one element. If you nest 'modifyLtl's, the head of the list will be the
-  -- formula that was introduced by the innermost 'modifyLtl')
+  -- Composite modifications in the current setting are lists of 'Ltl'
+  -- formulas, which are evaluated in parallel to the interpretation of the
+  -- 'AST'. (Each 'modifyLtl' adds another formula to the head of that list. If
+  -- you don't nest 'modifyLtl's, the list will only ever contain one element.
+  -- If you nest 'modifyLtl's, the head of the list will be the formula that
+  -- was introduced by the innermost 'modifyLtl')
   --
   -- The 'Nested' constructor proposes the following approach: It'll just give
   -- you a function
@@ -207,16 +207,17 @@ class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) w
   -- list of 'Ltl' formulas you provide. To explain it by example, let's use
   -- 'ErrorEffect':
   --
-  -- > instance (MonadError e m) => InterpretLtlHigherOrder x m (ErrorEffect e) where
+  -- > instance (MonadError e m) => InterpretLtlHigherOrder x m (MonadErrorEffect e) where
   -- >   interpretLtlHigherOrder (CatchError acts handler) =
   -- >     Nested $ \evalAST ltls ->
-  -- >       catchError
-  -- >         (evalAST ltls acts)
-  -- >         ( \err ->
-  -- >             do
-  -- >               (a, _) <- evalAST [] $ handler err
-  -- >               return (a, ltls)
-  -- >         )
+  -- >       Just
+  -- >         <$> catchError
+  -- >           (evalAST ltls acts)
+  -- >           ( \err ->
+  -- >               do
+  -- >                 (a, _) <- evalAST [] $ handler err
+  -- >                 return (a, ltls)
+  -- >           )
   -- >   interpretLtlHigherOrder (ThrowError err) = ...
   --
   -- The equation for 'CatchError' means that you'll interpret the body @acts@
@@ -225,12 +226,14 @@ class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) w
   -- restore the original composite modification. There might be other ways to
   -- implement this nesting behaviour, depending on your use case, and the
   -- 'Nested' constructor should hopefully be general enough to accommodate
-  -- most of them.
+  -- most of them. In particular, you can also return 'Nothing' from the
+  -- 'Nested' constructor to signal that with the current composite modification,
+  -- the operation can't be evaluated.
   interpretLtlHigherOrder :: op (AST ops) a -> LtlInterpHigherOrder mod m ops a
 
 -- | codomain of 'interpretLtlHigherOrder'. See the explanation there.
 data LtlInterpHigherOrder (mod :: Type) (m :: Type -> Type) (ops :: [Effect]) (a :: Type) where
-  Direct :: ModInterp mod m a -> LtlInterpHigherOrder mod m ops a
+  Direct :: (Maybe mod -> ModInterp mod m a) -> LtlInterpHigherOrder mod m ops a
   Nested ::
     ( (forall b. [Ltl mod] -> AST ops b -> m (b, [Ltl mod])) ->
       [Ltl mod] ->
@@ -373,7 +376,7 @@ interpretJoinedEffectsLtl (InterpretEffectsLtlEffectStateful cs) evalAST x (Join
 
 -- | Internal: For 'interpretJoinedEffectsLtl', we'll need a function that
 -- behaves like 'interpretEffectStateful', in the setting where we only have an
--- 'InterpretLtl' instance. This is that function.
+-- 'InterpretMod' instance. This is that function.
 interpretEffectStatefulFromLtl ::
   ( Semigroup mod,
     MonadPlus m,
@@ -385,21 +388,19 @@ interpretEffectStatefulFromLtl ::
   op (AST ops) a ->
   m (a, Const [Ltl mod] x)
 interpretEffectStatefulFromLtl evalActs (Const ltls) op =
-  case interpretMod op of
-    Ignore -> interpretUnmodified ltls op
-    Apply apply ->
-      msum $
-        map
-          ( \(now, later) ->
-              case now of
-                Nothing -> interpretUnmodified later op
-                Just x -> do
-                  mA <- apply x
-                  case mA of
-                    Just a -> return (a, Const later)
-                    Nothing -> mzero
-          )
-          (nowLaterList ltls)
+  msum $
+    map
+      ( \(now, later) ->
+          case interpretMod op now of
+            DontApply -> interpretUnmodified later op
+            Ignore -> interpretUnmodified ltls op
+            Apply applied -> do
+              mA <- applied
+              case mA of
+                Just a -> return (a, Const later)
+                Nothing -> mzero
+      )
+      (nowLaterList ltls)
   where
     interpretUnmodified later x =
       (,Const later)
@@ -421,29 +422,25 @@ interpretEffectStatefulFromLtlHigherOrder ::
   m (a, Const [Ltl mod] x)
 interpretEffectStatefulFromLtlHigherOrder evalActs (Const ltls) op =
   case interpretLtlHigherOrder op of
-    Nested nestFun -> do
-      mA <-
-        nestFun
-          (\x ast -> second getConst <$> evalActs (Const x) ast)
-          ltls
-      case mA of
-        Nothing -> mzero
-        Just (a, ltls') -> return (a, Const ltls')
-    Direct direct ->
+    Direct directFun ->
       msum $
         map
           ( \(now, later) ->
-              case direct of
+              case directFun now of
+                DontApply -> interpretUnmodified later op
                 Ignore -> interpretUnmodified ltls op
-                Apply apply -> case now of
-                  Nothing -> interpretUnmodified later op
-                  Just x -> do
-                    mA <- apply x
-                    case mA of
-                      Just a -> return (a, Const later)
-                      Nothing -> mzero
+                Apply applied -> do
+                  mA <- applied
+                  case mA of
+                    Just a -> return (a, Const later)
+                    Nothing -> mzero
           )
           (nowLaterList ltls)
+    Nested nestFun -> do
+      mA <- nestFun (\x' ast -> second getConst <$> evalActs (Const x') ast) ltls
+      case mA of
+        Nothing -> mzero
+        Just (a, ltls') -> return (a, Const ltls')
   where
     interpretUnmodified later x =
       (,Const later)

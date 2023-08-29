@@ -9,7 +9,7 @@ module Logic.SingleStep
 where
 
 import Data.Kind (Type)
-import Effect (Effect)
+import Effect (AST, Effect)
 
 -- | Explain how to interpret an atomic modification, applied an operation of a
 -- simple effect type (i.e. one that does not have any higher-order effects).
@@ -21,29 +21,50 @@ import Effect (Effect)
 --
 -- - @op@ is the effect type.
 class InterpretMod (mod :: Type) (m :: Type -> Type) (op :: Effect) where
-  -- | Given an operation of type @op a@, and an atomic modification, there are
-  -- three possibilities, corresponding to the constructors of
+  -- | The mental model of 'interpretMod' assumes a scenario like in the "Ltl"
+  -- setting, where there are a (possibly infinite) number of ways to satisfy a
+  -- formula, each given by a sequence of atomic modifications to be applied to
+  -- the operations of the 'AST'. If all applications of atomic modifications
+  -- succeed, that's a successful application of the composite modification
+  -- described by the formula.
+  --
+  -- This big picture is abstracted away here. Everything 'interpretMod' sees
+  -- is the current operation, and 'Maybe' an atomic modification. The 'Maybe'
+  -- indicates whether we need to apply a modification.
+  --
+  -- There are the following possibilities, corresponding to the constructors of
   -- 'LtlInterp':
   --
-  -- - If the modification of the operation should be ignored, and the
-  --   operation should just be interpreted without modification, return
-  --   'Ignore'.
+  -- - If you want to try applying the modification, use 'Apply'. Depending on
+  --   the current state reached so far, the application of the modification
+  --   can fail. Hence, there are two options:
   --
-  -- - If you want to try applying the modification, use return 'Apply':
+  --   - If the modification successfully applies, return some computation that
+  --     returns 'Just'.
   --
-  --   - If the modification applies, return some computation that returns
-  --     'Just'.
+  --   - If the modification fails to apply, return 'Nothing'.
   --
-  --   - If the modification does /not/ apply, return 'Nothing'.
+  -- - If you don't want to try applying the modification, return 'DontApply'.
+  --   Use this constructor if the modification is not applicable in the current
+  --   state, but you still want to continue interpreting the 'AST' as if the
+  --   modification had been applied. That is, at the next step, the evaluation
+  --   continues with the next modification in the sequence. This is most useful
+  --   if the current modification is 'Nothing': in this case, you can use
+  --   'DontApply' to indicate that want to proceed by \"successfully applying no
+  --   modification\".
   --
-  --
-  -- Note that the type @m (Maybe a)@ (and not @Maybe (m a)@!) in the 'Apply'
-  -- constructor means that the interpretation and applicability of the
-  -- modification can depend on the state in @m@.
+  -- - Like 'DontApply', 'Ignore' will interpret the operation without applying
+  --   the modification. The difference is that, at the next step, the
+  --   evaluation will continue with the same modification. This is also why
+  --   this constructor is called 'Ignore': it makes an operation invisible to
+  --   the evaluation of the sequence of atomic modifications. This is useful
+  --   if you want "timesteps" to only happen at some operations, and not at
+  --   others. Use 'Ignore' for all the operations that don't count as
+  --   timesteps.
   --
   -- The @dummy@ type variable signifies that the "nesting" monad of the effect
   -- type is irrelevant, since we're not dealing with higher-order effects.
-  interpretMod :: op dummy a -> ModInterp mod m a
+  interpretMod :: op (AST dummy) a -> Maybe mod -> ModInterp mod m a
 
 -- | Codomain of 'interpretLtl'. See the explanation there.
-data ModInterp mod m a = Ignore | Apply (mod -> m (Maybe a))
+data ModInterp mod m a = Apply (m (Maybe a)) | DontApply | Ignore

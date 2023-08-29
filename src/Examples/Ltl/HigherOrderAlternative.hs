@@ -47,9 +47,7 @@ instance (Monad m) => MonadMiniLang (MiniLangT m) where
     vs <- get
     case vs of
       [] -> throwError StackUnderflow
-      (v : vs') -> do
-        put vs'
-        return v
+      (v : vs') -> put vs' >> return v
   echo = tell
   if_ m1 m2 = do
     v <- pop
@@ -79,46 +77,54 @@ instance Semigroup Tweak where
       (\x -> (fPush <=< gPush) x <|> fPush x <|> gPush x)
 
 instance (MonadPlus m, MonadError MiniLangError m, MonadMiniLang m) => InterpretLtlHigherOrder Tweak m MonadMiniLangEffect where
-  interpretLtlHigherOrder (Push v) = Direct . Apply $ \x ->
-    case onPush x v of
-      Just v' -> Just <$> push v'
-      Nothing -> return Nothing
-  interpretLtlHigherOrder Pop = Direct . Apply $ \x -> do
+  interpretLtlHigherOrder (Push v) = Direct $ \case
+    Just x -> Apply $
+      case onPush x v of
+        Just v' -> Just <$> push v'
+        Nothing -> return Nothing
+    Nothing -> DontApply
+  interpretLtlHigherOrder Pop = Direct $ \case
+    Just x -> Apply $ do
+      v <- pop
+      case onPop x v of
+        Just v' -> return $ Just v'
+        Nothing -> return Nothing
+    Nothing -> DontApply
+  interpretLtlHigherOrder Echo {} = Direct $ const Ignore
+  interpretLtlHigherOrder (If_ m1 m2) = Nested $ \evalAST ltls -> do
     v <- pop
-    case onPop x v of
-      Just v' -> return (Just v')
-      Nothing -> return Nothing
-  interpretLtlHigherOrder Echo {} = Direct Ignore
-  interpretLtlHigherOrder (If_ m1 m2) = Nested $ \evalAST ltls ->
-    if_ (Just <$> evalAST ltls m1) (Just <$> evalAST ltls m2)
-  interpretLtlHigherOrder (While_ m) = Nested $ \evalAST ltls ->
-    whileWithFormulas evalAST ltls m
-    where
-      whileWithFormulas evalAST ltls acts = do
-        v <- pop
-        msum $
-          map
-            ( \(now, later) ->
-                case now of
-                  Nothing -> case v of
-                    (MiniLangInteger _) -> throwError ExpectedBoolean
-                    (MiniLangBoolean b) ->
-                      if b
-                        then do
-                          ((), ltls') <- evalAST later acts
-                          whileWithFormulas evalAST ltls' acts
-                        else return $ Just ((), later)
-                  Just x -> case onPop x v of
-                    Just (MiniLangInteger _) -> throwError ExpectedBoolean
-                    Just (MiniLangBoolean b) ->
-                      if b
-                        then do
-                          ((), ltls') <- evalAST later acts
-                          whileWithFormulas evalAST ltls' acts
-                        else return $ Just ((), later)
-                    Nothing -> return Nothing
-            )
-            (nowLaterList ltls)
+    msum $
+      map
+        ( \(now, later) ->
+            let vTweaked = case now of
+                  Just x -> onPop x v
+                  Nothing -> Just v
+             in case vTweaked of
+                  Just (MiniLangBoolean True) -> Just <$> evalAST later m1
+                  Just (MiniLangBoolean False) -> Just <$> evalAST later m2
+                  Nothing -> return Nothing
+                  _ -> throwError ExpectedBoolean
+        )
+        (nowLaterList ltls)
+  interpretLtlHigherOrder (While_ m) = Nested $ \evalAST ltls -> do
+    v <- pop
+    msum $
+      map
+        ( \(now, later) ->
+            let vTweaked = case now of
+                  Just x -> onPop x v
+                  Nothing -> Just v
+             in case vTweaked of
+                  Just (MiniLangBoolean True) -> do
+                    ((), later') <- evalAST later m
+                    case interpretLtlHigherOrder (While_ m) of
+                      Nested f -> f evalAST later'
+                      _ -> error "impossible"
+                  Just (MiniLangBoolean False) -> return $ Just ((), later)
+                  Nothing -> return Nothing
+                  _ -> throwError ExpectedBoolean
+        )
+        (nowLaterList ltls)
 
 popInteger :: (MonadError MiniLangError m, MonadMiniLang m) => m Integer
 popInteger =
@@ -148,6 +154,7 @@ fibonacciExample n = do
     n' <- popInteger
     b <- popInteger
     a <- popInteger
+    echo $ show n' ++ ", " ++ show a ++ ", " ++ show b ++ "\n"
     pushInteger (a + b)
     pushInteger a
     pushInteger (n' - 1)
@@ -163,29 +170,68 @@ gcdExample a b = do
   while_ $ do
     b' <- popInteger
     a' <- popInteger
-    -- echo $ show a' ++ ", " ++ show b' ++ "; "
     pushInteger b'
     pushInteger (a' `mod` b')
     pushBoolean (0 /= a' `mod` b')
   _ <- popInteger
   popInteger
 
-flipBools :: Tweak
-flipBools =
-  let f = \case
-        MiniLangBoolean b -> Just $ MiniLangBoolean (not b)
+popBoolTweak :: (Bool -> Maybe Bool) -> Tweak
+popBoolTweak f =
+  Tweak
+    { onPop = \case
+        MiniLangBoolean b -> MiniLangBoolean <$> f b
+        _ -> Nothing,
+      onPush = const Nothing
+    }
+
+popIntegerTweak :: (Integer -> Maybe Integer) -> Tweak
+popIntegerTweak f =
+  Tweak
+    { onPop = \case
+        MiniLangInteger n -> MiniLangInteger <$> f n
+        _ -> Nothing,
+      onPush = const Nothing
+    }
+
+popTweak :: (Bool -> Maybe Bool) -> (Integer -> Maybe Integer) -> Tweak
+popTweak fBool fInteger = popBoolTweak fBool <> popIntegerTweak fInteger
+
+pushBoolTweak :: (Bool -> Maybe Bool) -> Tweak
+pushBoolTweak f =
+  Tweak
+    { onPop = const Nothing,
+      onPush = \case
+        MiniLangBoolean b -> MiniLangBoolean <$> f b
         _ -> Nothing
-   in Tweak {onPop = f, onPush = f}
+    }
+
+pushIntegerTweak :: (Integer -> Maybe Integer) -> Tweak
+pushIntegerTweak f =
+  Tweak
+    { onPop = const Nothing,
+      onPush = \case
+        MiniLangInteger n -> MiniLangInteger <$> f n
+        _ -> Nothing
+    }
+
+pushTweak :: (Bool -> Maybe Bool) -> (Integer -> Maybe Integer) -> Tweak
+pushTweak fBool fInteger = pushBoolTweak fBool <> pushIntegerTweak fInteger
+
+flipBools :: Tweak
+flipBools = popBoolTweak (Just . not) <> pushBoolTweak (Just . not)
 
 flipIntegers :: Tweak
-flipIntegers =
-  let f = \case
-        MiniLangInteger n -> Just $ MiniLangInteger (-n)
-        _ -> Nothing
-   in Tweak {onPop = f, onPush = f}
+flipIntegers = popIntegerTweak f <> pushIntegerTweak f
+  where
+    f 0 = Nothing
+    f n = Just $ negate n
 
 flipBoth :: Tweak
 flipBoth = flipBools <> flipIntegers
+
+moduloTweak :: Integer -> Tweak
+moduloTweak n = popIntegerTweak (Just . (`mod` n)) <> pushIntegerTweak (Just . (`mod` n))
 
 instance {-# OVERLAPPING #-} (MonadPlus m) => Alternative (MiniLangT m) where
   empty = lift $ lift mzero
