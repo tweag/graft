@@ -30,7 +30,7 @@ tampering with existing actions.
 ## An example of the most common workflow
 
 The most common workflow is showcased in our
-[Ltl.Simple](./src/Example/Ltl.Simple.hs) tutorial. It goes like this: 
+[Ltl.Simple](./src/Examples/Ltl/Simple.hs) tutorial. It goes like this: 
 - Capture the behaviour of your system through a type class of monads
   containing all the relevant _domain actions_. Macros will define most of the
   rest of the machinery.
