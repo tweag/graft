@@ -69,6 +69,10 @@ class (Monad m) => MonadMiniLang m where
 
 type MiniLangT m = ExceptT MiniLangError (WriterT String (StateT [MiniLangValue] m))
 
+
+-- $doc
+-- The 'MonadPlus' instance will be necessary later on for the interpretation of 'Ltl' formulas, since there might be several ways to satisfy one formula, and we want to try them all.
+
 instance {-# OVERLAPPING #-} (MonadPlus m) => Alternative (MiniLangT m) where
   empty = lift $ lift mzero
   ExceptT (WriterT (StateT f)) <|> ExceptT (WriterT (StateT g)) =
