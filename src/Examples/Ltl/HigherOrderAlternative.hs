@@ -170,10 +170,10 @@ instance Semigroup MiniLangMod where
 -- As an example, the typical behaviour to handle an 'if' will be to
 -- evaluate the condition and pass the formula to either side
 -- depending on the result of this evalutation. In the case of our
--- example, the condition evaluation is itself an operation (a pop) so
--- it will first consume one of the single step modification, and pass
--- on the remaining of the formula to the right block depending on the
--- result of the evaluation. This passing is done through the use of
+-- example, the condition evaluation is itself an operation (a pop). So,
+-- we will first consume the next single step modification and apply it to that 'pop'. If that was successful, we'll pass
+-- on the remaining formulas  to the correct block depending on the
+-- result of the (possibly modified) result of evaluating the condition. This passing is done through the use of
 -- the 'evalAST' parameter of the function to be defined, while the
 -- second parameter, 'ltls' is the set of Ltl formulas to be applied
 -- from this point onward. This process uses the function
