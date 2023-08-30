@@ -25,14 +25,13 @@ import Control.Monad.Except
 import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Effect
 import Effect.Error
 import Effect.Error.Passthrough ()
 import Effect.TH
 import Logic.Ltl
 import Logic.SingleStep
 
--- * Example domain and implementation
+-- * Example domain specification and implementation
 
 -- $doc
 -- To use this library, you need a type class of monads that captures the
@@ -79,7 +78,7 @@ deleteTrace = do
 -- 'deleteValue' is wrong: we never delete anything from the
 -- store. We'll "find" this mistake later on.
 
-data KeyValueError = NoSuchKey String deriving (Show)
+newtype KeyValueError = NoSuchKey String deriving (Show)
 
 type KeyValueT m = ExceptT KeyValueError (StateT (Map String Integer) m)
 

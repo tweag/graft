@@ -11,6 +11,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 
+-- | A tutorial for how to use "Logic.Ltl" with higher-order effects.
+-- Understanding of "Simple.hs" for first order effects is assumed.
 module Examples.Ltl.HigherOrderAlternative where
 
 import Control.Applicative
@@ -23,9 +25,16 @@ import Effect.TH
 import Logic.Ltl
 import Logic.SingleStep
 
-data MiniLangValue = MiniLangInteger Integer | MiniLangBoolean Bool deriving (Show)
+data MiniLangValue
+  = MiniLangInteger Integer
+  | MiniLangBoolean Bool
+  deriving (Show)
 
-data MiniLangError = StackUnderflow | ExpectedBoolean | ExpectedInteger deriving (Show)
+data MiniLangError
+  = StackUnderflow
+  | ExpectedBoolean
+  | ExpectedInteger
+  deriving (Show)
 
 class (Monad m) => MonadMiniLang m where
   push :: MiniLangValue -> m ()
