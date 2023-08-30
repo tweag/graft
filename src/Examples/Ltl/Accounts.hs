@@ -54,16 +54,22 @@ instance MonadAccounts Accounts where
       Just (bal, _) -> return bal
       Nothing -> throwError $ NoSuchAccount name
 
--- This validator has a bug: since it is possible to exchange negative
--- amounts, being the actual recipient is not sufficient.
+-- Expectations: "validatorAlwaysReceives" will only accept payments
+-- that increase the balance of "me"
+--
+-- Bug: since it is possible to exchange negative amounts, being the
+-- actual recipient is not sufficient.
 validatorAlwaysReceives :: Validator
 validatorAlwaysReceives (_, _, recipient) _ me = recipient == me
 
 validatorAcceptsAll :: Validator
 validatorAcceptsAll _ _ _ = True
 
--- This validator has a bug: the balance should be checked to be
--- positive after the payment has been made, not before.
+-- Expectations: "validatorNeverNegative" will never accept payments
+-- that leave the balance negative.
+--
+-- Bug: balance should be checked to be positive after the payment has
+-- been made, not before.
 validatorNeverNegative :: Validator
 validatorNeverNegative _ bal _ = bal > 0
 
