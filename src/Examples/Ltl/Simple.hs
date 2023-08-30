@@ -25,7 +25,6 @@ import Control.Monad.Except
 import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Effect
 import Effect.Error
 import Effect.Error.Passthrough ()
 import Effect.TH
@@ -172,7 +171,7 @@ data KeyValueMod = KeyValueMod
 -- 'MonadKeyValueEffect', how it should be interpreted under a modification:
 --
 -- - Whenever the there's a modification that might apply, we'll try to apply
---   it using the 'Apply' constructor.
+--   it using the 'AttemptModification' constructor.
 --
 --   - When the modification applies, we signal that success by wrapping the
 --     return value of the action in a 'Just'.
@@ -180,32 +179,33 @@ data KeyValueMod = KeyValueMod
 --   - When the modification doesn't apply, we return 'Nothing'.
 --
 -- - Whenever there's no modification, we have nothing to apply, so we return
---   'DontApply'. This will mean that the operation will be performed as usual.
+--   'SkipModification'. This will mean that the operation will be performed as
+--   usual.
 --
--- - A third possibility, which is not shown here, is returning 'Ignore'
---   instead of 'Apply' or 'DontApply', which would mean to do the operation
---   without modification as usual, but remember the modification for the next
---   step. This is called "ignoring" the operation, because it makes the
+-- - A third possibility, which is not shown here, is returning 'PassModification'
+--   instead of 'AttemptModification' or 'SkipModification', which would mean
+--   to do the operation without modification as usual, but remember the
+--   modification for the next step. This can be thought of as making the
 --   operation invisible to modifications.
 
 instance (MonadError KeyValueError m, MonadKeyValue m) => InterpretMod KeyValueMod m MonadKeyValueEffect where
-  interpretMod (StoreValue key val) (Just modif) = Apply $ do
+  interpretMod (StoreValue key val) (Just modif) = AttemptModification $ do
     oldVal <- catchError (Just <$> getValue key) (\NoSuchKey {} -> return Nothing)
     case (oldVal, noOverwrite modif) of
       (Just _, True) -> return (Just ())
       (Nothing, True) -> return Nothing
       (_, False) -> Just <$> storeValue (renameKey modif key) val
   interpretMod (DeleteValue key) (Just modif) =
-    Apply $
+    AttemptModification $
       if noOverwrite modif
         then return Nothing
         else Just <$> deleteValue (renameKey modif key)
   interpretMod (GetValue key) (Just modif) =
-    Apply $
+    AttemptModification $
       if noOverwrite modif
         then return Nothing
         else Just <$> getValue (renameKey modif key)
-  interpretMod _ Nothing = DontApply
+  interpretMod _ Nothing = SkipModification
 
 -- $doc
 -- Here are two smart constructors for modifications, one for creating a

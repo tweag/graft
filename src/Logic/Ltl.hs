@@ -392,9 +392,9 @@ interpretEffectStatefulFromLtl evalActs (Const ltls) op =
     map
       ( \(now, later) ->
           case interpretMod op now of
-            DontApply -> interpretUnmodified later op
-            Ignore -> interpretUnmodified ltls op
-            Apply applied -> do
+            SkipModification -> interpretUnmodified later op
+            PassModification -> interpretUnmodified ltls op
+            AttemptModification applied -> do
               mA <- applied
               case mA of
                 Just a -> return (a, Const later)
@@ -427,9 +427,9 @@ interpretEffectStatefulFromLtlHigherOrder evalActs (Const ltls) op =
         map
           ( \(now, later) ->
               case directFun now of
-                DontApply -> interpretUnmodified later op
-                Ignore -> interpretUnmodified ltls op
-                Apply applied -> do
+                SkipModification -> interpretUnmodified later op
+                PassModification -> interpretUnmodified ltls op
+                AttemptModification applied -> do
                   mA <- applied
                   case mA of
                     Just a -> return (a, Const later)
