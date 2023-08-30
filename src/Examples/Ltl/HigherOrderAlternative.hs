@@ -109,8 +109,7 @@ runMiniLangT m = runStateT (runWriterT (runExceptT m)) []
 -- * Using the effect system
 
 -- $doc To obtain the effects associated with "MiniLang" for free, we
--- call the two following macros. They work both at first and higher
--- orders.
+-- call the two following macros. They work as explained in "Examples.Ltl.Simple"; the higher-order operations don't change that. 
 
 defineEffectType ''MonadMiniLang
 makeEffect ''MonadMiniLang ''MonadMiniLangEffect
