@@ -64,7 +64,7 @@ class (Monad m) => MonadMiniLang m where
 -- $doc A concrete implementation for our domain: we use
 --
 -- - a list of values as inner state to account for the stack
--- - a writer to allow prompting of strings
+-- - a writer to allow printing strings using 'echo'
 -- - an exception to cover possible errors
 
 type MiniLangT m = ExceptT MiniLangError (WriterT String (StateT [MiniLangValue] m))
