@@ -137,9 +137,7 @@ instance Semigroup MiniLangMod where
 -- their interpretation over our domain. This is what the class 'InterpretLtlHigherOrder' is for. There are two main
 -- differences with the first order case:
 --
--- - The interpretation function is directly dependant on Ltl (hence
---   the name 'InterpretLtlHigherOrder') as the Ltl formula needs to
---   be passed down explicitly in high order constructors
+-- - The interpretation function directly handles 'Ltl' formulas. (Remember that the 'InterpretMod' instance in the simple tutorial only has to handle single-step modifications.) This is because the approach based on applying atomic modifications to single operations breaks down for higher-order operations: since a single higher-order operation may contain sequences of operations in an 'AST' of operations, and we need a formula to modify these.
 --
 -- - An explicit distinction needs to be made between first order and
 --   high order constructors, by using 'Direct' and 'Nested'
