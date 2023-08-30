@@ -134,7 +134,7 @@ instance Semigroup MiniLangMod where
       (\x -> (fPush <=< gPush) x <|> fPush x <|> gPush x)
 
 -- $doc A meaning is given to the single step modifications through
--- their interpretation over our domain. There are two main
+-- their interpretation over our domain. This is what the class 'InterpretLtlHigherOrder' is for. There are two main
 -- differences with the first order case:
 --
 -- - The interpretation function is directly dependant on Ltl (hence
