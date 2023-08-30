@@ -156,13 +156,7 @@ instance Semigroup MiniLangMod where
 --
 -- Handling higher order operations:
 --
--- When using the Ltl logic within the first order setting, it is
--- possible to automatically decide what single step modifications
--- should be applied now and what should be the remaining formulas to
--- be applied later on. While the user can decide what to do with the
--- modification at hand within a given time step (attempting to apply
--- it, ignoring it or passing it on) they do not have to manually pass
--- formulas around. In the higher order setting the question is
+-- In the first order setting, we have the convenient class 'InterpretMod' which allows us to specify for individual operations and single-step modifications how they should be applied.  In the higher order setting the question is
 -- different: applying a single step modification on a nested
 -- operation makes no sense because it will likely contain several
 -- such operations, thus we provide the whole set of formulas to be
