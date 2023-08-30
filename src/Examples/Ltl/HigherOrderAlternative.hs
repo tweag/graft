@@ -29,16 +29,19 @@ import Logic.SingleStep
 
 -- * Example domain specification
 
--- $doc Higher order domains are domains with nested operations, that
--- is operations where parameters can have sequences of operations in
--- positive positions (ie (x -> m a) -> m a) is forbidden but (m a ->
--- x) -> m a is legit.
---
+-- $doc 
 -- Our domain will be a low level, turing-complete, abstract machine
--- called "MiniLang" which works on integers and booleans and can
--- raise a set of three errors. Values can be popped, pushed,
--- arbitrary text can be prompted and two control structures are
--- present: "if"s and "while"s that are of higher order.
+-- called 'MonadMiniLang' which works on integers and booleans and can
+-- raise a set of three errors. Values can be popped and pushed,
+-- arbitrary text can be printed, and two control structures are
+-- present: 'if_' and 'while_'.
+--
+-- These two latter operations are what makes 'MonadMiniLang' a /higher order domain/: 
+-- Such domains have /nested operations/, that
+-- is, operations that have sequences of operations as parameters. These seqences of operations must occur in
+-- positive positions (e.g. `(x -> m a) -> m a)` is forbidden but `(m a ->
+-- x) -> m a` is allowed).
+--
 
 data MiniLangValue
   = MiniLangInteger Integer
