@@ -120,7 +120,7 @@ makeEffect ''MonadMiniLang ''MonadMiniLangEffect
 -- applied before pushing a value, and a function to be applied after
 -- poping a value. To combine those within a Semigroup instance, we
 -- compose them while accounting for the fact that they can return
--- 'Nothing'
+-- 'Nothing'. Again, as explained in the simple tutorial, the 'Semigroup' instance is necessary because evaluation of 'Ltl' formulas might sometimes make it necessary to apply two modifications to the same operation.
 
 data MiniLangMod = MiniLangMod
   { onPop :: MiniLangValue -> Maybe MiniLangValue,
