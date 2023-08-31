@@ -143,8 +143,8 @@ instance Semigroup MiniLangMod where
 --
 -- Considering the second difference:
 --
--- - Using 'Direct' means the operation at hand is first order and
---   should be treated as such within this constructor.
+-- - Using 'Direct' singals that the operation at hand is first order, and
+--   you can proceed as if writing an 'InterpretMod' instance, as explained in the simple tutorial.
 --
 -- - Using 'Nested' means the operation is of higher order. This case
 --   is significantly more complicated as it requires to handle Ltl
