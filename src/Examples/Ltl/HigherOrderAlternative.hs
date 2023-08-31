@@ -137,8 +137,8 @@ instance Semigroup MiniLangMod where
 --
 -- - The interpretation function directly handles 'Ltl' formulas. (Remember that the 'InterpretMod' instance in the simple tutorial only has to handle single-step modifications.) This is because the approach based on applying atomic modifications to single operations breaks down for higher-order operations: since a single higher-order operation may contain sequences of operations in an 'AST' of operations, and we need a formula to modify these.
 --
--- - An explicit distinction needs to be made between first order and
---   high order constructors, by using 'Direct' and 'Nested'
+-- - An explicit distinction needs to be made between first-order and
+--   higher-order constructors, by using 'Direct' and 'Nested'
 --   respectively.
 --
 -- Considering the second difference:
