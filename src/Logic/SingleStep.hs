@@ -35,36 +35,40 @@ class InterpretMod (mod :: Type) (m :: Type -> Type) (op :: Effect) where
   -- There are the following possibilities, corresponding to the constructors of
   -- 'LtlInterp':
   --
-  -- - If you want to try applying the modification, use 'Apply'. Depending on
-  --   the current state reached so far, the application of the modification
-  --   can fail. Hence, there are two options:
+  -- - If you want to try applying the modification, use 'AttemptModification'.
+  --   Depending on the current state reached so far, the application of the
+  --   modification can fail. Hence, there are two options:
   --
   --   - If the modification successfully applies, return some computation that
   --     returns 'Just'.
   --
   --   - If the modification fails to apply, return 'Nothing'.
   --
-  -- - If you don't want to try applying the modification, return 'DontApply'.
-  --   Use this constructor if the modification is not applicable in the current
-  --   state, but you still want to continue interpreting the 'AST' as if the
-  --   modification had been applied. That is, at the next step, the evaluation
-  --   continues with the next modification in the sequence. This is most useful
-  --   if the current modification is 'Nothing': in this case, you can use
-  --   'DontApply' to indicate that want to proceed by \"successfully applying no
-  --   modification\".
+  -- - If you don't want to try applying the modification, return 'SkipModification'.
+  --   Use this constructor if you don't want to apply the modification to the
+  --   current operation, but you still want to continue interpreting the 'AST'
+  --   as if the modification had been applied. That is: the current
+  --   modification is consumed, and at the next step, the evaluation
+  --   continues with the next modification in the sequence. This is most
+  --   useful if the current modification is 'Nothing': in this case, you can
+  --   use 'SkipModification' to indicate that want to proceed by
+  --   \"successfully applying no modification\".
   --
-  -- - Like 'DontApply', 'Ignore' will interpret the operation without applying
-  --   the modification. The difference is that, at the next step, the
-  --   evaluation will continue with the same modification. This is also why
-  --   this constructor is called 'Ignore': it makes an operation invisible to
-  --   the evaluation of the sequence of atomic modifications. This is useful
-  --   if you want "timesteps" to only happen at some operations, and not at
-  --   others. Use 'Ignore' for all the operations that don't count as
-  --   timesteps.
+  -- - Like 'SkipModification', 'PassModification' will interpret the operation
+  --   without applying the modification. The difference is that the current
+  --   modification is /not/ consumed, and at the next step, the evaluation
+  --   will continue with the same modification. Another way to think about
+  --   'PassModification' is that it makes an operation invisible to the
+  --   evaluation of the sequence of atomic modifications. This is useful if
+  --   you want "timesteps" to only happen at some operations, and not at
+  --   others. Use 'PassModification' for all the operations that don't count
+  --   as timesteps.
   --
   -- The @dummy@ type variable signifies that the "nesting" monad of the effect
   -- type is irrelevant, since we're not dealing with higher-order effects.
-  interpretMod :: op (AST dummy) a -> Maybe mod -> ModInterp mod m a
+  interpretMod :: op (AST dummy) a -> ModInterp mod m a
 
 -- | Codomain of 'interpretLtl'. See the explanation there.
-data ModInterp mod m a = Apply (m (Maybe a)) | DontApply | Ignore
+data ModInterp mod m a
+  = Invisible
+  | Visible (mod -> m (Maybe a))

@@ -177,21 +177,13 @@ instance Semigroup MiniLangMod where
 -- formulas. This function will likely often be called in higher order
 -- operations.
 
-instance (MonadPlus m, MonadError MiniLangError m, MonadMiniLang m) => InterpretLtlHigherOrder MiniLangMod m MonadMiniLangEffect where
-  interpretLtlHigherOrder (Push v) = Direct $ \case
-    Just x -> Apply $
-      case onPush x v of
-        Just v' -> Just <$> push v'
-        Nothing -> return Nothing
-    Nothing -> DontApply
-  interpretLtlHigherOrder Pop = Direct $ \case
-    Just x -> Apply $ do
-      v <- pop
-      case onPop x v of
-        Just v' -> return $ Just v'
-        Nothing -> return Nothing
-    Nothing -> DontApply
-  interpretLtlHigherOrder Echo {} = Direct $ const Ignore
+instance (MonadPlus m, MonadError MiniLangError m, MonadMiniLang m) => InterpretLtlHigherOrder Tweak m MonadMiniLangEffect where
+  interpretLtlHigherOrder (Push v) = Direct $ Visible $ \x ->
+    case onPush x v of
+      Just v' -> Just <$> push v'
+      Nothing -> return Nothing
+  interpretLtlHigherOrder Pop = Direct $ Visible $ \x -> onPop x <$> pop
+  interpretLtlHigherOrder Echo {} = Direct Invisible
   interpretLtlHigherOrder (If_ m1 m2) = Nested $ \evalAST ltls -> do
     v <- pop
     msum $
