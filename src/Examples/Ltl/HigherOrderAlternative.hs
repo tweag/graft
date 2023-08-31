@@ -173,7 +173,7 @@ instance Semigroup MiniLangMod where
 -- on the remaining formulas  to the correct block depending on the
 -- result of the (possibly modified) result of evaluating the condition. This passing is done through the use of
 -- the 'evalAST' parameter of the function to be defined, while the
--- second parameter, 'ltls' is the set of Ltl formulas to be applied
+-- second parameter, 'later' is the set of Ltl formulas to be applied
 -- from this point onward. This process uses the function
 -- 'nowLaterList' which, from a list of Ltl formulas, creates a list
 -- of pairs of modification to be applied now and the remaining
