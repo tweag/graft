@@ -12,9 +12,7 @@
 {-# LANGUAGE TypeApplications #-}
 
 -- | A tutorial for how to use "Logic.Ltl" with higher-order effects.
--- Understanding of "Simple.hs" for first order effects is assumed and
--- elements revolving around higher order constructors only will be
--- further detailed alongside domain explanations.
+-- The explanations here assume you've understood the simple tutorial in "Examples.Ltl.Simple".
 module Examples.Ltl.HigherOrderAlternative where
 
 import Control.Applicative
