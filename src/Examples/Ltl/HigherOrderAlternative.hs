@@ -27,19 +27,18 @@ import Logic.SingleStep
 
 -- * Example domain specification
 
--- $doc 
+-- $doc
 -- Our domain will be a low level, turing-complete, abstract machine
 -- called 'MonadMiniLang' which works on integers and booleans and can
 -- raise a set of three errors. Values can be popped and pushed,
 -- arbitrary text can be printed, and two control structures are
 -- present: 'if_' and 'while_'.
 --
--- These two latter operations are what makes 'MonadMiniLang' a /higher order domain/: 
+-- These two latter operations are what makes 'MonadMiniLang' a /higher order domain/:
 -- Such domains have /nested operations/, that
 -- is, operations that have sequences of operations as parameters. These seqences of operations must occur in
 -- positive positions (e.g. `(x -> m a) -> m a)` is forbidden but `(m a ->
 -- x) -> m a` is allowed).
---
 
 data MiniLangValue
   = MiniLangInteger Integer
@@ -66,7 +65,6 @@ class (Monad m) => MonadMiniLang m where
 -- - an exception to cover possible errors
 
 type MiniLangT m = ExceptT MiniLangError (WriterT String (StateT [MiniLangValue] m))
-
 
 -- $doc
 -- The 'MonadPlus' instance will be necessary later on for the interpretation of 'Ltl' formulas, since there might be several ways to satisfy one formula, and we want to try them all.
@@ -107,7 +105,7 @@ runMiniLangT m = runStateT (runWriterT (runExceptT m)) []
 -- * Using the effect system
 
 -- $doc To obtain the effects associated with "MiniLang" for free, we
--- call the two following macros. They work as explained in "Examples.Ltl.Simple"; the higher-order operations don't change that. 
+-- call the two following macros. They work as explained in "Examples.Ltl.Simple"; the higher-order operations don't change that.
 
 defineEffectType ''MonadMiniLang
 makeEffect ''MonadMiniLang ''MonadMiniLangEffect
@@ -177,12 +175,15 @@ instance Semigroup MiniLangMod where
 -- formulas. This function will likely often be called in higher order
 -- operations.
 
-instance (MonadPlus m, MonadError MiniLangError m, MonadMiniLang m) => InterpretLtlHigherOrder Tweak m MonadMiniLangEffect where
-  interpretLtlHigherOrder (Push v) = Direct $ Visible $ \x ->
-    case onPush x v of
+instance
+  (MonadPlus m, MonadError MiniLangError m, MonadMiniLang m) =>
+  InterpretLtlHigherOrder MiniLangMod m MonadMiniLangEffect
+  where
+  interpretLtlHigherOrder (Push v) = Direct $ Visible $ \modif ->
+    case onPush modif v of
       Just v' -> Just <$> push v'
       Nothing -> return Nothing
-  interpretLtlHigherOrder Pop = Direct $ Visible $ \x -> onPop x <$> pop
+  interpretLtlHigherOrder Pop = Direct $ Visible $ \modif -> onPop modif <$> pop
   interpretLtlHigherOrder Echo {} = Direct Invisible
   interpretLtlHigherOrder (If_ m1 m2) = Nested $ \evalAST ltls -> do
     v <- pop
