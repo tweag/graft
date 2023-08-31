@@ -120,12 +120,11 @@ instance
   (MonadError AccountsError m, MonadAccounts m) =>
   InterpretMod AccountsMod m MonadAccountsEffect
   where
-  interpretMod (IssuePayment payment) (Just (AccountsMod modif)) = AttemptModification $
+  interpretMod (IssuePayment payment) = Visible $ \(AccountsMod modif) ->
     case modif payment of
       Nothing -> return Nothing
       (Just newPayment) -> Just <$> issuePayment newPayment
-  interpretMod (IssuePayment _) Nothing = SkipModification
-  interpretMod _ _ = PassModification
+  interpretMod _ = Invisible
 
 paymentsInvolvingXMod :: String -> Bool -> (Integer -> Maybe Integer) -> AccountsMod
 paymentsInvolvingXMod target isRecipient change =

@@ -233,7 +233,7 @@ class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) w
 
 -- | codomain of 'interpretLtlHigherOrder'. See the explanation there.
 data LtlInterpHigherOrder (mod :: Type) (m :: Type -> Type) (ops :: [Effect]) (a :: Type) where
-  Direct :: (Maybe mod -> ModInterp mod m a) -> LtlInterpHigherOrder mod m ops a
+  Direct :: ModInterp mod m a -> LtlInterpHigherOrder mod m ops a
   Nested ::
     ( (forall b. [Ltl mod] -> AST ops b -> m (b, [Ltl mod])) ->
       [Ltl mod] ->
@@ -388,19 +388,21 @@ interpretEffectStatefulFromLtl ::
   op (AST ops) a ->
   m (a, Const [Ltl mod] x)
 interpretEffectStatefulFromLtl evalActs (Const ltls) op =
-  msum $
-    map
-      ( \(now, later) ->
-          case interpretMod op now of
-            SkipModification -> interpretUnmodified later op
-            PassModification -> interpretUnmodified ltls op
-            AttemptModification applied -> do
-              mA <- applied
-              case mA of
-                Just a -> return (a, Const later)
-                Nothing -> mzero
-      )
-      (nowLaterList ltls)
+  case interpretMod op of
+    Invisible -> interpretUnmodified ltls op
+    Visible attempt ->
+      msum $
+        map
+          ( \(now, later) ->
+              case now of
+                Nothing -> interpretUnmodified later op
+                Just now' -> do
+                  mA <- attempt now'
+                  case mA of
+                    Just a -> return (a, Const later)
+                    Nothing -> mzero
+          )
+          (nowLaterList ltls)
   where
     interpretUnmodified later x =
       (,Const later)
@@ -422,20 +424,21 @@ interpretEffectStatefulFromLtlHigherOrder ::
   m (a, Const [Ltl mod] x)
 interpretEffectStatefulFromLtlHigherOrder evalActs (Const ltls) op =
   case interpretLtlHigherOrder op of
-    Direct directFun ->
-      msum $
-        map
-          ( \(now, later) ->
-              case directFun now of
-                SkipModification -> interpretUnmodified later op
-                PassModification -> interpretUnmodified ltls op
-                AttemptModification applied -> do
-                  mA <- applied
-                  case mA of
-                    Just a -> return (a, Const later)
-                    Nothing -> mzero
-          )
-          (nowLaterList ltls)
+    Direct inner -> case inner of
+      Invisible -> interpretUnmodified ltls op
+      Visible attempt ->
+        msum $
+          map
+            ( \(now, later) ->
+                case now of
+                  Nothing -> interpretUnmodified later op
+                  Just now' -> do
+                    mA <- attempt now'
+                    case mA of
+                      Just a -> return (a, Const later)
+                      Nothing -> mzero
+            )
+            (nowLaterList ltls)
     Nested nestFun -> do
       mA <- nestFun (\x' ast -> second getConst <$> evalActs (Const x') ast) ltls
       case mA of

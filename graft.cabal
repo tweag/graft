@@ -27,7 +27,6 @@ library
       Effect.Writer.Passthrough
       Examples.Ltl.Accounts
       Examples.Ltl.HigherOrder
-      Examples.Ltl.HigherOrderAlternative
       Examples.Ltl.Simple
       Logic.Ltl
       Logic.Ltl.TH
