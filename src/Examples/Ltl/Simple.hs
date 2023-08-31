@@ -32,7 +32,7 @@ import Effect.TH
 import Logic.Ltl
 import Logic.SingleStep
 
--- * Example domain and implementation
+-- * Example domain specification
 
 -- $doc
 -- To use this library, you need a type class of monads that captures the
