@@ -1,218 +1,359 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 
--- | This module contains a more advanced use case for the LTL framework from
--- "Logic.Ltl". It assumes you've read the first tutorial in
--- "Examples.Ltl.Simple".
+-- | A tutorial for how to use "Logic.Ltl" with higher-order effects.
+-- The explanations here assume you've understood the simple tutorial in "Examples.Ltl.Simple".
 module Examples.Ltl.HigherOrder where
 
--- import Control.Applicative
--- import Control.Monad
--- import Control.Monad.Except
--- import Control.Monad.Identity (Identity (runIdentity))
--- import Data.Map (Map)
--- import Effect
--- import Effect.Error
--- import Effect.Error.Passthrough ()
--- import Effect.TH
--- import Examples.Ltl.Simple
--- import Logic.Ltl
+import Control.Applicative
+import Control.Monad.Except
+import Control.Monad.State
+import Control.Monad.Writer
+import Effect.Error
+import Effect.Error.Passthrough ()
+import Effect.TH
+import Logic.Ltl
+import Logic.SingleStep
 
--- -- $doc
--- -- The idea in this tutorial is to use the key-value store from
--- -- "Examples.Ltl.Simple" as a basis for a minimal programming language: the
--- -- keys will be variable names, and the values, well, the values. We add a
--- -- branching construct 'ifThenElse' and a looping construct 'while'. Both of
--- -- these have as their first argument a key (i.e. a variable name), and branch
--- -- depending on whether the value associated to the key is 'truthy'.
+-- * Example domain specification
 
--- type MiniLangError = String
+-- $doc
+-- Our domain will be a low level, turing-complete, abstract machine
+-- called 'MonadMiniLang' which works on integers and booleans and can
+-- raise a set of three errors. Values can be popped and pushed,
+-- arbitrary text can be printed, and two control structures are
+-- present: 'if_' and 'while_'.
+--
+-- These two latter operations are what makes 'MonadMiniLang' a /higher order domain/:
+-- Such domains have /nested operations/, that
+-- is, operations that have sequences of operations as parameters. These seqences of operations must occur in
+-- positive positions (e.g. `(x -> m a) -> m a)` is forbidden but `(m a ->
+-- x) -> m a` is allowed).
 
--- class Truthy v where
---   truthy :: v -> Bool
+data MiniLangValue
+  = MiniLangInteger Integer
+  | MiniLangBoolean Bool
+  deriving (Show)
 
--- class (Truthy v, MonadKeyValue k v m) => MonadMiniLang k v m where
---   ifThenElse :: k -> m a -> m a -> m a
---   while :: k -> m () -> m ()
+data MiniLangError
+  = StackUnderflow
+  | ExpectedBoolean
+  | ExpectedInteger
+  deriving (Show)
 
--- -- $doc
--- -- As in the first-order tutorial, we also  ave a simple implementation of our
--- -- interface of interest, @MonadMiniLang@. Note that the branching in the
--- -- implementation of 'ifThenElse' and 'while' is implemented in a way that is
--- -- sometimes seen in real-world programming languages (Lua is an example): if
--- -- there's no value associated to the variable name, that counts as "false"
--- -- i.e. not 'truthy'.
+class (Monad m) => MonadMiniLang m where
+  push :: MiniLangValue -> m ()
+  pop :: m MiniLangValue
+  echo :: String -> m ()
+  if_ :: m a -> m a -> m a
+  while_ :: m () -> m ()
 
--- type MiniLangT k v m = ExceptT MiniLangError (KeyValueT k v m)
+-- $doc A concrete implementation for our domain: we use
+--
+-- - a list of values as inner state to account for the stack
+-- - a writer to allow printing strings using 'echo'
+-- - an exception to cover possible errors
 
--- type MiniLang k v = MiniLangT k v Identity
+type MiniLangT m = ExceptT MiniLangError (WriterT String (StateT [MiniLangValue] m))
 
--- runMiniLangT :: Map k v -> MiniLangT k v m a -> m (Either MiniLangError a, Map k v)
--- runMiniLangT initState = runKeyValueT initState . runExceptT
+-- $doc
+-- The 'MonadPlus' instance will be necessary later on for the interpretation of 'Ltl' formulas, since there might be several ways to satisfy one formula, and we want to try them all.
 
--- runMiniLang :: Map k v -> MiniLang k v a -> (Either MiniLangError a, Map k v)
--- runMiniLang initState = runIdentity . runMiniLangT initState
+instance {-# OVERLAPPING #-} (MonadPlus m) => Alternative (MiniLangT m) where
+  empty = lift $ lift mzero
+  ExceptT (WriterT (StateT f)) <|> ExceptT (WriterT (StateT g)) =
+    ExceptT . WriterT . StateT $ \s -> f s `mplus` g s
 
--- instance (Ord k, Monad m) => MonadKeyValue k v (MiniLangT k v m) where
---   storeValue k v = lift $ storeValue k v
---   getValue = lift . getValue
---   deleteValue = lift . deleteValue @k @v
+instance {-# OVERLAPPING #-} (MonadPlus m) => MonadPlus (MiniLangT m)
 
--- instance
---   (Ord k, Show k, Truthy v, Monad m) =>
---   MonadMiniLang k v (MiniLangT k v m)
---   where
---   ifThenElse cond l r = do
---     mTest <- getValue cond
---     case mTest of
---       Nothing -> r
---       Just b -> if truthy @v b then l else r
---   while test acts = do
---     mTest <- getValue test
---     case mTest of
---       Nothing -> return ()
---       Just b ->
---         when (truthy @v b) $ acts >> while @k @v test acts
+instance (Monad m) => MonadMiniLang (MiniLangT m) where
+  push v = do
+    vs <- get
+    put (v : vs)
+  pop = do
+    vs <- get
+    case vs of
+      [] -> throwError StackUnderflow
+      (v : vs') -> put vs' >> return v
+  echo = tell
+  if_ m1 m2 = do
+    v <- pop
+    case v of
+      MiniLangBoolean True -> m1
+      MiniLangBoolean False -> m2
+      _ -> throwError ExpectedBoolean
+  while_ m = do
+    v <- pop
+    case v of
+      MiniLangBoolean True -> m >> while_ m
+      MiniLangBoolean False -> return ()
+      _ -> throwError ExpectedBoolean
 
--- defineEffectType ''MonadMiniLang
--- makeEffect ''MonadMiniLang ''MonadMiniLangEffect
+runMiniLangT :: (Functor m) => MiniLangT m a -> m ((Either MiniLangError a, String), [MiniLangValue])
+runMiniLangT m = runStateT (runWriterT (runExceptT m)) []
 
--- -- $doc
--- -- For our little programming language, let's have booleans and integers, and
--- -- define them to be 'truthy' in the customary way: booleans truthy by their
--- -- very nature, integers are truthy if they're nonzero.
+-- * Using the effect system
 
--- data MiniLangValue = MLBool Bool | MLInteger Integer deriving (Show)
+-- $doc To obtain the effects associated with "MiniLang" for free, we
+-- call the two following macros. They work as explained in "Examples.Ltl.Simple"; the higher-order operations don't change that.
 
--- instance Truthy MiniLangValue where
---   truthy (MLBool b) = b
---   truthy (MLInteger i) = i /= 0
+defineEffectType ''MonadMiniLang
+makeEffect ''MonadMiniLang ''MonadMiniLangEffect
 
--- -- $doc
--- -- This next instance is what this tutorial is about. It makes the evaluation
--- -- of 'Ltl' formulas pass into the two higher-order effects 'IfThenElse' and
--- -- 'While' in the obvious ways:
--- --
--- -- - For 'IfThenElse', look at the condition. If it is 'truthy', continue
--- --   evaluating the 'Ltl' formula(s) on the "then" branch, otherwise the "else"
--- --   branch.
--- --
--- -- - For 'While', look at the condition. If it is 'truthy', run throuhg the
--- --   body once more, while continuing to evaluate the 'Ltl' formula(s), otherwise
--- --   continue evaluation after with whatever remains of the 'Ltl' formula(s).
--- --
--- -- TODO: explain it really thoroughly.
+-- * Defining single step modifications
 
--- instance (MonadMiniLang String MiniLangValue m) => InterpretLtlHigherOrder x m (MonadMiniLangEffect String MiniLangValue) where
---   interpretLtlHigherOrder (IfThenElse cond l r) = Nested $
---     \evalAST ltls -> do
---       ifThenElse @String @MiniLangValue
---         cond
---         (evalAST ltls l)
---         (evalAST ltls r)
---   interpretLtlHigherOrder (While cond body) = Nested $
---     \evalAST ltls -> whileWithLtls evalAST ltls cond body
---     where
---       whileWithLtls ::
---         (MonadMiniLang String MiniLangValue m) =>
---         ([Ltl mod] -> AST ops () -> m ((), [Ltl mod])) ->
---         [Ltl mod] ->
---         String ->
---         AST ops () ->
---         m ((), [Ltl mod])
---       whileWithLtls evalAST ltls test acts = do
---         mTest <- getValue test
---         case truthy @MiniLangValue <$> mTest of
---           Nothing -> return ((), ltls)
---           Just b -> do
---             if b
---               then do
---                 (_, ltls') <- evalAST ltls acts
---                 whileWithLtls evalAST ltls' test acts
---               else return ((), ltls)
+-- $doc Our type of modifications is a conjunction of a function to be
+-- applied before pushing a value, and a function to be applied after
+-- poping a value. To combine those within a Semigroup instance, we
+-- compose them while accounting for the fact that they can return
+-- 'Nothing'. Again, as explained in the simple tutorial, the 'Semigroup' instance is necessary because evaluation of 'Ltl' formulas might sometimes make it necessary to apply two modifications to the same operation.
 
--- -- $doc
--- -- TODO: here are a few silly example programs.
+data MiniLangMod = MiniLangMod
+  { onPop :: MiniLangValue -> Maybe MiniLangValue,
+    onPush :: MiniLangValue -> Maybe MiniLangValue
+  }
 
--- getInteger :: (MonadError MiniLangError m, MonadMiniLang String MiniLangValue m) => String -> m Integer
--- getInteger name = do
---   mi <- getValue name
---   case mi of
---     Just (MLInteger i) -> return i
---     Just _ -> throwError $ "not an Integer: " ++ name
---     Nothing -> throwError $ "unbond variable: " ++ name
+instance Semigroup MiniLangMod where
+  MiniLangMod fPop fPush <> MiniLangMod gPop gPush =
+    MiniLangMod
+      (\x -> (fPop <=< gPop) x <|> fPop x <|> gPop x)
+      (\x -> (fPush <=< gPush) x <|> fPush x <|> gPush x)
 
--- fibonacciTest :: (MonadError MiniLangError m, MonadMiniLang String MiniLangValue m) => Integer -> m Integer
--- fibonacciTest n = do
---   storeValue "n" $ MLInteger n
---   storeValue "a" $ MLInteger 0
---   storeValue "b" $ MLInteger 1
---   while @_ @MiniLangValue "n" $ do
---     n <- getInteger "n"
---     a <- getInteger "a"
---     b <- getInteger "b"
---     storeValue "b" $ MLInteger (a + b)
---     storeValue "a" $ MLInteger b
---     storeValue "n" $ MLInteger (n - 1)
---   getInteger "a"
+-- $doc A meaning is given to the single step modifications through
+-- their interpretation over our domain. This is what the class 'InterpretLtlHigherOrder' is for. There are two main
+-- differences with the first order case:
+--
+-- - The interpretation function directly handles 'Ltl' formulas. (Remember that the 'InterpretMod' instance in the simple tutorial only has to handle single-step modifications.) This is because the approach based on applying atomic modifications to single operations breaks down for higher-order operations: since a single higher-order operation may contain sequences of operations in an 'AST' of operations, and we need a formula to modify these.
+--
+-- - An explicit distinction needs to be made between first-order and
+--   higher-order constructors, by using 'Direct' and 'Nested'
+--   respectively.
+--
+-- Considering the second difference:
+--
+-- - Using 'Direct' singals that the operation at hand is first order, and
+--   you can proceed as if writing an 'InterpretMod' instance, as explained in the simple tutorial.
+--
+-- - Using 'Nested' means the operation is of higher order. This case
+--   is detailed below.
+--
+-- Handling higher order operations:
+--
+-- In the first order setting, we have the convenient class 'InterpretMod' which allows us to specify for individual operations and single-step modifications how they should be applied.  In the higher order setting the question is
+-- different: applying a single step modification on a nested
+-- operation makes no sense because it will likely contain several
+-- such operations, thus we provide the whole set of formulas to be
+-- applied currently and leave it to the user as to how they should be
+-- handling those. While it seems complicated, it is actually pretty
+-- straighforward in most cases as the user has sufficient domain
+-- knowledge to know how and when the nested blocks will be executed.
+--
+-- In the example:
+--
+-- As an example, the typical behaviour to handle an 'if' will be to
+-- evaluate the condition and pass the formula to either side
+-- depending on the result of this evalutation. In the case of our
+-- example, the condition evaluation is itself an operation (a pop). So,
+-- we will first consume the next single step modification and apply it to that 'pop'. If that was successful, we'll pass
+-- on the remaining formulas  to the correct block depending on the
+-- result of the (possibly modified) result of evaluating the condition. This passing is done through the use of
+-- the 'evalAST' parameter of the function to be defined, while the
+-- second parameter, 'later' is the set of Ltl formulas to be applied
+-- from this point onward. This process uses the function
+-- 'nowLaterList' which, from a list of Ltl formulas, creates a list
+-- of pairs of a modification to be applied now and the remaining
+-- formulas. This function will likely often be called in higher order
+-- operations.
 
--- branchTest :: (MonadMiniLang String MiniLangValue m) => Integer -> m Integer
--- branchTest n = do
---   storeValue "n" $ MLInteger n
---   ifThenElse @_ @MiniLangValue "n" (return 3) (return 4)
+instance
+  (MonadPlus m, MonadError MiniLangError m, MonadMiniLang m) =>
+  InterpretLtlHigherOrder MiniLangMod m MonadMiniLangEffect
+  where
+  interpretLtlHigherOrder (Push v) = Direct $ Visible $ \modif ->
+    case onPush modif v of
+      Just v' -> Just <$> push v'
+      Nothing -> return Nothing
+  interpretLtlHigherOrder Pop = Direct $ Visible $ \modif -> onPop modif <$> pop
+  interpretLtlHigherOrder Echo {} = Direct Invisible
+  interpretLtlHigherOrder (If_ m1 m2) = Nested $ \evalAST ltls -> do
+    v <- pop
+    msum $
+      map
+        ( \(now, later) ->
+            let vMiniLangModed = case now of
+                  Just x -> onPop x v
+                  Nothing -> Just v
+             in case vMiniLangModed of
+                  Just (MiniLangBoolean True) -> Just <$> evalAST later m1
+                  Just (MiniLangBoolean False) -> Just <$> evalAST later m2
+                  Nothing -> return Nothing
+                  _ -> throwError ExpectedBoolean
+        )
+        (nowLaterList ltls)
+  interpretLtlHigherOrder (While_ m) = Nested $ \evalAST ltls -> do
+    v <- pop
+    msum $
+      map
+        ( \(now, later) ->
+            let vMiniLangModed = case now of
+                  Just x -> onPop x v
+                  Nothing -> Just v
+             in case vMiniLangModed of
+                  Just (MiniLangBoolean True) -> do
+                    ((), later') <- evalAST later m
+                    case interpretLtlHigherOrder (While_ m) of
+                      Nested f -> f evalAST later'
+                      _ -> error "impossible"
+                  Just (MiniLangBoolean False) -> return $ Just ((), later)
+                  Nothing -> return Nothing
+                  _ -> throwError ExpectedBoolean
+        )
+        (nowLaterList ltls)
 
--- simpleRun :: (Ord k) => MiniLangT k v Identity a -> (Either String a, Map k v)
--- simpleRun = runMiniLang mempty
+interpretAndRunMiniLang ::
+  LtlAST MiniLangMod '[MonadMiniLangEffect, MonadErrorEffect MiniLangError] a ->
+  [((Either MiniLangError a, String), [MiniLangValue])]
+interpretAndRunMiniLang = runMiniLangT . interpretLtlAST @'[InterpretLtlHigherOrderTag, InterpretEffectStatefulTag]
 
--- foo :: Integer -> (Either String Integer, Map String MiniLangValue)
--- foo = simpleRun . fibonacciTest
+-- * Helper function to push and pop specific kinds of values
 
--- bar :: Integer -> (Either String Integer, Map String MiniLangValue)
--- bar = simpleRun . branchTest
+popInteger :: (MonadError MiniLangError m, MonadMiniLang m) => m Integer
+popInteger =
+  pop >>= \case
+    MiniLangInteger n -> return n
+    _ -> throwError ExpectedInteger
 
--- -- $doc
--- -- TODO here is a tweak that will apply a "renaming" function to all variable
--- -- names. We can use it to "detect" the "strange" behaviour that programs are
--- -- not invariant under uniform renaming of all variables, because 'ifThenElse'
--- -- and 'while' use hard-coded variable names.
+pushInteger :: (MonadMiniLang m) => Integer -> m ()
+pushInteger = push . MiniLangInteger
 
--- data Tweak k = Rename (k -> Maybe k)
+popBoolean :: (MonadError MiniLangError m, MonadMiniLang m) => m Bool
+popBoolean =
+  pop >>= \case
+    MiniLangBoolean b -> return b
+    _ -> throwError ExpectedBoolean
 
--- instance Semigroup (Tweak k) where
---   Rename f <> Rename g = Rename $ \key -> (f =<< g key) <|> g key <|> f key
+pushBoolean :: (MonadMiniLang m) => Bool -> m ()
+pushBoolean = push . MiniLangBoolean
 
--- instance (MonadKeyValue k v m) => InterpretLtl (Tweak k) m (MonadKeyValueEffect k v) where
---   interpretLtl (GetValue key) = Apply $ \(Rename f) -> case f key of
---     Nothing -> return Nothing
---     Just key' -> Just <$> getValue key'
---   interpretLtl (StoreValue key val) = Apply $ \(Rename f) -> case f key of
---     Nothing -> return Nothing
---     Just key' -> storeValue key' val >> return (Just ())
---   interpretLtl (DeleteValue key) = Apply $ \(Rename f) -> case f key of
---     Nothing -> return Nothing
---     Just key' -> deleteValue @_ @v key' >> return (Just ())
+-- * Examples of programs using MiniLang. Fibonacci and gcd.
 
--- interpretAndRunMiniLang ::
---   Map String MiniLangValue ->
---   LtlAST
---     (Tweak String)
---     '[ MonadErrorEffect MiniLangError,
---        MonadKeyValueEffect String MiniLangValue,
---        MonadMiniLangEffect String MiniLangValue
---      ]
---     a ->
---   [(Either MiniLangError a, Map String MiniLangValue)]
--- interpretAndRunMiniLang initialState acts =
---   runMiniLangT initialState $
---     interpretLtlAST
---       @'[InterpretEffectStatefulTag, InterpretLtlTag, InterpretLtlHigherOrderTag]
---       acts
+fibonacciExample :: (MonadError MiniLangError m, MonadMiniLang m) => Integer -> m Integer
+fibonacciExample n = do
+  pushInteger 1
+  pushInteger 0
+  pushInteger n
+  pushBoolean (n > 0)
+  while_ $ do
+    n' <- popInteger
+    b <- popInteger
+    a <- popInteger
+    echo $ show n' ++ ", " ++ show a ++ ", " ++ show b ++ "\n"
+    pushInteger (a + b)
+    pushInteger a
+    pushInteger (n' - 1)
+    pushBoolean (n' > 1)
+  _ <- popInteger
+  popInteger
+
+gcdExample :: (MonadError MiniLangError m, MonadMiniLang m) => Integer -> Integer -> m Integer
+gcdExample a b = do
+  pushInteger a
+  pushInteger b
+  pushBoolean (0 /= b)
+  while_ $ do
+    b' <- popInteger
+    a' <- popInteger
+    pushInteger b'
+    pushInteger (a' `mod` b')
+    pushBoolean (0 /= a' `mod` b')
+  _ <- popInteger
+  popInteger
+
+-- * Examples of modifications:
+
+-- $doc Modifies boolean values on pop
+
+popBoolMiniLangMod :: (Bool -> Maybe Bool) -> MiniLangMod
+popBoolMiniLangMod f =
+  MiniLangMod
+    { onPop = \case
+        MiniLangBoolean b -> MiniLangBoolean <$> f b
+        _ -> Nothing,
+      onPush = const Nothing
+    }
+
+-- $doc Modifies integer values on pop
+
+popIntegerMiniLangMod :: (Integer -> Maybe Integer) -> MiniLangMod
+popIntegerMiniLangMod f =
+  MiniLangMod
+    { onPop = \case
+        MiniLangInteger n -> MiniLangInteger <$> f n
+        _ -> Nothing,
+      onPush = const Nothing
+    }
+
+-- $doc Modifies all values on pop
+
+popMiniLangMod :: (Bool -> Maybe Bool) -> (Integer -> Maybe Integer) -> MiniLangMod
+popMiniLangMod fBool fInteger = popBoolMiniLangMod fBool <> popIntegerMiniLangMod fInteger
+
+-- $doc Modifies booleans on push
+
+pushBoolMiniLangMod :: (Bool -> Maybe Bool) -> MiniLangMod
+pushBoolMiniLangMod f =
+  MiniLangMod
+    { onPop = const Nothing,
+      onPush = \case
+        MiniLangBoolean b -> MiniLangBoolean <$> f b
+        _ -> Nothing
+    }
+
+-- $doc Modifies integers on push
+
+pushIntegerMiniLangMod :: (Integer -> Maybe Integer) -> MiniLangMod
+pushIntegerMiniLangMod f =
+  MiniLangMod
+    { onPop = const Nothing,
+      onPush = \case
+        MiniLangInteger n -> MiniLangInteger <$> f n
+        _ -> Nothing
+    }
+
+-- $doc Modifies all values on push
+
+pushMiniLangMod :: (Bool -> Maybe Bool) -> (Integer -> Maybe Integer) -> MiniLangMod
+pushMiniLangMod fBool fInteger = pushBoolMiniLangMod fBool <> pushIntegerMiniLangMod fInteger
+
+-- $doc Negates booleans on pop and push
+
+flipBools :: MiniLangMod
+flipBools = popBoolMiniLangMod (Just . not) <> pushBoolMiniLangMod (Just . not)
+
+-- $doc Negates integers on pop and push
+
+flipIntegers :: MiniLangMod
+flipIntegers = popIntegerMiniLangMod f <> pushIntegerMiniLangMod f
+  where
+    f 0 = Nothing
+    f n = Just $ negate n
+
+-- $doc Negates all values on pop and push
+
+flipBoth :: MiniLangMod
+flipBoth = flipBools <> flipIntegers
+
+-- $doc Applies the modulo operation on pop and push for integers
+
+moduloMiniLangMod :: Integer -> MiniLangMod
+moduloMiniLangMod n = popIntegerMiniLangMod (Just . (`mod` n)) <> pushIntegerMiniLangMod (Just . (`mod` n))
