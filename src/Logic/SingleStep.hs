@@ -5,7 +5,6 @@ module Logic.SingleStep
   ( -- * Simple effects
     InterpretMod (..),
     ModInterp (..),
-    AttemptOrSkip (..),
   )
 where
 
@@ -70,6 +69,6 @@ class InterpretMod (mod :: Type) (m :: Type -> Type) (op :: Effect) where
   interpretMod :: op (AST dummy) a -> ModInterp mod m a
 
 -- | Codomain of 'interpretLtl'. See the explanation there.
-data ModInterp mod m a = Invisible | Visible (mod -> AttemptOrSkip m a)
-
-data AttemptOrSkip m a = Attempt (m (Maybe a)) | Skip
+data ModInterp mod m a
+  = Invisible
+  | Visible (mod -> m (Maybe a))

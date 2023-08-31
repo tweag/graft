@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -78,7 +79,7 @@ deleteTrace = do
 -- 'deleteValue' is wrong: we never delete anything from the
 -- store. We'll "find" this mistake later on.
 
-data KeyValueError = NoSuchKey String deriving (Show)
+newtype KeyValueError = NoSuchKey String deriving (Show)
 
 type KeyValueT m = ExceptT KeyValueError (StateT (Map String Integer) m)
 
@@ -189,23 +190,23 @@ data KeyValueMod = KeyValueMod
 --   operation invisible to modifications.
 
 instance (MonadError KeyValueError m, MonadKeyValue m) => InterpretMod KeyValueMod m MonadKeyValueEffect where
-  interpretMod (StoreValue key val) (Just modif) = AttemptModification $ do
-    oldVal <- catchError (Just <$> getValue key) (\NoSuchKey {} -> return Nothing)
-    case (oldVal, noOverwrite modif) of
-      (Just _, True) -> return (Just ())
-      (Nothing, True) -> return Nothing
-      (_, False) -> Just <$> storeValue (renameKey modif key) val
-  interpretMod (DeleteValue key) (Just modif) =
-    AttemptModification $
+  interpretMod (StoreValue key val) =
+    Visible $ \modif -> do
+      oldVal <- catchError (Just <$> getValue key) (\NoSuchKey {} -> return Nothing)
+      case (oldVal, noOverwrite modif) of
+        (Just _, True) -> return (Just ())
+        (Nothing, True) -> return Nothing
+        (_, False) -> Just <$> storeValue (renameKey modif key) val
+  interpretMod (DeleteValue key) =
+    Visible $ \modif ->
       if noOverwrite modif
         then return Nothing
         else Just <$> deleteValue (renameKey modif key)
-  interpretMod (GetValue key) (Just modif) =
-    AttemptModification $
+  interpretMod (GetValue key) =
+    Visible $ \modif ->
       if noOverwrite modif
         then return Nothing
         else Just <$> getValue (renameKey modif key)
-  interpretMod _ Nothing = SkipModification
 
 -- $doc
 -- Here are two smart constructors for modifications, one for creating a
