@@ -147,8 +147,7 @@ instance Semigroup MiniLangMod where
 --   you can proceed as if writing an 'InterpretMod' instance, as explained in the simple tutorial.
 --
 -- - Using 'Nested' means the operation is of higher order. This case
---   is significantly more complicated as it requires to handle Ltl
---   formulas by hand. Achieving this is detailed below.
+--   is detailed below.
 --
 -- Handling higher order operations:
 --
