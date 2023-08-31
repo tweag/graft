@@ -176,7 +176,7 @@ instance Semigroup MiniLangMod where
 -- second parameter, 'later' is the set of Ltl formulas to be applied
 -- from this point onward. This process uses the function
 -- 'nowLaterList' which, from a list of Ltl formulas, creates a list
--- of pairs of modification to be applied now and the remaining
+-- of pairs of a modification to be applied now and the remaining
 -- formulas. This function will likely often be called in higher order
 -- operations.
 
