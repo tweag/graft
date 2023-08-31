@@ -176,7 +176,7 @@ instance
 -- | Explain how to interpret an 'Ltl' modification, in the presence of
 -- higher-order effects. The type parameters have the same meaning as for
 -- 'InterpretLtl'.
-class InterpretLtlHigherOrder mod m op where
+class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) where
   -- | Given an operation of type @op a@, there are two possibilities,
   -- corresponding the two constructors of 'LtlInterpHigherOrder'.
   --
