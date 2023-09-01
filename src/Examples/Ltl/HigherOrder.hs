@@ -12,7 +12,8 @@
 {-# LANGUAGE TypeApplications #-}
 
 -- | A tutorial for how to use "Logic.Ltl" with higher-order effects.
--- The explanations here assume you've understood the simple tutorial in "Examples.Ltl.Simple".
+-- The explanations here assume you've understood the simple tutorial
+-- in "Examples.Ltl.Simple".
 module Examples.Ltl.HigherOrder where
 
 import Control.Applicative
@@ -27,18 +28,18 @@ import Logic.SingleStep
 
 -- * Example domain specification
 
--- $doc
--- Our domain will be a low level, turing-complete, abstract machine
--- called 'MonadMiniLang' which works on integers and booleans and can
--- raise a set of three errors. Values can be popped and pushed,
--- arbitrary text can be printed, and two control structures are
--- present: 'if_' and 'while_'.
+-- $doc Our domain will be a low level, turing-complete, abstract
+-- machine called 'MonadMiniLang' which works on integers and booleans
+-- and can raise a set of three errors. Values can be popped and
+-- pushed, arbitrary text can be printed, and two control structures
+-- are present: 'if_' and 'while_'.
 --
--- These two latter operations are what makes 'MonadMiniLang' a /higher order domain/:
--- Such domains have /nested operations/, that
--- is, operations that have sequences of operations as parameters. These seqences of operations must occur in
--- positive positions (e.g. `(x -> m a) -> m a)` is forbidden but `(m a ->
--- x) -> m a` is allowed).
+-- These two latter operations are what makes 'MonadMiniLang' a
+-- /higher order domain/: Such domains have /nested operations/, that
+-- is, operations that have sequences of operations as
+-- parameters. These seqences of operations must occur in positive
+-- positions (e.g. `(x -> m a) -> m a)` is forbidden but `(m a -> x)
+-- -> m a` is allowed).
 
 data MiniLangValue
   = MiniLangInteger Integer
@@ -61,13 +62,16 @@ class (Monad m) => MonadMiniLang m where
 -- $doc A concrete implementation for our domain: we use
 --
 -- - a list of values as inner state to account for the stack
+--
 -- - a writer to allow printing strings using 'echo'
+--
 -- - an exception to cover possible errors
 
 type MiniLangT m = ExceptT MiniLangError (WriterT String (StateT [MiniLangValue] m))
 
--- $doc
--- The 'MonadPlus' instance will be necessary later on for the interpretation of 'Ltl' formulas, since there might be several ways to satisfy one formula, and we want to try them all.
+-- $doc The 'MonadPlus' instance will be necessary later on for the
+-- interpretation of 'Ltl' formulas, since there might be several ways
+-- to satisfy one formula, and we want to try them all.
 
 instance {-# OVERLAPPING #-} (MonadPlus m) => Alternative (MiniLangT m) where
   empty = lift $ lift mzero
@@ -105,7 +109,8 @@ runMiniLangT m = runStateT (runWriterT (runExceptT m)) []
 -- * Using the effect system
 
 -- $doc To obtain the effects associated with "MiniLang" for free, we
--- call the two following macros. They work as explained in "Examples.Ltl.Simple"; the higher-order operations don't change that.
+-- call the same macros as in "Examples.Ltl.Simple" which also work in
+-- higher order settings.
 
 defineEffectType ''MonadMiniLang
 makeEffect ''MonadMiniLang ''MonadMiniLangEffect
@@ -116,7 +121,10 @@ makeEffect ''MonadMiniLang ''MonadMiniLangEffect
 -- applied before pushing a value, and a function to be applied after
 -- poping a value. To combine those within a Semigroup instance, we
 -- compose them while accounting for the fact that they can return
--- 'Nothing'. Again, as explained in the simple tutorial, the 'Semigroup' instance is necessary because evaluation of 'Ltl' formulas might sometimes make it necessary to apply two modifications to the same operation.
+-- 'Nothing'. Again, as explained in the simple tutorial, the
+-- 'Semigroup' instance is necessary because evaluation of 'Ltl'
+-- formulas might sometimes make it necessary to apply more than one
+-- modification on the same operation.
 
 data MiniLangMod = MiniLangMod
   { onPop :: MiniLangValue -> Maybe MiniLangValue,
@@ -130,10 +138,18 @@ instance Semigroup MiniLangMod where
       (\x -> (fPush <=< gPush) x <|> fPush x <|> gPush x)
 
 -- $doc A meaning is given to the single step modifications through
--- their interpretation over our domain. This is what the class 'InterpretLtlHigherOrder' is for. There are two main
--- differences with the first order case:
+-- their interpretation over our domain. This is what the class
+-- 'InterpretLtlHigherOrder' is for. There are two main differences
+-- with the first order case:
 --
--- - The interpretation function directly handles 'Ltl' formulas. (Remember that the 'InterpretMod' instance in the simple tutorial only has to handle single-step modifications.) This is because the approach based on applying atomic modifications to single operations breaks down for higher-order operations: since a single higher-order operation may contain sequences of operations in an 'AST' of operations, and we need a formula to modify these.
+-- - The interpretation function directly handles 'Ltl'
+--   formulas. (Remember that the 'InterpretMod' instance in the
+--   simple tutorial only has to handle single-step modifications.)
+--   This is because the approach based on applying atomic
+--   modifications to single operations breaks down for higher-order
+--   operations: since a single higher-order operation may contain
+--   sequences of operations in an 'AST' of operations, and we need a
+--   formula to modify these.
 --
 -- - An explicit distinction needs to be made between first-order and
 --   higher-order constructors, by using 'Direct' and 'Nested'
@@ -141,39 +157,44 @@ instance Semigroup MiniLangMod where
 --
 -- Considering the second difference:
 --
--- - Using 'Direct' singals that the operation at hand is first order, and
---   you can proceed as if writing an 'InterpretMod' instance, as explained in the simple tutorial.
+-- - Using 'Direct' singals that the operation at hand is first order,
+--   and you can proceed as if writing an 'InterpretMod' instance, as
+--   explained in the simple tutorial.
 --
 -- - Using 'Nested' means the operation is of higher order. This case
 --   is detailed below.
 --
 -- Handling higher order operations:
 --
--- In the first order setting, we have the convenient class 'InterpretMod' which allows us to specify for individual operations and single-step modifications how they should be applied.  In the higher order setting the question is
--- different: applying a single step modification on a nested
--- operation makes no sense because it will likely contain several
--- such operations, thus we provide the whole set of formulas to be
--- applied currently and leave it to the user as to how they should be
--- handling those. While it seems complicated, it is actually pretty
--- straighforward in most cases as the user has sufficient domain
--- knowledge to know how and when the nested blocks will be executed.
+-- In the first order setting, we have the convenient class
+-- 'InterpretMod' which allows us to specify how single-step
+-- modifications should be applied on operations. In the higher order
+-- setting the question is different: applying a single step
+-- modification on a nested operation makes no sense because it will
+-- likely contain several such operations, thus we provide the whole
+-- set of formulas to be applied currently and leave it to the user as
+-- to how they should be handling those. While it seems complicated,
+-- it is actually pretty straighforward in most cases as the user has
+-- sufficient domain knowledge to know how and when the nested blocks
+-- will be executed.
 --
 -- In the example:
 --
 -- As an example, the typical behaviour to handle an 'if' will be to
 -- evaluate the condition and pass the formula to either side
 -- depending on the result of this evalutation. In the case of our
--- example, the condition evaluation is itself an operation (a pop). So,
--- we will first consume the next single step modification and apply it to that 'pop'. If that was successful, we'll pass
--- on the remaining formulas  to the correct block depending on the
--- result of the (possibly modified) result of evaluating the condition. This passing is done through the use of
--- the 'evalAST' parameter of the function to be defined, while the
--- second parameter, 'later' is the set of Ltl formulas to be applied
--- from this point onward. This process uses the function
--- 'nowLaterList' which, from a list of Ltl formulas, creates a list
--- of pairs of a modification to be applied now and the remaining
--- formulas. This function will likely often be called in higher order
--- operations.
+-- example, the condition evaluation is itself an operation (a
+-- pop). So, we will first consume the next single step modification
+-- and apply it to that 'pop'. If that was successful, we'll pass on
+-- the remaining formulas to the correct block depending on the result
+-- of the (possibly modified) evaluation of the condition. This
+-- passing is done through the use of the 'evalAST' parameter of the
+-- function to be defined, while the second parameter, 'later' is the
+-- set of Ltl formulas to be applied from this point onward. This
+-- process uses the function 'nowLaterList' which, from a list of Ltl
+-- formulas, creates a list of pairs of a modification to be applied
+-- now and the remaining formulas. This function will likely often be
+-- called in higher order operations.
 
 instance
   (MonadPlus m, MonadError MiniLangError m, MonadMiniLang m) =>
