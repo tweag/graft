@@ -126,20 +126,16 @@ instance
       (Just newPayment) -> Just <$> issuePayment newPayment
   interpretMod _ = Invisible
 
-paymentsInvolvingXMod :: String -> Bool -> (Integer -> Maybe Integer) -> AccountsMod
-paymentsInvolvingXMod target isRecipient change =
-  AccountsMod
-    ( \(sender, amount, recipient) -> case change amount of
-        Nothing -> Nothing
-        Just x ->
-          if target == (if isRecipient then recipient else sender)
-            then Just (sender, x, recipient)
-            else Nothing
-    )
+conditionalPaymentMod :: (String -> Bool) -> (String -> Bool) -> (Integer -> Maybe Integer) -> AccountsMod
+conditionalPaymentMod condSender condRecipient change =
+  AccountsMod $
+    \(sender, amount, recipient) -> case (change amount, condSender sender && condRecipient recipient) of
+      (Nothing, _) -> Nothing
+      (_, False) -> Nothing
+      (Just newAmount, True) -> Just (sender, newAmount, recipient)
 
 increaseJudithPaymentsMod :: AccountsMod
-increaseJudithPaymentsMod =
-  paymentsInvolvingXMod "judith" False (\x -> Just (x + 500))
+increaseJudithPaymentsMod = conditionalPaymentMod (== "judith") (const True) (Just . (+ 500))
 
 interpretAndRun ::
   LtlAST AccountsMod '[MonadAccountsEffect, MonadErrorEffect AccountsError] a ->
