@@ -452,24 +452,8 @@ interpretEffectStatefulFromLtlHigherOrder evalActs (Const ltls) op =
           x
 
 -- | Internal: Split an LTL formula that describes a modification of a
--- computation into a list of @(doNow, doLater)@ pairs, where
---
--- * @doNow@ is @Just@ the modification to be applied to the current time step,
---   or @Nothing@, if no modification needs to be applied,
---
--- * @doLater@ is an LTL formula describing the composite modification that
---   should be applied from the next time step onwards, and
---
--- The return value is a list because a formula might be satisfied in different
--- ways. For example, the modification described by @a `LtlUntil` b@ might be
--- accomplished by applying the modification @b@ right now, or by applying @a@
--- right now and @a `LtlUntil` b@ from the next step onwards; the returned list
--- will contain these two options.
---
--- Modifications should form a 'Semigroup', where '<>' is the composition of
--- modifications. We interpret @a <> b@ as the modification that first applies
--- @b@ and then @a@. Attention: Since we use '<>' to define conjunction, if '<>'
--- is not commutative, conjunction will also fail to be commutative!
+-- computation into a list of @(doNow, doLater)@ pairs. This is used mostly to
+-- implement 'nowLaterList', so see the comment there.
 nowLater :: (Semigroup a) => Ltl a -> [(Maybe a, Ltl a)]
 nowLater LtlTruth = [(Nothing, LtlTruth)]
 nowLater LtlFalsity = []
@@ -488,7 +472,7 @@ nowLater (a `LtlUntil` b) =
 nowLater (a `LtlRelease` b) =
   nowLater $ b `LtlAnd` (a `LtlOr` LtlNext (a `LtlRelease` b))
 
--- } Internal: If there are no more steps and the next step should satisfy the
+-- | Internal: If there are no more steps and the next step should satisfy the
 -- given formula: Are we finished, i.e. was the initial formula satisfied by
 -- now?
 finished :: Ltl a -> Bool
@@ -501,12 +485,28 @@ finished (LtlNext _) = False
 finished (LtlUntil _ _) = False
 finished (LtlRelease _ _) = True
 
--- | Internal: Say we're passing around more than one formula from each time
--- step to the next, where the intended meaning of a list of formulas is the
--- modification that applies the first formula in the list first, then the
--- second formula, then the third and so on. We'd still like to compute a list
--- of @(doNow, doLater)@ pairs as in 'nowLater', only that the @doLater@ should
--- again be a list of formulas.
+-- | We're passing around a list of 'Ltl' formulas from each time
+-- step to the next.
+--
+-- This function returns computes a list of @(doNow, doLater)@ pairs, where
+--
+-- * @doNow@ is @Just@ the modification to be applied to the current time step,
+--   or @Nothing@, if no modification needs to be applied, and
+--
+-- * @doLater@ is again a list of 'Ltl' formulas describing the composite modification that
+--   should be applied from the next time step onwards.
+--
+-- The return value is a list because a formula might be satisfied in different
+-- ways. For example, the modification described by @a `LtlUntil` b@ might be
+-- accomplished by applying the modification @b@ right now, or by applying @a@
+-- right now and @a `LtlUntil` b@ from the next step onwards; the returned list
+-- will contain these two options.
+--
+-- Atomic modifications of type @a@ should form a 'Semigroup', where '<>' is
+-- the composition of modifications. We interpret @x <> y@ as the modification
+-- that first applies @y@ and then @x@. Attention: Since we use '<>' to define
+-- conjunction, if '<>' is not commutative, conjunction will also fail to be
+-- commutative!
 nowLaterList :: (Semigroup a) => [Ltl a] -> [(Maybe a, [Ltl a])]
 nowLaterList = joinNowLaters . map nowLater
   where
