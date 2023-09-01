@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -31,7 +32,7 @@ import Effect.TH
 import Logic.Ltl
 import Logic.SingleStep
 
--- * Example domain and implementation
+-- * Example domain specification
 
 -- $doc
 -- To use this library, you need a type class of monads that captures the
@@ -78,7 +79,7 @@ deleteTrace = do
 -- 'deleteValue' is wrong: we never delete anything from the
 -- store. We'll "find" this mistake later on.
 
-data KeyValueError = NoSuchKey String deriving (Show)
+newtype KeyValueError = NoSuchKey String deriving (Show)
 
 type KeyValueT m = ExceptT KeyValueError (StateT (Map String Integer) m)
 
@@ -168,33 +169,44 @@ data KeyValueMod = KeyValueMod
 --
 -- The 'InterpretMod' instance now makes these intended meanings explicit. The
 -- function 'interpretMod' describes, for each constructor of
--- 'MonadKeyValueEffect', how it should be interpreted:
+-- 'MonadKeyValueEffect', how it should be interpreted under a modification:
 --
--- - Whenever the modification applies, it signals that success by wrapping the
---   return value of the action in a 'Just'.
+-- - Whenever the there's a modification that might apply, we'll try to apply
+--   it using the 'AttemptModification' constructor.
 --
--- - Whenever the modification doesn't apply, it returns 'Nothing'.
+--   - When the modification applies, we signal that success by wrapping the
+--     return value of the action in a 'Just'.
 --
--- - A third possibility, which is not shown here, is returning 'Ignore' instead of
---   'Apply', which would mean to skip the operation. This is neither a
---   successfully applied modification, nor a failed application, and the
---   modification will be applied at the next action in the 'AST'.
+--   - When the modification doesn't apply, we return 'Nothing'.
+--
+-- - Whenever there's no modification, we have nothing to apply, so we return
+--   'SkipModification'. This will mean that the operation will be performed as
+--   usual.
+--
+-- - A third possibility, which is not shown here, is returning 'PassModification'
+--   instead of 'AttemptModification' or 'SkipModification', which would mean
+--   to do the operation without modification as usual, but remember the
+--   modification for the next step. This can be thought of as making the
+--   operation invisible to modifications.
 
 instance (MonadError KeyValueError m, MonadKeyValue m) => InterpretMod KeyValueMod m MonadKeyValueEffect where
-  interpretMod (StoreValue key val) = Apply $ \modif -> do
-    oldVal <- catchError (Just <$> getValue key) (\NoSuchKey {} -> return Nothing)
-    case (oldVal, noOverwrite modif) of
-      (Just _, True) -> return (Just ())
-      (Nothing, True) -> return Nothing
-      (_, False) -> Just <$> storeValue (renameKey modif key) val
-  interpretMod (DeleteValue key) = Apply $ \modif ->
-    if noOverwrite modif
-      then return Nothing
-      else Just <$> deleteValue (renameKey modif key)
-  interpretMod (GetValue key) = Apply $ \modif ->
-    if noOverwrite modif
-      then return Nothing
-      else Just <$> getValue (renameKey modif key)
+  interpretMod (StoreValue key val) =
+    Visible $ \modif -> do
+      oldVal <- catchError (Just <$> getValue key) (\NoSuchKey {} -> return Nothing)
+      case (oldVal, noOverwrite modif) of
+        (Just _, True) -> return (Just ())
+        (Nothing, True) -> return Nothing
+        (_, False) -> Just <$> storeValue (renameKey modif key) val
+  interpretMod (DeleteValue key) =
+    Visible $ \modif ->
+      if noOverwrite modif
+        then return Nothing
+        else Just <$> deleteValue (renameKey modif key)
+  interpretMod (GetValue key) =
+    Visible $ \modif ->
+      if noOverwrite modif
+        then return Nothing
+        else Just <$> getValue (renameKey modif key)
 
 -- $doc
 -- Here are two smart constructors for modifications, one for creating a

@@ -25,6 +25,7 @@ library
       Effect.THTests
       Effect.Writer
       Effect.Writer.Passthrough
+      Examples.Ltl.HigherOrder
       Examples.Ltl.Simple
       Logic.Ltl
       Logic.Ltl.TH

@@ -33,7 +33,7 @@
 -- - write instances of 'InterpretLtl' (or 'InterpretLtlHigherOrder' for
 --   higher-order effects) that explain how your atomic modifications apply to
 --   your effects,
---
+-- Last reply today at 4:00 PM
 -- - use 'modifyLtl' to apply composite modifications to your trace, and
 --
 -- - use 'interpretLtlAST' to run all modified versions of your trace.
@@ -57,6 +57,8 @@ module Logic.Ltl
     -- * Higher-order effects
     InterpretLtlHigherOrder (..),
     LtlInterpHigherOrder (..),
+    nowLaterList,
+    nowLaterSplit,
 
     -- * Interpreting 'Ltl' modifications
     LtlInstanceKind (..),
@@ -180,7 +182,7 @@ class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) w
   --
   -- For simple operations that don't \"nest\" other 'AST's, use the
   -- 'Direct' constructor. Its meaning corresponds precisely to the
-  -- 'interpretLtl' function.
+  -- 'interpretMod' function.
   --
   -- For operations that /do/ nest, use the 'Nested' constructor. It needs some
   -- explanation: the stepwise approach based on applying atomic modifications
@@ -189,12 +191,12 @@ class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) w
   -- likely want to use a composite modification while evaluating such nested
   -- 'AST's.
   --
-  -- Composite modifications in the current setting are list of 'Ltl' formulas.
-  -- Each 'modifyLtl' adds another formula to the head of that list, and all
-  -- formulas are evaluated in parallel to the interpretation of the 'AST'.
-  -- (That is: if you don't nest 'modifyLtl's, the list will only ever contain
-  -- one element. If you nest 'modifyLtl's, the head of the list will be the
-  -- formula that was introduced by the innermost 'modifyLtl')
+  -- Composite modifications in the current setting are lists of 'Ltl'
+  -- formulas, which are evaluated in parallel to the interpretation of the
+  -- 'AST'. (Each 'modifyLtl' adds another formula to the head of that list. If
+  -- you don't nest 'modifyLtl's, the list will only ever contain one element.
+  -- If you nest 'modifyLtl's, the head of the list will be the formula that
+  -- was introduced by the innermost 'modifyLtl')
   --
   -- The 'Nested' constructor proposes the following approach: It'll just give
   -- you a function
@@ -205,16 +207,17 @@ class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) w
   -- list of 'Ltl' formulas you provide. To explain it by example, let's use
   -- 'ErrorEffect':
   --
-  -- > instance (MonadError e m) => InterpretLtlHigherOrder x m (ErrorEffect e) where
+  -- > instance (MonadError e m) => InterpretLtlHigherOrder x m (MonadErrorEffect e) where
   -- >   interpretLtlHigherOrder (CatchError acts handler) =
   -- >     Nested $ \evalAST ltls ->
-  -- >       catchError
-  -- >         (evalAST ltls acts)
-  -- >         ( \err ->
-  -- >             do
-  -- >               (a, _) <- evalAST [] $ handler err
-  -- >               return (a, ltls)
-  -- >         )
+  -- >       Just
+  -- >         <$> catchError
+  -- >           (evalAST ltls acts)
+  -- >           ( \err ->
+  -- >               do
+  -- >                 (a, _) <- evalAST [] $ handler err
+  -- >                 return (a, ltls)
+  -- >           )
   -- >   interpretLtlHigherOrder (ThrowError err) = ...
   --
   -- The equation for 'CatchError' means that you'll interpret the body @acts@
@@ -223,7 +226,9 @@ class InterpretLtlHigherOrder (mod :: Type) (m :: Type -> Type) (op :: Effect) w
   -- restore the original composite modification. There might be other ways to
   -- implement this nesting behaviour, depending on your use case, and the
   -- 'Nested' constructor should hopefully be general enough to accommodate
-  -- most of them.
+  -- most of them. In particular, you can also return 'Nothing' from the
+  -- 'Nested' constructor to signal that with the current composite modification,
+  -- the operation can't be evaluated.
   interpretLtlHigherOrder :: op (AST ops) a -> LtlInterpHigherOrder mod m ops a
 
 -- | codomain of 'interpretLtlHigherOrder'. See the explanation there.
@@ -232,7 +237,7 @@ data LtlInterpHigherOrder (mod :: Type) (m :: Type -> Type) (ops :: [Effect]) (a
   Nested ::
     ( (forall b. [Ltl mod] -> AST ops b -> m (b, [Ltl mod])) ->
       [Ltl mod] ->
-      m (a, [Ltl mod])
+      m (Maybe (a, [Ltl mod]))
     ) ->
     LtlInterpHigherOrder mod m ops a
 
@@ -371,7 +376,7 @@ interpretJoinedEffectsLtl (InterpretEffectsLtlEffectStateful cs) evalAST x (Join
 
 -- | Internal: For 'interpretJoinedEffectsLtl', we'll need a function that
 -- behaves like 'interpretEffectStateful', in the setting where we only have an
--- 'InterpretLtl' instance. This is that function.
+-- 'InterpretMod' instance. This is that function.
 interpretEffectStatefulFromLtl ::
   ( Semigroup mod,
     MonadPlus m,
@@ -384,15 +389,15 @@ interpretEffectStatefulFromLtl ::
   m (a, Const [Ltl mod] x)
 interpretEffectStatefulFromLtl evalActs (Const ltls) op =
   case interpretMod op of
-    Ignore -> interpretUnmodified ltls op
-    Apply apply ->
+    Invisible -> interpretUnmodified ltls op
+    Visible attempt ->
       msum $
         map
           ( \(now, later) ->
               case now of
                 Nothing -> interpretUnmodified later op
-                Just x -> do
-                  mA <- apply x
+                Just now' -> do
+                  mA <- attempt now'
                   case mA of
                     Just a -> return (a, Const later)
                     Nothing -> mzero
@@ -419,26 +424,26 @@ interpretEffectStatefulFromLtlHigherOrder ::
   m (a, Const [Ltl mod] x)
 interpretEffectStatefulFromLtlHigherOrder evalActs (Const ltls) op =
   case interpretLtlHigherOrder op of
-    Nested nestFun ->
-      second Const
-        <$> nestFun
-          (\x ast -> second getConst <$> evalActs (Const x) ast)
-          ltls
-    Direct direct ->
-      msum $
-        map
-          ( \(now, later) ->
-              case direct of
-                Ignore -> interpretUnmodified ltls op
-                Apply apply -> case now of
+    Direct inner -> case inner of
+      Invisible -> interpretUnmodified ltls op
+      Visible attempt ->
+        msum $
+          map
+            ( \(now, later) ->
+                case now of
                   Nothing -> interpretUnmodified later op
-                  Just x -> do
-                    mA <- apply x
+                  Just now' -> do
+                    mA <- attempt now'
                     case mA of
                       Just a -> return (a, Const later)
                       Nothing -> mzero
-          )
-          (nowLaterList ltls)
+            )
+            (nowLaterList ltls)
+    Nested nestFun -> do
+      mA <- nestFun (\x' ast -> second getConst <$> evalActs (Const x') ast) ltls
+      case mA of
+        Nothing -> mzero
+        Just (a, ltls') -> return (a, Const ltls')
   where
     interpretUnmodified later x =
       (,Const later)
@@ -447,24 +452,8 @@ interpretEffectStatefulFromLtlHigherOrder evalActs (Const ltls) op =
           x
 
 -- | Internal: Split an LTL formula that describes a modification of a
--- computation into a list of @(doNow, doLater)@ pairs, where
---
--- * @doNow@ is @Just@ the modification to be applied to the current time step,
---   or @Nothing@, if no modification needs to be applied,
---
--- * @doLater@ is an LTL formula describing the composite modification that
---   should be applied from the next time step onwards, and
---
--- The return value is a list because a formula might be satisfied in different
--- ways. For example, the modification described by @a `LtlUntil` b@ might be
--- accomplished by applying the modification @b@ right now, or by applying @a@
--- right now and @a `LtlUntil` b@ from the next step onwards; the returned list
--- will contain these two options.
---
--- Modifications should form a 'Semigroup', where '<>' is the composition of
--- modifications. We interpret @a <> b@ as the modification that first applies
--- @b@ and then @a@. Attention: Since we use '<>' to define conjunction, if '<>'
--- is not commutative, conjunction will also fail to be commutative!
+-- computation into a list of @(doNow, doLater)@ pairs. This is used mostly to
+-- implement 'nowLaterList', so see the comment there.
 nowLater :: (Semigroup a) => Ltl a -> [(Maybe a, Ltl a)]
 nowLater LtlTruth = [(Nothing, LtlTruth)]
 nowLater LtlFalsity = []
@@ -483,7 +472,7 @@ nowLater (a `LtlUntil` b) =
 nowLater (a `LtlRelease` b) =
   nowLater $ b `LtlAnd` (a `LtlOr` LtlNext (a `LtlRelease` b))
 
--- } Internal: If there are no more steps and the next step should satisfy the
+-- | Internal: If there are no more steps and the next step should satisfy the
 -- given formula: Are we finished, i.e. was the initial formula satisfied by
 -- now?
 finished :: Ltl a -> Bool
@@ -496,12 +485,28 @@ finished (LtlNext _) = False
 finished (LtlUntil _ _) = False
 finished (LtlRelease _ _) = True
 
--- | Internal: Say we're passing around more than one formula from each time
--- step to the next, where the intended meaning of a list of formulas is the
--- modification that applies the first formula in the list first, then the
--- second formula, then the third and so on. We'd still like to compute a list
--- of @(doNow, doLater)@ pairs as in 'nowLater', only that the @doLater@ should
--- again be a list of formulas.
+-- | We're passing around a list of 'Ltl' formulas from each time
+-- step to the next.
+--
+-- This function returns computes a list of @(doNow, doLater)@ pairs, where
+--
+-- * @doNow@ is @Just@ the modification to be applied to the current time step,
+--   or @Nothing@, if no modification needs to be applied, and
+--
+-- * @doLater@ is again a list of 'Ltl' formulas describing the composite modification that
+--   should be applied from the next time step onwards.
+--
+-- The return value is a list because a formula might be satisfied in different
+-- ways. For example, the modification described by @a `LtlUntil` b@ might be
+-- accomplished by applying the modification @b@ right now, or by applying @a@
+-- right now and @a `LtlUntil` b@ from the next step onwards; the returned list
+-- will contain these two options.
+--
+-- Atomic modifications of type @a@ should form a 'Semigroup', where '<>' is
+-- the composition of modifications. We interpret @x <> y@ as the modification
+-- that first applies @y@ and then @x@. Attention: Since we use '<>' to define
+-- conjunction, if '<>' is not commutative, conjunction will also fail to be
+-- commutative!
 nowLaterList :: (Semigroup a) => [Ltl a] -> [(Maybe a, [Ltl a])]
 nowLaterList = joinNowLaters . map nowLater
   where
@@ -511,6 +516,25 @@ nowLaterList = joinNowLaters . map nowLater
         | (f, c) <- l,
           (g, cs) <- joinNowLaters ls
       ]
+
+nowLaterSplit ::
+  (Semigroup x, MonadPlus m) =>
+  m a ->
+  (x -> m (Maybe a)) ->
+  [Ltl x] ->
+  m (a, [Ltl x])
+nowLaterSplit defaultBehaviour applyMod formulas =
+  msum $
+    map
+      ( \(now, later) -> case now of
+          Nothing -> (,later) <$> defaultBehaviour
+          Just x -> do
+            mA <- applyMod x
+            case mA of
+              Nothing -> mzero
+              Just a -> return (a, later)
+      )
+      (nowLaterList formulas)
 
 -- | Internal: Straightforward simplification procedure for LTL formulas. This
 -- function knows how 'LtlTruth' and 'LtlFalsity' play with conjunction and

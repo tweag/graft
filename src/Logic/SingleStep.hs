@@ -9,7 +9,7 @@ module Logic.SingleStep
 where
 
 import Data.Kind (Type)
-import Effect (Effect)
+import Effect (AST, Effect)
 
 -- | Explain how to interpret an atomic modification, applied an operation of a
 -- simple effect type (i.e. one that does not have any higher-order effects).
@@ -21,29 +21,31 @@ import Effect (Effect)
 --
 -- - @op@ is the effect type.
 class InterpretMod (mod :: Type) (m :: Type -> Type) (op :: Effect) where
-  -- | Given an operation of type @op a@, and an atomic modification, there are
-  -- three possibilities, corresponding to the constructors of
-  -- 'LtlInterp':
+  -- | 'interpretMod' takes the current operation, an atomic
+  -- modification and describes how they should interact.
   --
-  -- - If the modification of the operation should be ignored, and the
-  --   operation should just be interpreted without modification, return
-  --   'Ignore'.
+  -- There are the following possibilities, corresponding to the
+  -- constructors of 'LtlInterp':
   --
-  -- - If you want to try applying the modification, use return 'Apply':
+  -- - If you want to ignore the current operation, make it
+  --   'Invisible'. Invisible operations will be ignored by the
+  --   modification process, but still executed.
   --
-  --   - If the modification applies, return some computation that returns
-  --     'Just'.
+  -- - If you want to try applying the modification, use 'Visible'.
+  --   Depending on the current state reached so far, the application
+  --   of the modification can fail. Hence, there are two options:
   --
-  --   - If the modification does /not/ apply, return 'Nothing'.
+  --   - If the modification successfully applies, return some
+  --     computation that returns 'Just'.
   --
+  --   - If the modification fails to apply, return 'Nothing'.
   --
-  -- Note that the type @m (Maybe a)@ (and not @Maybe (m a)@!) in the 'Apply'
-  -- constructor means that the interpretation and applicability of the
-  -- modification can depend on the state in @m@.
-  --
-  -- The @dummy@ type variable signifies that the "nesting" monad of the effect
-  -- type is irrelevant, since we're not dealing with higher-order effects.
-  interpretMod :: op dummy a -> ModInterp mod m a
+  -- The @dummy@ type variable signifies that the "nesting" monad of
+  -- the effect type is irrelevant, since we're not dealing with
+  -- higher-order effects.
+  interpretMod :: op (AST dummy) a -> ModInterp mod m a
 
 -- | Codomain of 'interpretLtl'. See the explanation there.
-data ModInterp mod m a = Ignore | Apply (mod -> m (Maybe a))
+data ModInterp mod m a
+  = Invisible
+  | Visible (mod -> m (Maybe a))
