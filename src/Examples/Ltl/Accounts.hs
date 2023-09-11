@@ -5,6 +5,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -16,6 +17,7 @@ import Control.Applicative
 import Control.Monad.Except
 import Control.Monad.State
 import Data.Bifunctor (second)
+import Data.Either (isRight)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Set (Set)
@@ -60,7 +62,9 @@ initialRegister = Register Map.empty Map.empty
 class (Monad m) => MonadAccounts m where
   addUser :: String -> Integer -> m ()
   addPolicy :: String -> Policy -> m ()
+  allPolicies :: m [String]
   subscribeToPolicy :: String -> String -> m ()
+  anticipate :: m a -> Bool -> m Bool
   issuePayment :: Payment -> m ()
   getBalance :: String -> m Integer
 
@@ -78,11 +82,17 @@ type AccountsT m = ExceptT AccountsError (StateT Register m)
 
 -- | A function to run the domain into the list monad and return
 -- relevant information
-runAccountsT :: AccountsT [] a -> [(Either AccountsError a, Map String (Integer, Set String))]
-runAccountsT =
-  map (second accounts)
-    . flip runStateT initialRegister
-    . runExceptT
+runAccountsT ::
+  (Monad m) =>
+  Register ->
+  AccountsT m a ->
+  m (Either AccountsError a, Map String (Integer, Set String))
+runAccountsT register comp = second accounts <$> runStateT (runExceptT comp) register
+
+isSuccessful :: (Monad m) => Register -> AccountsT m a -> m Bool
+isSuccessful register comp = isRight . fst <$> runAccountsT register comp
+
+-- (second accounts) $ flip runStateT register $ runExceptT comp
 
 instance (Monad m) => MonadAccounts (AccountsT m) where
   addUser name balance = do
@@ -103,11 +113,17 @@ instance (Monad m) => MonadAccounts (AccountsT m) where
         if Map.member polName pols
           then modify $ \x -> x {accounts = Map.insert userName (bal, Set.insert polName accPols) accs}
           else throwError $ NoSuchPolicy polName
+  allPolicies = do
+    Register pols _ <- get
+    return $ Map.keys pols
   getBalance name = do
     accs <- gets accounts
     case Map.lookup name accs of
       Nothing -> throwError $ NoSuchAccount name
       Just (bal, _) -> return bal
+  anticipate comp shouldSucceed = do
+    current <- get
+    (shouldSucceed ==) . isRight . fst <$> lift (lift $ runAccountsT current comp)
   issuePayment payment@(sender, amount, recipient) = do
     Register pols accs <- get
     case Map.lookup sender accs of
@@ -208,7 +224,7 @@ interpretAndRun ::
   LtlAST AccountsMod '[MonadAccountsEffect, MonadErrorEffect AccountsError] a ->
   [(Either AccountsError a, Map String (Integer, Set String))]
 interpretAndRun =
-  runAccountsT
+  runAccountsT initialRegister
     . interpretLtlAST
       @'[ InterpretModTag,
           InterpretEffectStatefulTag
