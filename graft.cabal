@@ -25,7 +25,10 @@ library
       Effect.THTests
       Effect.Writer
       Effect.Writer.Passthrough
-      Examples.Ltl.Accounts
+      Examples.Account.AbstractDomain
+      Examples.Account.PaymentMod
+      Examples.Account.Scenarios
+      Examples.Account.SimpleDomain
       Examples.Ltl.HigherOrder
       Examples.Ltl.Simple
       Logic.Ltl
@@ -41,6 +44,7 @@ library
       ansi-terminal
     , base
     , containers
+    , extra
     , inspection-testing
     , mtl
     , parallel
@@ -64,6 +68,7 @@ test-suite spec
       ansi-terminal
     , base
     , containers
+    , extra
     , graft
     , inspection-testing
     , mtl
