@@ -17,9 +17,9 @@ import Control.Applicative
 import Control.Monad.Except
 import Control.Monad.State
 import Data.Bifunctor (second)
-import Data.Either (isRight)
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Maybe (isJust)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Effect.Error
@@ -44,20 +44,18 @@ type Policy =
   -- | Returns whether the payment should go through
   Bool
 
+-- | An account contains the balance and set of policies
+type Account = (Integer, Set String)
+
 -- | The register associates:
 --
 -- - policy names with policies
 --
--- - users with a balance and a set of policy names
-type Account = (Integer, Set String)
-
+-- - user names with accounts
 data Register = Register
   { policies :: Map String Policy,
     accounts :: Map String Account
   }
-
-initialRegister :: Register
-initialRegister = Register Map.empty Map.empty
 
 -- | Our domain specification: users can be added, payments can be
 -- attempted and balances can be requested.
@@ -67,7 +65,7 @@ class (Monad m) => MonadAccounts m where
   allPolicies :: m [String]
   subscribeToPolicy :: String -> String -> m ()
   unsubscribeToPolicy :: String -> String -> m ()
-  anticipate :: m a -> m Bool
+  anticipate :: m a -> m (Maybe a)
   issuePayment :: Payment -> m ()
   getUserBalance :: String -> m Integer
 
@@ -94,7 +92,7 @@ whenM :: (Monad m) => m Bool -> m () -> m ()
 whenM b t = ifM b t (pure ())
 
 maybeM :: (Monad m) => m b -> (a -> m b) -> m (Maybe a) -> m b
-maybeM n j x = maybe n j =<< x
+maybeM n j = (maybe n j =<<)
 
 -- | Ensures a user is registered and returns the associated account
 ensureExistingUser :: (Monad m) => String -> AccountsT m Account
@@ -124,8 +122,7 @@ ensureNonExistingPolicy name =
 modifyPolicies :: (Monad m) => (Map String Policy -> Map String Policy) -> AccountsT m ()
 modifyPolicies f = modify $ \(Register pols accs) -> flip Register accs $ f pols
 
--- | A function to run the domain into the list monad and return
--- relevant information
+-- | A function to run the domain and return relevant information
 runAccountsT :: (Monad m) => Register -> AccountsT m a -> m (Either AccountsError a, Map String Account)
 runAccountsT register comp = second accounts <$> runStateT (runExceptT comp) register
 
@@ -153,7 +150,10 @@ instance (Monad m) => MonadAccounts (AccountsT m) where
 
   anticipate comp = do
     current <- get
-    isRight . fst <$> lift (lift $ runAccountsT current comp)
+    x <- lift $ lift $ runAccountsT current comp
+    return $ case fst x of
+      (Left _) -> Nothing
+      Right a -> Just a
 
   issuePayment payment@(sender, amount, recipient) = do
     (senderBal, senderPols) <- ensureExistingUser sender
@@ -165,18 +165,15 @@ instance (Monad m) => MonadAccounts (AccountsT m) where
     modifyAccounts $ Map.insert recipient (recipientBal + amount, recipientPols)
     modifyAccounts $ Map.insert sender (senderBal - amount, senderPols)
 
--- * Some (possibly bugged) validators
+-- * Some validators, some of them purposely bugged
 
 -- Expectations: "validatorAlwaysReceives" will only accept payments
 -- that increase the balance of "me"
 --
 -- Reality: since it is possible to exchange negative amounts, being
--- the actual recipient is not sufficient.
+-- the actual recipient of payments is not sufficient.
 validatorAlwaysReceives :: Policy
 validatorAlwaysReceives (_, _, recipient) _ me = recipient == me
-
-validatorAcceptsAll :: Policy
-validatorAcceptsAll _ _ _ = True
 
 -- Expectations: "validatorNeverNegative" will never accept payments
 -- that leave the balance negative.
@@ -191,12 +188,10 @@ validatorNeverNegative _ bal _ = bal > 0
 baseScenario :: (MonadAccounts m) => m ()
 baseScenario = do
   addPolicy "alwaysReceives" validatorAlwaysReceives
-  addPolicy "acceptsAll" validatorAcceptsAll
   addPolicy "neverNegative" validatorNeverNegative
   addUser "alice" 0
   subscribeToPolicy "alice" "alwaysReceives"
   addUser "bob" 1000
-  subscribeToPolicy "bob" "acceptsAll"
   addUser "judith" 500
   subscribeToPolicy "judith" "neverNegative"
 
@@ -211,8 +206,8 @@ alwaysReceivesAttempt = do
   baseScenario
   res <- anticipate $ do
     firstPayments
-  when res firstPayments
-  return res
+  when (isJust res) firstPayments
+  return $ isJust res
 
 defineEffectType ''MonadAccounts
 makeEffect ''MonadAccounts ''MonadAccountsEffect
@@ -257,7 +252,7 @@ interpretAndRun ::
   LtlAST AccountsMod '[MonadAccountsEffect, MonadErrorEffect AccountsError] a ->
   [(Either AccountsError a, Map String (Integer, Set String))]
 interpretAndRun =
-  runAccountsT initialRegister
+  runAccountsT (Register Map.empty Map.empty)
     . interpretLtlAST
       @'[ InterpretModTag,
           InterpretEffectStatefulTag
