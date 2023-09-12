@@ -67,7 +67,7 @@ class (Monad m) => MonadAccounts m where
   allPolicies :: m [String]
   subscribeToPolicy :: String -> String -> m ()
   unsubscribeToPolicy :: String -> String -> m ()
-  anticipate :: m a -> Bool -> m Bool
+  anticipate :: m a -> m Bool
   issuePayment :: Payment -> m ()
   getUserBalance :: String -> m Integer
 
@@ -151,9 +151,9 @@ instance (Monad m) => MonadAccounts (AccountsT m) where
 
   getUserBalance = (fst <$>) . ensureExistingUser
 
-  anticipate comp shouldSucceed = do
+  anticipate comp = do
     current <- get
-    (shouldSucceed ==) . isRight . fst <$> lift (lift $ runAccountsT current comp)
+    isRight . fst <$> lift (lift $ runAccountsT current comp)
 
   issuePayment payment@(sender, amount, recipient) = do
     (senderBal, senderPols) <- ensureExistingUser sender
@@ -200,17 +200,19 @@ baseScenario = do
   addUser "judith" 500
   subscribeToPolicy "judith" "neverNegative"
 
-firstPayments :: (MonadAccounts m) => m Integer
+firstPayments :: (MonadAccounts m) => m ()
 firstPayments = do
-  baseScenario
   issuePayment ("bob", 400, "judith")
   issuePayment ("bob", 600, "alice")
   issuePayment ("judith", 600, "alice")
-  getUserBalance "judith"
 
-alwaysReceivesAttempt :: (MonadAccounts m) => m ()
+alwaysReceivesAttempt :: (MonadAccounts m) => m Bool
 alwaysReceivesAttempt = do
   baseScenario
+  res <- anticipate $ do
+    firstPayments
+  when res firstPayments
+  return res
 
 defineEffectType ''MonadAccounts
 makeEffect ''MonadAccounts ''MonadAccountsEffect
