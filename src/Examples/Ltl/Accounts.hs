@@ -49,9 +49,11 @@ type Policy =
 -- - policy names with policies
 --
 -- - users with a balance and a set of policy names
+type Account = (Integer, Set String)
+
 data Register = Register
   { policies :: Map String Policy,
-    accounts :: Map String (Integer, Set String)
+    accounts :: Map String Account
   }
 
 initialRegister :: Register
@@ -64,9 +66,10 @@ class (Monad m) => MonadAccounts m where
   addPolicy :: String -> Policy -> m ()
   allPolicies :: m [String]
   subscribeToPolicy :: String -> String -> m ()
+  unsubscribeToPolicy :: String -> String -> m ()
   anticipate :: m a -> Bool -> m Bool
   issuePayment :: Payment -> m ()
-  getBalance :: String -> m Integer
+  getUserBalance :: String -> m Integer
 
 -- | Errors raised by the domain
 data AccountsError
@@ -80,67 +83,87 @@ data AccountsError
 -- | Our domain implementation
 type AccountsT m = ExceptT AccountsError (StateT Register m)
 
+-- * Some helper functions over AccountsT m
+
+-- | Like @if@, but where the test can be monadic.
+ifM :: (Monad m) => m Bool -> m a -> m a -> m a
+ifM bM t f = do b <- bM; if b then t else f
+
+-- | Like 'when', but where the test can be monadic.
+whenM :: (Monad m) => m Bool -> m () -> m ()
+whenM b t = ifM b t (pure ())
+
+maybeM :: (Monad m) => m b -> (a -> m b) -> m (Maybe a) -> m b
+maybeM n j x = maybe n j =<< x
+
+-- | Ensures a user is registered and returns the associated account
+ensureExistingUser :: (Monad m) => String -> AccountsT m Account
+ensureExistingUser name =
+  maybeM (throwError $ NoSuchAccount name) return $ gets $ Map.lookup name . accounts
+
+-- | Ensures a user is not registered
+ensureNonExistingUser :: (Monad m) => String -> AccountsT m ()
+ensureNonExistingUser name =
+  whenM (gets $ (name `Map.member`) . accounts) $ throwError $ AlreadyExistingAccount name
+
+-- | Modifies the current map of accounts
+modifyAccounts :: (Monad m) => (Map String Account -> Map String Account) -> AccountsT m ()
+modifyAccounts f = modify $ \(Register pols accs) -> Register pols $ f accs
+
+-- | Ensures a policy is registered and executes an action based on its value
+ensureExistingPolicy :: (Monad m) => String -> AccountsT m Policy
+ensureExistingPolicy name =
+  maybeM (throwError $ NoSuchPolicy name) return $ gets $ Map.lookup name . policies
+
+-- | Ensures a policy is not present and executes an action
+ensureNonExistingPolicy :: (Monad m) => String -> AccountsT m ()
+ensureNonExistingPolicy name =
+  whenM (gets $ (name `Map.member`) . policies) $ throwError $ AlreadyExistingPolicy name
+
+-- | Modifies the current map of policies
+modifyPolicies :: (Monad m) => (Map String Policy -> Map String Policy) -> AccountsT m ()
+modifyPolicies f = modify $ \(Register pols accs) -> flip Register accs $ f pols
+
 -- | A function to run the domain into the list monad and return
 -- relevant information
-runAccountsT ::
-  (Monad m) =>
-  Register ->
-  AccountsT m a ->
-  m (Either AccountsError a, Map String (Integer, Set String))
+runAccountsT :: (Monad m) => Register -> AccountsT m a -> m (Either AccountsError a, Map String Account)
 runAccountsT register comp = second accounts <$> runStateT (runExceptT comp) register
-
-isSuccessful :: (Monad m) => Register -> AccountsT m a -> m Bool
-isSuccessful register comp = isRight . fst <$> runAccountsT register comp
-
--- (second accounts) $ flip runStateT register $ runExceptT comp
 
 instance (Monad m) => MonadAccounts (AccountsT m) where
   addUser name balance = do
-    accs <- gets accounts
-    case Map.lookup name accs of
-      Just _ -> throwError $ AlreadyExistingAccount name
-      Nothing -> modify $ \x -> x {accounts = Map.insert name (balance, Set.empty) accs}
+    ensureNonExistingUser name
+    modifyAccounts $ Map.insert name (balance, Set.empty)
+
   addPolicy name val = do
-    pols <- gets policies
-    case Map.lookup name pols of
-      Just _ -> throwError $ AlreadyExistingPolicy name
-      Nothing -> modify $ \x -> x {policies = Map.insert name val pols}
+    ensureNonExistingPolicy name
+    modifyPolicies $ Map.insert name val
+
   subscribeToPolicy userName polName = do
-    Register pols accs <- get
-    case Map.lookup userName accs of
-      Nothing -> throwError $ NoSuchAccount userName
-      Just (bal, accPols) ->
-        if Map.member polName pols
-          then modify $ \x -> x {accounts = Map.insert userName (bal, Set.insert polName accPols) accs}
-          else throwError $ NoSuchPolicy polName
-  allPolicies = do
-    Register pols _ <- get
-    return $ Map.keys pols
-  getBalance name = do
-    accs <- gets accounts
-    case Map.lookup name accs of
-      Nothing -> throwError $ NoSuchAccount name
-      Just (bal, _) -> return bal
+    (bal, accPols) <- ensureExistingUser userName
+    void $ ensureExistingPolicy polName
+    modifyAccounts $ Map.insert userName (bal, Set.insert polName accPols)
+
+  unsubscribeToPolicy userName polName = do
+    (bal, accPols) <- ensureExistingUser userName
+    modifyAccounts $ Map.insert userName (bal, Set.delete polName accPols)
+
+  allPolicies = gets $ Map.keys . policies
+
+  getUserBalance = (fst <$>) . ensureExistingUser
+
   anticipate comp shouldSucceed = do
     current <- get
     (shouldSucceed ==) . isRight . fst <$> lift (lift $ runAccountsT current comp)
+
   issuePayment payment@(sender, amount, recipient) = do
-    Register pols accs <- get
-    case Map.lookup sender accs of
-      Nothing -> throwError $ NoSuchAccount sender
-      Just (senderBal, senderPols) -> case Map.lookup recipient accs of
-        Nothing -> throwError $ NoSuchAccount recipient
-        Just (recipientBal, recipientPols) -> do
-          sPols <- foldM (\current el -> (\f -> f payment senderBal sender && current) <$> getPolicy pols el) True senderPols
-          unless sPols $ throwError PolicyError
-          rPols <- foldM (\current el -> (\f -> f payment recipientBal recipient && current) <$> getPolicy pols el) True recipientPols
-          unless rPols $ throwError PolicyError
-          let accs' = Map.insert sender (senderBal - amount, senderPols) accs
-          modify $ \x -> x {accounts = Map.insert recipient (recipientBal + amount, recipientPols) accs'}
-    where
-      getPolicy pols x = case Map.lookup x pols of
-        Nothing -> throwError $ NoSuchPolicy x
-        Just cPol -> return cPol
+    (senderBal, senderPols) <- ensureExistingUser sender
+    (recipientBal, recipientPols) <- ensureExistingUser recipient
+    sPols <- foldM (\res el -> (\f -> f payment senderBal sender && res) <$> ensureExistingPolicy el) True senderPols
+    unless sPols $ throwError PolicyError
+    rPols <- foldM (\res el -> (\f -> f payment recipientBal recipient && res) <$> ensureExistingPolicy el) True recipientPols
+    unless rPols $ throwError PolicyError
+    modifyAccounts $ Map.insert recipient (recipientBal + amount, recipientPols)
+    modifyAccounts $ Map.insert sender (senderBal - amount, senderPols)
 
 -- * Some (possibly bugged) validators
 
@@ -165,8 +188,8 @@ validatorNeverNegative _ bal _ = bal > 0
 
 -- * A few scenarios that exhibit no wrong behavior
 
-scenario :: (MonadAccounts m) => m Integer
-scenario = do
+baseScenario :: (MonadAccounts m) => m ()
+baseScenario = do
   addPolicy "alwaysReceives" validatorAlwaysReceives
   addPolicy "acceptsAll" validatorAcceptsAll
   addPolicy "neverNegative" validatorNeverNegative
@@ -176,10 +199,18 @@ scenario = do
   subscribeToPolicy "bob" "acceptsAll"
   addUser "judith" 500
   subscribeToPolicy "judith" "neverNegative"
+
+firstPayments :: (MonadAccounts m) => m Integer
+firstPayments = do
+  baseScenario
   issuePayment ("bob", 400, "judith")
   issuePayment ("bob", 600, "alice")
   issuePayment ("judith", 600, "alice")
-  getBalance "judith"
+  getUserBalance "judith"
+
+alwaysReceivesAttempt :: (MonadAccounts m) => m ()
+alwaysReceivesAttempt = do
+  baseScenario
 
 defineEffectType ''MonadAccounts
 makeEffect ''MonadAccounts ''MonadAccountsEffect
