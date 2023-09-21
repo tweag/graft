@@ -4,6 +4,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Examples.Account.PaymentMod where
@@ -29,7 +30,7 @@ instance Semigroup AccountsMod where
       (\x -> (f1 <=< f2) x <|> f1 x <|> f2 x)
 
 instance
-  (MonadError AccountsError m, MonadAccounts m) =>
+  (MonadAccounts m) =>
   InterpretMod AccountsMod m MonadAccountsEffect
   where
   interpretMod (IssuePayment payment) = Visible $ \(AccountsMod modif) ->
@@ -37,6 +38,15 @@ instance
       Nothing -> return Nothing
       (Just newPayment) -> Just <$> issuePayment newPayment
   interpretMod _ = Invisible
+
+instance
+  (MonadAccounts m) =>
+  InterpretLtlHigherOrder AccountsMod m MonadAccountsEffect
+  where
+  interpretLtlHigherOrder (Simulate comp) = Nested $ \evalAST ltls -> do
+    x <- simulate $ evalAST ltls comp
+    return $ Just (fst <$> x, ltls)
+  interpretLtlHigherOrder p = Direct $ interpretMod p
 
 conditionalPaymentMod :: (String -> Bool) -> (String -> Bool) -> (Integer -> Maybe Integer) -> AccountsMod
 conditionalPaymentMod condSender condRecipient change =
@@ -55,6 +65,6 @@ interpretAndRun ::
 interpretAndRun =
   runAccountsT (Register Map.empty Map.empty)
     . interpretLtlAST
-      @'[ InterpretModTag,
+      @'[ InterpretLtlHigherOrderTag,
           InterpretEffectStatefulTag
         ]

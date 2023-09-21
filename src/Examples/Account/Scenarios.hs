@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Examples.Account.Scenarios where
 
 import Control.Monad
