@@ -5,6 +5,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Examples.Account.PaymentMod where
@@ -34,18 +35,15 @@ instance
   InterpretMod AccountsMod m MonadAccountsEffect
   where
   interpretMod (IssuePayment payment) = Visible $ \(AccountsMod modif) ->
-    case modif payment of
-      Nothing -> return Nothing
-      (Just newPayment) -> Just <$> issuePayment newPayment
+    maybe (return Nothing) ((Just <$>) . issuePayment) $ modif payment
   interpretMod _ = Invisible
 
 instance
   (MonadAccounts m) =>
   InterpretLtlHigherOrder AccountsMod m MonadAccountsEffect
   where
-  interpretLtlHigherOrder (Simulate comp) = Nested $ \evalAST ltls -> do
-    x <- simulate $ evalAST ltls comp
-    return $ Just (fst <$> x, ltls)
+  interpretLtlHigherOrder (Simulate comp) = Nested $ \evalAST ltls ->
+    Just . (,ltls) . (fst <$>) <$> simulate (evalAST ltls comp)
   interpretLtlHigherOrder p = Direct $ interpretMod p
 
 conditionalPaymentMod :: (String -> Bool) -> (String -> Bool) -> (Integer -> Maybe Integer) -> AccountsMod
@@ -56,14 +54,18 @@ conditionalPaymentMod condSender condRecipient change =
       (_, False) -> Nothing
       (Just newAmount, True) -> Just (sender, newAmount, recipient)
 
-increaseJudithPaymentsMod :: AccountsMod
-increaseJudithPaymentsMod = conditionalPaymentMod (== "judith") (const True) (Just . (+ 500))
+increaseJudithPaymentsMod :: Integer -> AccountsMod
+increaseJudithPaymentsMod n = conditionalPaymentMod (== "judith") (const True) (Just . (+ n))
+
+negatePaymentsMod :: AccountsMod
+negatePaymentsMod = conditionalPaymentMod (const True) (const True) (Just . negate)
 
 interpretAndRun ::
   LtlAST AccountsMod '[MonadAccountsEffect, MonadErrorEffect AccountsError] a ->
-  [(Either AccountsError a, Map String (Integer, Set String))]
+  [Either AccountsError a]
 interpretAndRun =
-  runAccountsT (Register Map.empty Map.empty)
+  (fst <$>)
+    . runAccountsT (Register Map.empty Map.empty)
     . interpretLtlAST
       @'[ InterpretLtlHigherOrderTag,
           InterpretEffectStatefulTag
