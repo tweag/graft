@@ -65,7 +65,7 @@ scenario1 user = do
   getUserBalance user
 
 -- >>> [(Right -1200]
-negateScenario1 = interpretAndRun (modifyLtl (everywhere negatePaymentsMod) (scenario1 "alice"))
+negateScenario1 = interpretAndRun $ modifyLtl (everywhere negatePaymentsMod) $ scenario1 "alice"
 
 scenario2 :: (MonadAccounts m) => m ()
 scenario2 = do
@@ -75,18 +75,17 @@ scenario2 = do
   firstPayments
 
 -- >>> [Left PolicyError,Left PolicyError,Left PolicyError]
-negateScenario2 = interpretAndRun (modifyLtl (somewhere negatePaymentsMod) scenario2)
+negateScenario2 = interpretAndRun $ modifyLtl (somewhere negatePaymentsMod) scenario2
 
 -- >>> [Right (-200)]
-increaseJudithPaymentsScenario1 = interpretAndRun (modifyLtl (somewhere $ increaseJudithPaymentsMod 500) (scenario1 "judith"))
+increaseJudithPaymentsScenario1 = interpretAndRun $ modifyLtl (there 2 $ LtlAtom $ increaseJudithPaymentsMod 500) $ scenario1 "judith"
 
-scenario3 :: (MonadAccounts m) => m Integer
+scenario3 :: (MonadAccounts m) => m ()
 scenario3 = do
   registerPolicies
   registerUsers
   subscribeToPolicy "judith" "realAlwaysPositive"
   firstPayments
-  getUserBalance "judith"
 
 -- >>> [Left PolicyError]
-increaseJudithPaymentsScenario3 = interpretAndRun (modifyLtl (somewhere $ increaseJudithPaymentsMod 500) scenario3)
+increaseJudithPaymentsScenario3 = interpretAndRun $ modifyLtl (there 2 $ LtlAtom $ increaseJudithPaymentsMod 500) scenario3
