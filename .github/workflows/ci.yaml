@@ -14,7 +14,7 @@ jobs:
       - uses: cachix/install-nix-action@v24
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - name: cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cabal/packages
