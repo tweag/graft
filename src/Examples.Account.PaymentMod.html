@@ -1,0 +1,323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DataKinds #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE GADTs #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE ImportQualifiedPost #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE TupleSections #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Examples.Account.PaymentMod</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Applicative</span></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Except</span></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Set</span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.Error.html"><span class="hs-identifier">Effect.Error</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.Error.Passthrough.html"><span class="hs-identifier">Effect.Error.Passthrough</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html"><span class="hs-identifier">Examples.Account.AbstractDomain</span></a></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html"><span class="hs-identifier">Examples.Account.SimpleDomain</span></a></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Logic.Ltl.html"><span class="hs-identifier">Logic.Ltl</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Logic.SingleStep.html"><span class="hs-identifier">Logic.SingleStep</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">data</span><span> </span><span id="AccountsMod"><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-var">AccountsMod</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-26"></span><span>  </span><span id="AccountsMod"><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-var">AccountsMod</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Payment"><span class="hs-identifier hs-type">Payment</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Payment"><span class="hs-identifier hs-type">Payment</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-type">AccountsMod</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679197695"><span id="local-6989586621679197699"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-type">AccountsMod</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-type">AccountsMod</span></a></span><span> </span><span id="local-6989586621679197709"><span class="annot"><span class="annottext">Payment -&gt; Maybe Payment
+</span><a href="#local-6989586621679197709"><span class="hs-identifier hs-var">f1</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679197710"><span class="annot"><span class="annottext">&lt;&gt; :: AccountsMod -&gt; AccountsMod -&gt; AccountsMod
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-type">AccountsMod</span></a></span><span> </span><span id="local-6989586621679197711"><span class="annot"><span class="annottext">Payment -&gt; Maybe Payment
+</span><a href="#local-6989586621679197711"><span class="hs-identifier hs-var">f2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="annottext">(Payment -&gt; Maybe Payment) -&gt; AccountsMod
+</span><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-var">AccountsMod</span></a></span><span>
+</span><span id="line-31"></span><span>      </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679197712"><span class="annot"><span class="annottext">Payment
+</span><a href="#local-6989586621679197712"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Payment -&gt; Maybe Payment
+</span><a href="#local-6989586621679197709"><span class="hs-identifier hs-var">f1</span></a></span><span> </span><span class="annot"><span class="annottext">(Payment -&gt; Maybe Payment)
+-&gt; (Payment -&gt; Maybe Payment) -&gt; Payment -&gt; Maybe Payment
+forall (m :: * -&gt; *) b c a.
+Monad m =&gt;
+(b -&gt; m c) -&gt; (a -&gt; m b) -&gt; a -&gt; m c
+</span><span class="hs-operator hs-var">&lt;=&lt;</span></span><span> </span><span class="annot"><span class="annottext">Payment -&gt; Maybe Payment
+</span><a href="#local-6989586621679197711"><span class="hs-identifier hs-var">f2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Payment
+</span><a href="#local-6989586621679197712"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Payment -&gt; Maybe Payment -&gt; Maybe Payment
+forall a. Maybe a -&gt; Maybe a -&gt; Maybe a
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="annot"><span class="annottext">Payment -&gt; Maybe Payment
+</span><a href="#local-6989586621679197709"><span class="hs-identifier hs-var">f1</span></a></span><span> </span><span class="annot"><span class="annottext">Payment
+</span><a href="#local-6989586621679197712"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Payment -&gt; Maybe Payment -&gt; Maybe Payment
+forall a. Maybe a -&gt; Maybe a -&gt; Maybe a
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="annot"><span class="annottext">Payment -&gt; Maybe Payment
+</span><a href="#local-6989586621679197711"><span class="hs-identifier hs-var">f2</span></a></span><span> </span><span class="annot"><span class="annottext">Payment
+</span><a href="#local-6989586621679197712"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-34"></span><span>  </span><span id="local-6989586621679197585"><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.AbstractDomain.html#MonadAccounts"><span class="hs-identifier hs-type">MonadAccounts</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197585"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-35"></span><span>  </span><span class="annot"><a href="Logic.SingleStep.html#InterpretMod"><span class="hs-identifier hs-type">InterpretMod</span></a></span><span> </span><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-type">AccountsMod</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197585"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#MonadAccountsEffect"><span class="hs-identifier hs-type">MonadAccountsEffect</span></a></span></span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-37"></span><span>  </span><span id="local-6989586621679197725"><span class="annot"><span class="annottext">interpretMod :: forall (dummy :: [Effect]) a.
+MonadAccountsEffect (AST dummy) a -&gt; ModInterp AccountsMod m a
+</span><a href="#local-6989586621679197725"><span class="hs-identifier hs-var hs-var hs-var hs-var">interpretMod</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.AbstractDomain.html#IssuePayment"><span class="hs-identifier hs-type">IssuePayment</span></a></span><span> </span><span id="local-6989586621679197732"><span class="annot"><span class="annottext">Payment
+</span><a href="#local-6989586621679197732"><span class="hs-identifier hs-var">payment</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(AccountsMod -&gt; m (Maybe a)) -&gt; ModInterp AccountsMod m a
+forall mod (m :: * -&gt; *) a.
+(mod -&gt; m (Maybe a)) -&gt; ModInterp mod m a
+</span><a href="Logic.SingleStep.html#Visible"><span class="hs-identifier hs-var">Visible</span></a></span><span> </span><span class="annot"><span class="annottext">((AccountsMod -&gt; m (Maybe a)) -&gt; ModInterp AccountsMod m a)
+-&gt; (AccountsMod -&gt; m (Maybe a)) -&gt; ModInterp AccountsMod m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-type">AccountsMod</span></a></span><span> </span><span id="local-6989586621679197734"><span class="annot"><span class="annottext">Payment -&gt; Maybe Payment
+</span><a href="#local-6989586621679197734"><span class="hs-identifier hs-var">modif</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><span class="annottext">m (Maybe a)
+-&gt; (Payment -&gt; m (Maybe a)) -&gt; Maybe Payment -&gt; m (Maybe a)
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe a -&gt; m (Maybe a)
+forall a. a -&gt; m a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Maybe a
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Maybe a
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; Maybe a) -&gt; m a -&gt; m (Maybe a)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m a -&gt; m (Maybe a)) -&gt; (Payment -&gt; m a) -&gt; Payment -&gt; m (Maybe a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Payment -&gt; m a
+Payment -&gt; m ()
+forall (m :: * -&gt; *). MonadAccounts m =&gt; Payment -&gt; m ()
+</span><a href="Examples.Account.AbstractDomain.html#issuePayment"><span class="hs-identifier hs-var">issuePayment</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe Payment -&gt; m (Maybe a)) -&gt; Maybe Payment -&gt; m (Maybe a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Payment -&gt; Maybe Payment
+</span><a href="#local-6989586621679197734"><span class="hs-identifier hs-var">modif</span></a></span><span> </span><span class="annot"><span class="annottext">Payment
+</span><a href="#local-6989586621679197732"><span class="hs-identifier hs-var">payment</span></a></span><span>
+</span><span id="line-39"></span><span>  </span><span class="annot"><a href="Logic.SingleStep.html#interpretMod"><span class="hs-identifier hs-var">interpretMod</span></a></span><span> </span><span class="annot"><span class="annottext">MonadAccountsEffect (AST dummy) a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ModInterp AccountsMod m a
+forall mod (m :: * -&gt; *) a. ModInterp mod m a
+</span><a href="Logic.SingleStep.html#Invisible"><span class="hs-identifier hs-var">Invisible</span></a></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-42"></span><span>  </span><span id="local-6989586621679197615"><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.AbstractDomain.html#MonadAccounts"><span class="hs-identifier hs-type">MonadAccounts</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197615"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-43"></span><span>  </span><span class="annot"><a href="Logic.Ltl.html#InterpretLtlHigherOrder"><span class="hs-identifier hs-type">InterpretLtlHigherOrder</span></a></span><span> </span><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-type">AccountsMod</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197615"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#MonadAccountsEffect"><span class="hs-identifier hs-type">MonadAccountsEffect</span></a></span></span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-45"></span><span>  </span><span id="local-6989586621679197748"><span class="annot"><span class="annottext">interpretLtlHigherOrder :: forall (ops :: [Effect]) a.
+MonadAccountsEffect (AST ops) a
+-&gt; LtlInterpHigherOrder AccountsMod m ops a
+</span><a href="#local-6989586621679197748"><span class="hs-identifier hs-var hs-var hs-var hs-var">interpretLtlHigherOrder</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Simulate"><span class="hs-identifier hs-type">Simulate</span></a></span><span> </span><span id="local-6989586621679197756"><span class="annot"><span class="annottext">AST ops a1
+</span><a href="#local-6989586621679197756"><span class="hs-identifier hs-var">comp</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((forall b.
+  [Ltl AccountsMod] -&gt; AST ops b -&gt; m (b, [Ltl AccountsMod]))
+ -&gt; [Ltl AccountsMod] -&gt; m (Maybe (a, [Ltl AccountsMod])))
+-&gt; LtlInterpHigherOrder AccountsMod m ops a
+forall mod (ops :: [Effect]) (m :: * -&gt; *) a.
+((forall b. [Ltl mod] -&gt; AST ops b -&gt; m (b, [Ltl mod]))
+ -&gt; [Ltl mod] -&gt; m (Maybe (a, [Ltl mod])))
+-&gt; LtlInterpHigherOrder mod m ops a
+</span><a href="Logic.Ltl.html#Nested"><span class="hs-identifier hs-var">Nested</span></a></span><span> </span><span class="annot"><span class="annottext">(((forall b.
+   [Ltl AccountsMod] -&gt; AST ops b -&gt; m (b, [Ltl AccountsMod]))
+  -&gt; [Ltl AccountsMod] -&gt; m (Maybe (a, [Ltl AccountsMod])))
+ -&gt; LtlInterpHigherOrder AccountsMod m ops a)
+-&gt; ((forall b.
+     [Ltl AccountsMod] -&gt; AST ops b -&gt; m (b, [Ltl AccountsMod]))
+    -&gt; [Ltl AccountsMod] -&gt; m (Maybe (a, [Ltl AccountsMod])))
+-&gt; LtlInterpHigherOrder AccountsMod m ops a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679197758"><span class="annot"><span class="annottext">forall b.
+[Ltl AccountsMod] -&gt; AST ops b -&gt; m (b, [Ltl AccountsMod])
+</span><a href="#local-6989586621679197758"><span class="hs-identifier hs-var">evalAST</span></a></span></span><span> </span><span id="local-6989586621679197759"><span class="annot"><span class="annottext">[Ltl AccountsMod]
+</span><a href="#local-6989586621679197759"><span class="hs-identifier hs-var">ltls</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><span class="annottext">(a, [Ltl AccountsMod]) -&gt; Maybe (a, [Ltl AccountsMod])
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">((a, [Ltl AccountsMod]) -&gt; Maybe (a, [Ltl AccountsMod]))
+-&gt; (Maybe (a1, [Ltl AccountsMod]) -&gt; (a, [Ltl AccountsMod]))
+-&gt; Maybe (a1, [Ltl AccountsMod])
+-&gt; Maybe (a, [Ltl AccountsMod])
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">,</span><span class="annot"><span class="annottext">[Ltl AccountsMod]
+</span><a href="#local-6989586621679197759"><span class="hs-identifier hs-var">ltls</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(a -&gt; (a, [Ltl AccountsMod]))
+-&gt; (Maybe (a1, [Ltl AccountsMod]) -&gt; a)
+-&gt; Maybe (a1, [Ltl AccountsMod])
+-&gt; (a, [Ltl AccountsMod])
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(a1, [Ltl AccountsMod]) -&gt; a1
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">((a1, [Ltl AccountsMod]) -&gt; a1)
+-&gt; Maybe (a1, [Ltl AccountsMod]) -&gt; Maybe a1
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Maybe (a1, [Ltl AccountsMod]) -&gt; Maybe (a, [Ltl AccountsMod]))
+-&gt; m (Maybe (a1, [Ltl AccountsMod]))
+-&gt; m (Maybe (a, [Ltl AccountsMod]))
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">m (a1, [Ltl AccountsMod]) -&gt; m (Maybe (a1, [Ltl AccountsMod]))
+forall a. m a -&gt; m (Maybe a)
+forall (m :: * -&gt; *) a. MonadAccounts m =&gt; m a -&gt; m (Maybe a)
+</span><a href="Examples.Account.AbstractDomain.html#simulate"><span class="hs-identifier hs-var">simulate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Ltl AccountsMod] -&gt; AST ops a1 -&gt; m (a1, [Ltl AccountsMod])
+forall b.
+[Ltl AccountsMod] -&gt; AST ops b -&gt; m (b, [Ltl AccountsMod])
+</span><a href="#local-6989586621679197758"><span class="hs-identifier hs-var">evalAST</span></a></span><span> </span><span class="annot"><span class="annottext">[Ltl AccountsMod]
+</span><a href="#local-6989586621679197759"><span class="hs-identifier hs-var">ltls</span></a></span><span> </span><span class="annot"><span class="annottext">AST ops a1
+</span><a href="#local-6989586621679197756"><span class="hs-identifier hs-var">comp</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>  </span><span class="annot"><a href="Logic.Ltl.html#interpretLtlHigherOrder"><span class="hs-identifier hs-var">interpretLtlHigherOrder</span></a></span><span> </span><span id="local-6989586621679197762"><span class="annot"><span class="annottext">MonadAccountsEffect (AST ops) a
+</span><a href="#local-6989586621679197762"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ModInterp AccountsMod m a
+-&gt; LtlInterpHigherOrder AccountsMod m ops a
+forall mod (m :: * -&gt; *) a (ops :: [Effect]).
+ModInterp mod m a -&gt; LtlInterpHigherOrder mod m ops a
+</span><a href="Logic.Ltl.html#Direct"><span class="hs-identifier hs-var">Direct</span></a></span><span> </span><span class="annot"><span class="annottext">(ModInterp AccountsMod m a
+ -&gt; LtlInterpHigherOrder AccountsMod m ops a)
+-&gt; ModInterp AccountsMod m a
+-&gt; LtlInterpHigherOrder AccountsMod m ops a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">MonadAccountsEffect (AST ops) a -&gt; ModInterp AccountsMod m a
+forall (dummy :: [Effect]) a.
+MonadAccountsEffect (AST dummy) a -&gt; ModInterp AccountsMod m a
+forall mod (m :: * -&gt; *) (op :: Effect) (dummy :: [Effect]) a.
+InterpretMod mod m op =&gt;
+op (AST dummy) a -&gt; ModInterp mod m a
+</span><a href="Logic.SingleStep.html#interpretMod"><span class="hs-identifier hs-var">interpretMod</span></a></span><span> </span><span class="annot"><span class="annottext">MonadAccountsEffect (AST ops) a
+</span><a href="#local-6989586621679197762"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="annot"><a href="Examples.Account.PaymentMod.html#conditionalPaymentMod"><span class="hs-identifier hs-type">conditionalPaymentMod</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-type">AccountsMod</span></a></span><span>
+</span><span id="line-50"></span><span id="conditionalPaymentMod"><span class="annot"><span class="annottext">conditionalPaymentMod :: (String -&gt; Bool)
+-&gt; (String -&gt; Bool) -&gt; (Integer -&gt; Maybe Integer) -&gt; AccountsMod
+</span><a href="Examples.Account.PaymentMod.html#conditionalPaymentMod"><span class="hs-identifier hs-var hs-var">conditionalPaymentMod</span></a></span></span><span> </span><span id="local-6989586621679197765"><span class="annot"><span class="annottext">String -&gt; Bool
+</span><a href="#local-6989586621679197765"><span class="hs-identifier hs-var">condSender</span></a></span></span><span> </span><span id="local-6989586621679197766"><span class="annot"><span class="annottext">String -&gt; Bool
+</span><a href="#local-6989586621679197766"><span class="hs-identifier hs-var">condRecipient</span></a></span></span><span> </span><span id="local-6989586621679197767"><span class="annot"><span class="annottext">Integer -&gt; Maybe Integer
+</span><a href="#local-6989586621679197767"><span class="hs-identifier hs-var">change</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-51"></span><span>  </span><span class="annot"><span class="annottext">(Payment -&gt; Maybe Payment) -&gt; AccountsMod
+</span><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-var">AccountsMod</span></a></span><span> </span><span class="annot"><span class="annottext">((Payment -&gt; Maybe Payment) -&gt; AccountsMod)
+-&gt; (Payment -&gt; Maybe Payment) -&gt; AccountsMod
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-52"></span><span>    </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679197768"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679197768"><span class="hs-identifier hs-var">sender</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197769"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679197769"><span class="hs-identifier hs-var">amount</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679197770"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679197770"><span class="hs-identifier hs-var">recipient</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Maybe Integer
+</span><a href="#local-6989586621679197767"><span class="hs-identifier hs-var">change</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679197769"><span class="hs-identifier hs-var">amount</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Bool
+</span><a href="#local-6989586621679197765"><span class="hs-identifier hs-var">condSender</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679197768"><span class="hs-identifier hs-var">sender</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Bool
+</span><a href="#local-6989586621679197766"><span class="hs-identifier hs-var">condRecipient</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679197770"><span class="hs-identifier hs-var">recipient</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-53"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Integer
+</span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Payment
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-54"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Integer
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Payment
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-55"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679197772"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679197772"><span class="hs-identifier hs-var">newAmount</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Payment -&gt; Maybe Payment
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679197768"><span class="hs-identifier hs-var">sender</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679197772"><span class="hs-identifier hs-var">newAmount</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679197770"><span class="hs-identifier hs-var">recipient</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><a href="Examples.Account.PaymentMod.html#increaseJudithPaymentsMod"><span class="hs-identifier hs-type">increaseJudithPaymentsMod</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-type">AccountsMod</span></a></span><span>
+</span><span id="line-58"></span><span id="increaseJudithPaymentsMod"><span class="annot"><span class="annottext">increaseJudithPaymentsMod :: Integer -&gt; AccountsMod
+</span><a href="Examples.Account.PaymentMod.html#increaseJudithPaymentsMod"><span class="hs-identifier hs-var hs-var">increaseJudithPaymentsMod</span></a></span></span><span> </span><span id="local-6989586621679197774"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679197774"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; Bool)
+-&gt; (String -&gt; Bool) -&gt; (Integer -&gt; Maybe Integer) -&gt; AccountsMod
+</span><a href="Examples.Account.PaymentMod.html#conditionalPaymentMod"><span class="hs-identifier hs-var">conditionalPaymentMod</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;judith&quot;</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; String -&gt; Bool
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Maybe Integer
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Integer -&gt; Maybe Integer)
+-&gt; (Integer -&gt; Integer) -&gt; Integer -&gt; Maybe Integer
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679197774"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="annot"><a href="Examples.Account.PaymentMod.html#negatePaymentsMod"><span class="hs-identifier hs-type">negatePaymentsMod</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-type">AccountsMod</span></a></span><span>
+</span><span id="line-61"></span><span id="negatePaymentsMod"><span class="annot"><span class="annottext">negatePaymentsMod :: AccountsMod
+</span><a href="Examples.Account.PaymentMod.html#negatePaymentsMod"><span class="hs-identifier hs-var hs-var">negatePaymentsMod</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(String -&gt; Bool)
+-&gt; (String -&gt; Bool) -&gt; (Integer -&gt; Maybe Integer) -&gt; AccountsMod
+</span><a href="Examples.Account.PaymentMod.html#conditionalPaymentMod"><span class="hs-identifier hs-var">conditionalPaymentMod</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; String -&gt; Bool
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; String -&gt; Bool
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Maybe Integer
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Integer -&gt; Maybe Integer)
+-&gt; (Integer -&gt; Integer) -&gt; Integer -&gt; Maybe Integer
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">negate</span></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span id="local-6989586621679197634"><span class="annot"><a href="Examples.Account.PaymentMod.html#interpretAndRun"><span class="hs-identifier hs-type">interpretAndRun</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-64"></span><span>  </span><span class="annot"><a href="Logic.Ltl.html#LtlAST"><span class="hs-identifier hs-type">LtlAST</span></a></span><span> </span><span class="annot"><a href="Examples.Account.PaymentMod.html#AccountsMod"><span class="hs-identifier hs-type">AccountsMod</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="annot"><a href="Examples.Account.AbstractDomain.html#MonadAccountsEffect"><span class="hs-identifier hs-type">MonadAccountsEffect</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Effect.Error.html#MonadErrorEffect"><span class="hs-identifier hs-type">MonadErrorEffect</span></a></span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsError"><span class="hs-identifier hs-type">AccountsError</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679197634"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsError"><span class="hs-identifier hs-type">AccountsError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679197634"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-66"></span><span id="interpretAndRun"><span class="annot"><span class="annottext">interpretAndRun :: forall a.
+LtlAST
+  AccountsMod
+  '[MonadAccountsEffect, MonadErrorEffect AccountsError]
+  a
+-&gt; [Either AccountsError a]
+</span><a href="Examples.Account.PaymentMod.html#interpretAndRun"><span class="hs-identifier hs-var hs-var">interpretAndRun</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-67"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Either AccountsError a, Map String Account)
+-&gt; Either AccountsError a
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">((Either AccountsError a, Map String Account)
+ -&gt; Either AccountsError a)
+-&gt; [(Either AccountsError a, Map String Account)]
+-&gt; [Either AccountsError a]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><span class="annottext">([(Either AccountsError a, Map String Account)]
+ -&gt; [Either AccountsError a])
+-&gt; (LtlAST
+      AccountsMod
+      '[MonadAccountsEffect, MonadErrorEffect AccountsError]
+      a
+    -&gt; [(Either AccountsError a, Map String Account)])
+-&gt; LtlAST
+     AccountsMod
+     '[MonadAccountsEffect, MonadErrorEffect AccountsError]
+     a
+-&gt; [Either AccountsError a]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Register
+-&gt; AccountsT [] a -&gt; [(Either AccountsError a, Map String Account)]
+forall (m :: * -&gt; *) a.
+Monad m =&gt;
+Register
+-&gt; AccountsT m a -&gt; m (Either AccountsError a, Map String Account)
+</span><a href="Examples.Account.SimpleDomain.html#runAccountsT"><span class="hs-identifier hs-var">runAccountsT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map String Policy -&gt; Map String Account -&gt; Register
+</span><a href="Examples.Account.AbstractDomain.html#Register"><span class="hs-identifier hs-var">Register</span></a></span><span> </span><span class="annot"><span class="annottext">Map String Policy
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span> </span><span class="annot"><span class="annottext">Map String Account
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>    </span><span class="annot"><span class="annottext">(AccountsT [] a -&gt; [(Either AccountsError a, Map String Account)])
+-&gt; (LtlAST
+      AccountsMod
+      '[MonadAccountsEffect, MonadErrorEffect AccountsError]
+      a
+    -&gt; AccountsT [] a)
+-&gt; LtlAST
+     AccountsMod
+     '[MonadAccountsEffect, MonadErrorEffect AccountsError]
+     a
+-&gt; [(Either AccountsError a, Map String Account)]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">forall (tags :: [LtlInstanceKind]) mod (m :: * -&gt; *)
+       (ops :: [Effect]) a.
+(Semigroup mod, MonadPlus m, InterpretEffectsLtl mod m tags ops) =&gt;
+LtlAST mod ops a -&gt; m a
+</span><a href="Logic.Ltl.html#interpretLtlAST"><span class="hs-identifier hs-var">interpretLtlAST</span></a></span><span>
+</span><span id="line-70"></span><span>      </span><span class="hs-glyph">@</span><span class="hs-special">'</span><span class="hs-special">[</span><span> </span><span class="annot"><a href="Logic.Ltl.html#InterpretLtlHigherOrderTag"><span class="hs-identifier hs-type">InterpretLtlHigherOrderTag</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-71"></span><span>          </span><span class="annot"><a href="Logic.Ltl.html#InterpretEffectStatefulTag"><span class="hs-identifier hs-type">InterpretEffectStatefulTag</span></a></span><span>
+</span><span id="line-72"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-73"></span></pre></body></html>

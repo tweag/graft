@@ -1,0 +1,682 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE ImportQualifiedPost #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Examples.Account.SimpleDomain</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Applicative</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Except</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Extra</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.State</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Bifunctor</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">second</span></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html"><span class="hs-identifier">Examples.Account.AbstractDomain</span></a></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="annot"><span class="hs-comment">-- | Errors raised by the domain</span></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">data</span><span> </span><span id="AccountsError"><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsError"><span class="hs-identifier hs-var">AccountsError</span></a></span></span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="NoSuchAccount"><span class="annot"><a href="Examples.Account.SimpleDomain.html#NoSuchAccount"><span class="hs-identifier hs-var">NoSuchAccount</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="AlreadyExistingAccount"><span class="annot"><a href="Examples.Account.SimpleDomain.html#AlreadyExistingAccount"><span class="hs-identifier hs-var">AlreadyExistingAccount</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="NoSuchPolicy"><span class="annot"><a href="Examples.Account.SimpleDomain.html#NoSuchPolicy"><span class="hs-identifier hs-var">NoSuchPolicy</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="AlreadyExistingPolicy"><span class="annot"><a href="Examples.Account.SimpleDomain.html#AlreadyExistingPolicy"><span class="hs-identifier hs-var">AlreadyExistingPolicy</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PolicyError"><span class="annot"><a href="Examples.Account.SimpleDomain.html#PolicyError"><span class="hs-identifier hs-var">PolicyError</span></a></span></span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679194160"><span id="local-6989586621679194173"><span id="local-6989586621679194177"><span class="annot"><span class="annottext">Int -&gt; AccountsError -&gt; ShowS
+[AccountsError] -&gt; ShowS
+AccountsError -&gt; String
+(Int -&gt; AccountsError -&gt; ShowS)
+-&gt; (AccountsError -&gt; String)
+-&gt; ([AccountsError] -&gt; ShowS)
+-&gt; Show AccountsError
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; AccountsError -&gt; ShowS
+showsPrec :: Int -&gt; AccountsError -&gt; ShowS
+$cshow :: AccountsError -&gt; String
+show :: AccountsError -&gt; String
+$cshowList :: [AccountsError] -&gt; ShowS
+showList :: [AccountsError] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="annot"><span class="hs-comment">-- | Our domain implementation</span></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">type</span><span> </span><span id="AccountsT"><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsT"><span class="hs-identifier hs-var">AccountsT</span></a></span></span><span> </span><span id="local-6989586621679194181"><span class="annot"><a href="#local-6989586621679194181"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsError"><span class="hs-identifier hs-type">AccountsError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Register"><span class="hs-identifier hs-type">Register</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194181"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">instance</span><span> </span><span class="hs-pragma">{-# OVERLAPPING</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span id="local-6989586621679194032"><span id="local-6989586621679194191"><span id="local-6989586621679194195"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="annot"><a href="#local-6989586621679194032"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Alternative</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsT"><span class="hs-identifier hs-type">AccountsT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194032"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-30"></span><span>  </span><span id="local-6989586621679194213"><span class="annot"><span class="annottext">empty :: forall a. AccountsT m a
+</span><a href="#local-6989586621679194213"><span class="hs-identifier hs-var hs-var hs-var hs-var">empty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">StateT Register m a -&gt; ExceptT AccountsError (StateT Register m) a
+forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; ExceptT AccountsError m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+(MonadTrans t, Monad m) =&gt;
+m a -&gt; t m a
+</span><span class="hs-identifier hs-var">lift</span></span><span> </span><span class="annot"><span class="annottext">StateT Register m a
+forall a. StateT Register m a
+forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a
+</span><span class="hs-identifier hs-var">mzero</span></span><span>
+</span><span id="line-31"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span id="local-6989586621679194220"><span class="annot"><span class="annottext">Register -&gt; m (Either AccountsError a, Register)
+</span><a href="#local-6989586621679194220"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679194221"><span class="annot"><span class="annottext">&lt;|&gt; :: forall a. AccountsT m a -&gt; AccountsT m a -&gt; AccountsT m a
+</span><a href="#local-6989586621679194221"><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;|&gt;</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span id="local-6989586621679194223"><span class="annot"><span class="annottext">Register -&gt; m (Either AccountsError a, Register)
+</span><a href="#local-6989586621679194223"><span class="hs-identifier hs-var">g</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><span class="annottext">StateT Register m (Either AccountsError a)
+-&gt; ExceptT AccountsError (StateT Register m) a
+forall e (m :: * -&gt; *) a. m (Either e a) -&gt; ExceptT e m a
+</span><span class="hs-identifier hs-var">ExceptT</span></span><span> </span><span class="annot"><span class="annottext">(StateT Register m (Either AccountsError a)
+ -&gt; ExceptT AccountsError (StateT Register m) a)
+-&gt; ((Register -&gt; m (Either AccountsError a, Register))
+    -&gt; StateT Register m (Either AccountsError a))
+-&gt; (Register -&gt; m (Either AccountsError a, Register))
+-&gt; ExceptT AccountsError (StateT Register m) a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Register -&gt; m (Either AccountsError a, Register))
+-&gt; StateT Register m (Either AccountsError a)
+forall s (m :: * -&gt; *) a. (s -&gt; m (a, s)) -&gt; StateT s m a
+</span><span class="hs-identifier hs-var">StateT</span></span><span> </span><span class="annot"><span class="annottext">((Register -&gt; m (Either AccountsError a, Register))
+ -&gt; ExceptT AccountsError (StateT Register m) a)
+-&gt; (Register -&gt; m (Either AccountsError a, Register))
+-&gt; ExceptT AccountsError (StateT Register m) a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679194225"><span class="annot"><span class="annottext">Register
+</span><a href="#local-6989586621679194225"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Register -&gt; m (Either AccountsError a, Register)
+</span><a href="#local-6989586621679194220"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Register
+</span><a href="#local-6989586621679194225"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">m (Either AccountsError a, Register)
+-&gt; m (Either AccountsError a, Register)
+-&gt; m (Either AccountsError a, Register)
+forall a. m a -&gt; m a -&gt; m a
+forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a -&gt; m a -&gt; m a
+</span><span class="hs-operator hs-var">`mplus`</span></span><span> </span><span class="annot"><span class="annottext">Register -&gt; m (Either AccountsError a, Register)
+</span><a href="#local-6989586621679194223"><span class="hs-identifier hs-var">g</span></a></span><span> </span><span class="annot"><span class="annottext">Register
+</span><a href="#local-6989586621679194225"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">instance</span><span> </span><span class="hs-pragma">{-# OVERLAPPING</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span id="local-6989586621679194059"><span id="local-6989586621679194235"><span id="local-6989586621679194239"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="annot"><a href="#local-6989586621679194059"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsT"><span class="hs-identifier hs-type">AccountsT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194059"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="annot"><span class="hs-comment">-- * Some helper functions over AccountsT m</span></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="annot"><span class="hs-comment">-- | Ensures a user is registered and returns the associated account</span></span><span>
+</span><span id="line-39"></span><span id="local-6989586621679194060"><span class="annot"><a href="Examples.Account.SimpleDomain.html#ensureExistingUser"><span class="hs-identifier hs-type">ensureExistingUser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679194060"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsT"><span class="hs-identifier hs-type">AccountsT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194060"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Account"><span class="hs-identifier hs-type">Account</span></a></span></span><span>
+</span><span id="line-40"></span><span id="ensureExistingUser"><span class="annot"><span class="annottext">ensureExistingUser :: forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m Account
+</span><a href="Examples.Account.SimpleDomain.html#ensureExistingUser"><span class="hs-identifier hs-var hs-var">ensureExistingUser</span></a></span></span><span> </span><span id="local-6989586621679194258"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194258"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-41"></span><span>  </span><span class="annot"><span class="annottext">ExceptT AccountsError (StateT Register m) Account
+-&gt; (Account -&gt; ExceptT AccountsError (StateT Register m) Account)
+-&gt; ExceptT AccountsError (StateT Register m) (Maybe Account)
+-&gt; ExceptT AccountsError (StateT Register m) Account
+forall (m :: * -&gt; *) b a.
+Monad m =&gt;
+m b -&gt; (a -&gt; m b) -&gt; m (Maybe a) -&gt; m b
+</span><span class="hs-identifier hs-var">maybeM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AccountsError -&gt; ExceptT AccountsError (StateT Register m) Account
+forall a.
+AccountsError -&gt; ExceptT AccountsError (StateT Register m) a
+forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">(AccountsError
+ -&gt; ExceptT AccountsError (StateT Register m) Account)
+-&gt; AccountsError
+-&gt; ExceptT AccountsError (StateT Register m) Account
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; AccountsError
+</span><a href="Examples.Account.SimpleDomain.html#NoSuchAccount"><span class="hs-identifier hs-var">NoSuchAccount</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194258"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Account -&gt; ExceptT AccountsError (StateT Register m) Account
+forall a. a -&gt; ExceptT AccountsError (StateT Register m) a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(ExceptT AccountsError (StateT Register m) (Maybe Account)
+ -&gt; ExceptT AccountsError (StateT Register m) Account)
+-&gt; ExceptT AccountsError (StateT Register m) (Maybe Account)
+-&gt; ExceptT AccountsError (StateT Register m) Account
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Register -&gt; Maybe Account)
+-&gt; ExceptT AccountsError (StateT Register m) (Maybe Account)
+forall s (m :: * -&gt; *) a. MonadState s m =&gt; (s -&gt; a) -&gt; m a
+</span><span class="hs-identifier hs-var">gets</span></span><span> </span><span class="annot"><span class="annottext">((Register -&gt; Maybe Account)
+ -&gt; ExceptT AccountsError (StateT Register m) (Maybe Account))
+-&gt; (Register -&gt; Maybe Account)
+-&gt; ExceptT AccountsError (StateT Register m) (Maybe Account)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Map String Account -&gt; Maybe Account
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194258"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">(Map String Account -&gt; Maybe Account)
+-&gt; (Register -&gt; Map String Account) -&gt; Register -&gt; Maybe Account
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Register -&gt; Map String Account
+</span><a href="Examples.Account.AbstractDomain.html#accounts"><span class="hs-identifier hs-var">accounts</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="annot"><span class="hs-comment">-- | Ensures a user is not registered</span></span><span>
+</span><span id="line-44"></span><span id="local-6989586621679194087"><span class="annot"><a href="Examples.Account.SimpleDomain.html#ensureNonExistingUser"><span class="hs-identifier hs-type">ensureNonExistingUser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679194087"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsT"><span class="hs-identifier hs-type">AccountsT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194087"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-45"></span><span id="ensureNonExistingUser"><span class="annot"><span class="annottext">ensureNonExistingUser :: forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#ensureNonExistingUser"><span class="hs-identifier hs-var hs-var">ensureNonExistingUser</span></a></span></span><span> </span><span id="local-6989586621679194273"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194273"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-46"></span><span>  </span><span class="annot"><span class="annottext">ExceptT AccountsError (StateT Register m) Bool
+-&gt; ExceptT AccountsError (StateT Register m) ()
+-&gt; ExceptT AccountsError (StateT Register m) ()
+forall (m :: * -&gt; *). Monad m =&gt; m Bool -&gt; m () -&gt; m ()
+</span><span class="hs-identifier hs-var">whenM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Register -&gt; Bool)
+-&gt; ExceptT AccountsError (StateT Register m) Bool
+forall s (m :: * -&gt; *) a. MonadState s m =&gt; (s -&gt; a) -&gt; m a
+</span><span class="hs-identifier hs-var">gets</span></span><span> </span><span class="annot"><span class="annottext">((Register -&gt; Bool)
+ -&gt; ExceptT AccountsError (StateT Register m) Bool)
+-&gt; (Register -&gt; Bool)
+-&gt; ExceptT AccountsError (StateT Register m) Bool
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194273"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Map String Account -&gt; Bool
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Bool
+</span><span class="hs-operator hs-var">`Map.member`</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Map String Account -&gt; Bool)
+-&gt; (Register -&gt; Map String Account) -&gt; Register -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Register -&gt; Map String Account
+</span><a href="Examples.Account.AbstractDomain.html#accounts"><span class="hs-identifier hs-var">accounts</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(ExceptT AccountsError (StateT Register m) ()
+ -&gt; ExceptT AccountsError (StateT Register m) ())
+-&gt; ExceptT AccountsError (StateT Register m) ()
+-&gt; ExceptT AccountsError (StateT Register m) ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">AccountsError -&gt; ExceptT AccountsError (StateT Register m) ()
+forall a.
+AccountsError -&gt; ExceptT AccountsError (StateT Register m) a
+forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">(AccountsError -&gt; ExceptT AccountsError (StateT Register m) ())
+-&gt; AccountsError -&gt; ExceptT AccountsError (StateT Register m) ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; AccountsError
+</span><a href="Examples.Account.SimpleDomain.html#AlreadyExistingAccount"><span class="hs-identifier hs-var">AlreadyExistingAccount</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194273"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="annot"><span class="hs-comment">-- | Modifies the current map of accounts</span></span><span>
+</span><span id="line-49"></span><span id="local-6989586621679194092"><span class="annot"><a href="Examples.Account.SimpleDomain.html#modifyAccounts"><span class="hs-identifier hs-type">modifyAccounts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679194092"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Account"><span class="hs-identifier hs-type">Account</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Account"><span class="hs-identifier hs-type">Account</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsT"><span class="hs-identifier hs-type">AccountsT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194092"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-50"></span><span id="modifyAccounts"><span class="annot"><span class="annottext">modifyAccounts :: forall (m :: * -&gt; *).
+Monad m =&gt;
+(Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#modifyAccounts"><span class="hs-identifier hs-var hs-var">modifyAccounts</span></a></span></span><span> </span><span id="local-6989586621679194280"><span class="annot"><span class="annottext">Map String Account -&gt; Map String Account
+</span><a href="#local-6989586621679194280"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Register -&gt; Register)
+-&gt; ExceptT AccountsError (StateT Register m) ()
+forall s (m :: * -&gt; *). MonadState s m =&gt; (s -&gt; s) -&gt; m ()
+</span><span class="hs-identifier hs-var">modify</span></span><span> </span><span class="annot"><span class="annottext">((Register -&gt; Register)
+ -&gt; ExceptT AccountsError (StateT Register m) ())
+-&gt; (Register -&gt; Register)
+-&gt; ExceptT AccountsError (StateT Register m) ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Register"><span class="hs-identifier hs-type">Register</span></a></span><span> </span><span id="local-6989586621679194283"><span class="annot"><span class="annottext">Map String Policy
+</span><a href="#local-6989586621679194283"><span class="hs-identifier hs-var">pols</span></a></span></span><span> </span><span id="local-6989586621679194284"><span class="annot"><span class="annottext">Map String Account
+</span><a href="#local-6989586621679194284"><span class="hs-identifier hs-var">accs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Map String Policy -&gt; Map String Account -&gt; Register
+</span><a href="Examples.Account.AbstractDomain.html#Register"><span class="hs-identifier hs-var">Register</span></a></span><span> </span><span class="annot"><span class="annottext">Map String Policy
+</span><a href="#local-6989586621679194283"><span class="hs-identifier hs-var">pols</span></a></span><span> </span><span class="annot"><span class="annottext">(Map String Account -&gt; Register) -&gt; Map String Account -&gt; Register
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Map String Account -&gt; Map String Account
+</span><a href="#local-6989586621679194280"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Map String Account
+</span><a href="#local-6989586621679194284"><span class="hs-identifier hs-var">accs</span></a></span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="annot"><span class="hs-comment">-- | Ensures a policy is registered and executes an action based on its value</span></span><span>
+</span><span id="line-53"></span><span id="local-6989586621679194097"><span class="annot"><a href="Examples.Account.SimpleDomain.html#ensureExistingPolicy"><span class="hs-identifier hs-type">ensureExistingPolicy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679194097"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsT"><span class="hs-identifier hs-type">AccountsT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194097"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Policy"><span class="hs-identifier hs-type">Policy</span></a></span></span><span>
+</span><span id="line-54"></span><span id="ensureExistingPolicy"><span class="annot"><span class="annottext">ensureExistingPolicy :: forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m Policy
+</span><a href="Examples.Account.SimpleDomain.html#ensureExistingPolicy"><span class="hs-identifier hs-var hs-var">ensureExistingPolicy</span></a></span></span><span> </span><span id="local-6989586621679194295"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194295"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-55"></span><span>  </span><span class="annot"><span class="annottext">ExceptT AccountsError (StateT Register m) Policy
+-&gt; (Policy -&gt; ExceptT AccountsError (StateT Register m) Policy)
+-&gt; ExceptT AccountsError (StateT Register m) (Maybe Policy)
+-&gt; ExceptT AccountsError (StateT Register m) Policy
+forall (m :: * -&gt; *) b a.
+Monad m =&gt;
+m b -&gt; (a -&gt; m b) -&gt; m (Maybe a) -&gt; m b
+</span><span class="hs-identifier hs-var">maybeM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AccountsError -&gt; ExceptT AccountsError (StateT Register m) Policy
+forall a.
+AccountsError -&gt; ExceptT AccountsError (StateT Register m) a
+forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">(AccountsError -&gt; ExceptT AccountsError (StateT Register m) Policy)
+-&gt; AccountsError
+-&gt; ExceptT AccountsError (StateT Register m) Policy
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; AccountsError
+</span><a href="Examples.Account.SimpleDomain.html#NoSuchPolicy"><span class="hs-identifier hs-var">NoSuchPolicy</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194295"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Policy -&gt; ExceptT AccountsError (StateT Register m) Policy
+forall a. a -&gt; ExceptT AccountsError (StateT Register m) a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(ExceptT AccountsError (StateT Register m) (Maybe Policy)
+ -&gt; ExceptT AccountsError (StateT Register m) Policy)
+-&gt; ExceptT AccountsError (StateT Register m) (Maybe Policy)
+-&gt; ExceptT AccountsError (StateT Register m) Policy
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Register -&gt; Maybe Policy)
+-&gt; ExceptT AccountsError (StateT Register m) (Maybe Policy)
+forall s (m :: * -&gt; *) a. MonadState s m =&gt; (s -&gt; a) -&gt; m a
+</span><span class="hs-identifier hs-var">gets</span></span><span> </span><span class="annot"><span class="annottext">((Register -&gt; Maybe Policy)
+ -&gt; ExceptT AccountsError (StateT Register m) (Maybe Policy))
+-&gt; (Register -&gt; Maybe Policy)
+-&gt; ExceptT AccountsError (StateT Register m) (Maybe Policy)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Map String Policy -&gt; Maybe Policy
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194295"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">(Map String Policy -&gt; Maybe Policy)
+-&gt; (Register -&gt; Map String Policy) -&gt; Register -&gt; Maybe Policy
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Register -&gt; Map String Policy
+</span><a href="Examples.Account.AbstractDomain.html#policies"><span class="hs-identifier hs-var">policies</span></a></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><span class="hs-comment">-- | Ensures a policy is not present and executes an action</span></span><span>
+</span><span id="line-58"></span><span id="local-6989586621679194297"><span class="annot"><a href="Examples.Account.SimpleDomain.html#ensureNonExistingPolicy"><span class="hs-identifier hs-type">ensureNonExistingPolicy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679194297"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsT"><span class="hs-identifier hs-type">AccountsT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194297"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-59"></span><span id="ensureNonExistingPolicy"><span class="annot"><span class="annottext">ensureNonExistingPolicy :: forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#ensureNonExistingPolicy"><span class="hs-identifier hs-var hs-var">ensureNonExistingPolicy</span></a></span></span><span> </span><span id="local-6989586621679194307"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194307"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-60"></span><span>  </span><span class="annot"><span class="annottext">ExceptT AccountsError (StateT Register m) Bool
+-&gt; ExceptT AccountsError (StateT Register m) ()
+-&gt; ExceptT AccountsError (StateT Register m) ()
+forall (m :: * -&gt; *). Monad m =&gt; m Bool -&gt; m () -&gt; m ()
+</span><span class="hs-identifier hs-var">whenM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Register -&gt; Bool)
+-&gt; ExceptT AccountsError (StateT Register m) Bool
+forall s (m :: * -&gt; *) a. MonadState s m =&gt; (s -&gt; a) -&gt; m a
+</span><span class="hs-identifier hs-var">gets</span></span><span> </span><span class="annot"><span class="annottext">((Register -&gt; Bool)
+ -&gt; ExceptT AccountsError (StateT Register m) Bool)
+-&gt; (Register -&gt; Bool)
+-&gt; ExceptT AccountsError (StateT Register m) Bool
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194307"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; Map String Policy -&gt; Bool
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Bool
+</span><span class="hs-operator hs-var">`Map.member`</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Map String Policy -&gt; Bool)
+-&gt; (Register -&gt; Map String Policy) -&gt; Register -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Register -&gt; Map String Policy
+</span><a href="Examples.Account.AbstractDomain.html#policies"><span class="hs-identifier hs-var">policies</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(ExceptT AccountsError (StateT Register m) ()
+ -&gt; ExceptT AccountsError (StateT Register m) ())
+-&gt; ExceptT AccountsError (StateT Register m) ()
+-&gt; ExceptT AccountsError (StateT Register m) ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">AccountsError -&gt; ExceptT AccountsError (StateT Register m) ()
+forall a.
+AccountsError -&gt; ExceptT AccountsError (StateT Register m) a
+forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">(AccountsError -&gt; ExceptT AccountsError (StateT Register m) ())
+-&gt; AccountsError -&gt; ExceptT AccountsError (StateT Register m) ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; AccountsError
+</span><a href="Examples.Account.SimpleDomain.html#AlreadyExistingPolicy"><span class="hs-identifier hs-var">AlreadyExistingPolicy</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194307"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="annot"><span class="hs-comment">-- | Modifies the current map of policies</span></span><span>
+</span><span id="line-63"></span><span id="local-6989586621679194100"><span class="annot"><a href="Examples.Account.SimpleDomain.html#modifyPolicies"><span class="hs-identifier hs-type">modifyPolicies</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679194100"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Policy"><span class="hs-identifier hs-type">Policy</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Policy"><span class="hs-identifier hs-type">Policy</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsT"><span class="hs-identifier hs-type">AccountsT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194100"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-64"></span><span id="modifyPolicies"><span class="annot"><span class="annottext">modifyPolicies :: forall (m :: * -&gt; *).
+Monad m =&gt;
+(Map String Policy -&gt; Map String Policy) -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#modifyPolicies"><span class="hs-identifier hs-var hs-var">modifyPolicies</span></a></span></span><span> </span><span id="local-6989586621679194312"><span class="annot"><span class="annottext">Map String Policy -&gt; Map String Policy
+</span><a href="#local-6989586621679194312"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Register -&gt; Register)
+-&gt; ExceptT AccountsError (StateT Register m) ()
+forall s (m :: * -&gt; *). MonadState s m =&gt; (s -&gt; s) -&gt; m ()
+</span><span class="hs-identifier hs-var">modify</span></span><span> </span><span class="annot"><span class="annottext">((Register -&gt; Register)
+ -&gt; ExceptT AccountsError (StateT Register m) ())
+-&gt; (Register -&gt; Register)
+-&gt; ExceptT AccountsError (StateT Register m) ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Register"><span class="hs-identifier hs-type">Register</span></a></span><span> </span><span id="local-6989586621679194313"><span class="annot"><span class="annottext">Map String Policy
+</span><a href="#local-6989586621679194313"><span class="hs-identifier hs-var">pols</span></a></span></span><span> </span><span id="local-6989586621679194314"><span class="annot"><span class="annottext">Map String Account
+</span><a href="#local-6989586621679194314"><span class="hs-identifier hs-var">accs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Map String Policy -&gt; Map String Account -&gt; Register)
+-&gt; Map String Account -&gt; Map String Policy -&gt; Register
+forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
+</span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">Map String Policy -&gt; Map String Account -&gt; Register
+</span><a href="Examples.Account.AbstractDomain.html#Register"><span class="hs-identifier hs-var">Register</span></a></span><span> </span><span class="annot"><span class="annottext">Map String Account
+</span><a href="#local-6989586621679194314"><span class="hs-identifier hs-var">accs</span></a></span><span> </span><span class="annot"><span class="annottext">(Map String Policy -&gt; Register) -&gt; Map String Policy -&gt; Register
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Map String Policy -&gt; Map String Policy
+</span><a href="#local-6989586621679194312"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Map String Policy
+</span><a href="#local-6989586621679194313"><span class="hs-identifier hs-var">pols</span></a></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="annot"><span class="hs-comment">-- | A function to run the domain and return relevant information</span></span><span>
+</span><span id="line-67"></span><span id="local-6989586621679194105"><span id="local-6989586621679194106"><span class="annot"><a href="Examples.Account.SimpleDomain.html#runAccountsT"><span class="hs-identifier hs-type">runAccountsT</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679194105"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Register"><span class="hs-identifier hs-type">Register</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsT"><span class="hs-identifier hs-type">AccountsT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194105"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194106"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679194105"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsError"><span class="hs-identifier hs-type">AccountsError</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194106"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#Account"><span class="hs-identifier hs-type">Account</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-68"></span><span id="runAccountsT"><span class="annot"><span class="annottext">runAccountsT :: forall (m :: * -&gt; *) a.
+Monad m =&gt;
+Register
+-&gt; AccountsT m a -&gt; m (Either AccountsError a, Map String Account)
+</span><a href="Examples.Account.SimpleDomain.html#runAccountsT"><span class="hs-identifier hs-var hs-var">runAccountsT</span></a></span></span><span> </span><span id="local-6989586621679194324"><span class="annot"><span class="annottext">Register
+</span><a href="#local-6989586621679194324"><span class="hs-identifier hs-var">register</span></a></span></span><span> </span><span id="local-6989586621679194325"><span class="annot"><span class="annottext">AccountsT m a
+</span><a href="#local-6989586621679194325"><span class="hs-identifier hs-var">comp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Register -&gt; Map String Account)
+-&gt; (Either AccountsError a, Register)
+-&gt; (Either AccountsError a, Map String Account)
+forall b c a. (b -&gt; c) -&gt; (a, b) -&gt; (a, c)
+forall (p :: * -&gt; * -&gt; *) b c a.
+Bifunctor p =&gt;
+(b -&gt; c) -&gt; p a b -&gt; p a c
+</span><span class="hs-identifier hs-var">second</span></span><span> </span><span class="annot"><span class="annottext">Register -&gt; Map String Account
+</span><a href="Examples.Account.AbstractDomain.html#accounts"><span class="hs-identifier hs-var">accounts</span></a></span><span> </span><span class="annot"><span class="annottext">((Either AccountsError a, Register)
+ -&gt; (Either AccountsError a, Map String Account))
+-&gt; m (Either AccountsError a, Register)
+-&gt; m (Either AccountsError a, Map String Account)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">StateT Register m (Either AccountsError a)
+-&gt; Register -&gt; m (Either AccountsError a, Register)
+forall s (m :: * -&gt; *) a. StateT s m a -&gt; s -&gt; m (a, s)
+</span><span class="hs-identifier hs-var">runStateT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AccountsT m a -&gt; StateT Register m (Either AccountsError a)
+forall e (m :: * -&gt; *) a. ExceptT e m a -&gt; m (Either e a)
+</span><span class="hs-identifier hs-var">runExceptT</span></span><span> </span><span class="annot"><span class="annottext">AccountsT m a
+</span><a href="#local-6989586621679194325"><span class="hs-identifier hs-var">comp</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Register
+</span><a href="#local-6989586621679194324"><span class="hs-identifier hs-var">register</span></a></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679194128"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679194128"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Examples.Account.AbstractDomain.html#MonadAccounts"><span class="hs-identifier hs-type">MonadAccounts</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Examples.Account.SimpleDomain.html#AccountsT"><span class="hs-identifier hs-type">AccountsT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679194128"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-71"></span><span>  </span><span id="local-6989586621679194351"><span class="annot"><span class="annottext">addUser :: String -&gt; Integer -&gt; AccountsT m ()
+</span><a href="#local-6989586621679194351"><span class="hs-identifier hs-var hs-var hs-var hs-var">addUser</span></a></span></span><span> </span><span id="local-6989586621679194353"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194353"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679194354"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194354"><span class="hs-identifier hs-var">balance</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-72"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; AccountsT m ()
+forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#ensureNonExistingUser"><span class="hs-identifier hs-var">ensureNonExistingUser</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194353"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><span class="annottext">(Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#modifyAccounts"><span class="hs-identifier hs-var">modifyAccounts</span></a></span><span> </span><span class="annot"><span class="annottext">((Map String Account -&gt; Map String Account) -&gt; AccountsT m ())
+-&gt; (Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Account -&gt; Map String Account -&gt; Map String Account
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194353"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194354"><span class="hs-identifier hs-var">balance</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Set String
+forall a. Set a
+</span><span class="hs-identifier hs-var">Set.empty</span></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span>  </span><span id="local-6989586621679194363"><span class="annot"><span class="annottext">addPolicy :: String -&gt; Policy -&gt; AccountsT m ()
+</span><a href="#local-6989586621679194363"><span class="hs-identifier hs-var hs-var hs-var hs-var">addPolicy</span></a></span></span><span> </span><span id="local-6989586621679194365"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194365"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679194366"><span class="annot"><span class="annottext">Policy
+</span><a href="#local-6989586621679194366"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-76"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; AccountsT m ()
+forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#ensureNonExistingPolicy"><span class="hs-identifier hs-var">ensureNonExistingPolicy</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194365"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-77"></span><span>    </span><span class="annot"><span class="annottext">(Map String Policy -&gt; Map String Policy) -&gt; AccountsT m ()
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(Map String Policy -&gt; Map String Policy) -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#modifyPolicies"><span class="hs-identifier hs-var">modifyPolicies</span></a></span><span> </span><span class="annot"><span class="annottext">((Map String Policy -&gt; Map String Policy) -&gt; AccountsT m ())
+-&gt; (Map String Policy -&gt; Map String Policy) -&gt; AccountsT m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Policy -&gt; Map String Policy -&gt; Map String Policy
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194365"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Policy
+</span><a href="#local-6989586621679194366"><span class="hs-identifier hs-var">val</span></a></span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span>  </span><span id="local-6989586621679194379"><span class="annot"><span class="annottext">subscribeToPolicy :: String -&gt; String -&gt; AccountsT m ()
+</span><a href="#local-6989586621679194379"><span class="hs-identifier hs-var hs-var hs-var hs-var">subscribeToPolicy</span></a></span></span><span> </span><span id="local-6989586621679194381"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194381"><span class="hs-identifier hs-var">userName</span></a></span></span><span> </span><span id="local-6989586621679194382"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194382"><span class="hs-identifier hs-var">polName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-80"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679194383"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194383"><span class="hs-identifier hs-var">bal</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194384"><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679194384"><span class="hs-identifier hs-var">accPols</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; AccountsT m Account
+forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m Account
+</span><a href="Examples.Account.SimpleDomain.html#ensureExistingUser"><span class="hs-identifier hs-var">ensureExistingUser</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194381"><span class="hs-identifier hs-var">userName</span></a></span><span>
+</span><span id="line-81"></span><span>    </span><span class="annot"><span class="annottext">ExceptT AccountsError (StateT Register m) Policy -&gt; AccountsT m ()
+forall (f :: * -&gt; *) a. Functor f =&gt; f a -&gt; f ()
+</span><span class="hs-identifier hs-var">void</span></span><span> </span><span class="annot"><span class="annottext">(ExceptT AccountsError (StateT Register m) Policy
+ -&gt; AccountsT m ())
+-&gt; ExceptT AccountsError (StateT Register m) Policy
+-&gt; AccountsT m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ExceptT AccountsError (StateT Register m) Policy
+forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m Policy
+</span><a href="Examples.Account.SimpleDomain.html#ensureExistingPolicy"><span class="hs-identifier hs-var">ensureExistingPolicy</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194382"><span class="hs-identifier hs-var">polName</span></a></span><span>
+</span><span id="line-82"></span><span>    </span><span class="annot"><span class="annottext">(Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#modifyAccounts"><span class="hs-identifier hs-var">modifyAccounts</span></a></span><span> </span><span class="annot"><span class="annottext">((Map String Account -&gt; Map String Account) -&gt; AccountsT m ())
+-&gt; (Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Account -&gt; Map String Account -&gt; Map String Account
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194381"><span class="hs-identifier hs-var">userName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194383"><span class="hs-identifier hs-var">bal</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Set String -&gt; Set String
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><span class="hs-identifier hs-var">Set.insert</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194382"><span class="hs-identifier hs-var">polName</span></a></span><span> </span><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679194384"><span class="hs-identifier hs-var">accPols</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span>  </span><span id="local-6989586621679194394"><span class="annot"><span class="annottext">unsubscribeToPolicy :: String -&gt; String -&gt; AccountsT m ()
+</span><a href="#local-6989586621679194394"><span class="hs-identifier hs-var hs-var hs-var hs-var">unsubscribeToPolicy</span></a></span></span><span> </span><span id="local-6989586621679194396"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194396"><span class="hs-identifier hs-var">userName</span></a></span></span><span> </span><span id="local-6989586621679194397"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194397"><span class="hs-identifier hs-var">polName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-85"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679194398"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194398"><span class="hs-identifier hs-var">bal</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194399"><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679194399"><span class="hs-identifier hs-var">accPols</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; AccountsT m Account
+forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m Account
+</span><a href="Examples.Account.SimpleDomain.html#ensureExistingUser"><span class="hs-identifier hs-var">ensureExistingUser</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194396"><span class="hs-identifier hs-var">userName</span></a></span><span>
+</span><span id="line-86"></span><span>    </span><span class="annot"><span class="annottext">(Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#modifyAccounts"><span class="hs-identifier hs-var">modifyAccounts</span></a></span><span> </span><span class="annot"><span class="annottext">((Map String Account -&gt; Map String Account) -&gt; AccountsT m ())
+-&gt; (Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Account -&gt; Map String Account -&gt; Map String Account
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194396"><span class="hs-identifier hs-var">userName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194398"><span class="hs-identifier hs-var">bal</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String -&gt; Set String -&gt; Set String
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Set a
+</span><span class="hs-identifier hs-var">Set.delete</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194397"><span class="hs-identifier hs-var">polName</span></a></span><span> </span><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679194399"><span class="hs-identifier hs-var">accPols</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span>  </span><span id="local-6989586621679194403"><span class="annot"><span class="annottext">allPolicies :: AccountsT m [String]
+</span><a href="#local-6989586621679194403"><span class="hs-identifier hs-var hs-var hs-var hs-var">allPolicies</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Register -&gt; [String]) -&gt; AccountsT m [String]
+forall s (m :: * -&gt; *) a. MonadState s m =&gt; (s -&gt; a) -&gt; m a
+</span><span class="hs-identifier hs-var">gets</span></span><span> </span><span class="annot"><span class="annottext">((Register -&gt; [String]) -&gt; AccountsT m [String])
+-&gt; (Register -&gt; [String]) -&gt; AccountsT m [String]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Map String Policy -&gt; [String]
+forall k a. Map k a -&gt; [k]
+</span><span class="hs-identifier hs-var">Map.keys</span></span><span> </span><span class="annot"><span class="annottext">(Map String Policy -&gt; [String])
+-&gt; (Register -&gt; Map String Policy) -&gt; Register -&gt; [String]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Register -&gt; Map String Policy
+</span><a href="Examples.Account.AbstractDomain.html#policies"><span class="hs-identifier hs-var">policies</span></a></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span>  </span><span id="local-6989586621679194409"><span class="annot"><span class="annottext">getUserBalance :: String -&gt; AccountsT m Integer
+</span><a href="#local-6989586621679194409"><span class="hs-identifier hs-var hs-var hs-var hs-var">getUserBalance</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Account -&gt; Integer
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">(Account -&gt; Integer) -&gt; AccountsT m Account -&gt; AccountsT m Integer
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(AccountsT m Account -&gt; AccountsT m Integer)
+-&gt; (String -&gt; AccountsT m Account) -&gt; String -&gt; AccountsT m Integer
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; AccountsT m Account
+forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m Account
+</span><a href="Examples.Account.SimpleDomain.html#ensureExistingUser"><span class="hs-identifier hs-var">ensureExistingUser</span></a></span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span>  </span><span id="local-6989586621679194424"><span class="annot"><span class="annottext">simulate :: forall a. AccountsT m a -&gt; AccountsT m (Maybe a)
+</span><a href="#local-6989586621679194424"><span class="hs-identifier hs-var hs-var hs-var hs-var">simulate</span></a></span></span><span> </span><span id="local-6989586621679194426"><span class="annot"><span class="annottext">AccountsT m a
+</span><a href="#local-6989586621679194426"><span class="hs-identifier hs-var">comp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-93"></span><span>    </span><span id="local-6989586621679194427"><span class="annot"><span class="annottext">Register
+</span><a href="#local-6989586621679194427"><span class="hs-identifier hs-var">current</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ExceptT AccountsError (StateT Register m) Register
+forall s (m :: * -&gt; *). MonadState s m =&gt; m s
+</span><span class="hs-identifier hs-var">get</span></span><span>
+</span><span id="line-94"></span><span>    </span><span id="local-6989586621679194429"><span class="annot"><span class="annottext">(Either AccountsError a, Map String Account)
+</span><a href="#local-6989586621679194429"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">StateT Register m (Either AccountsError a, Map String Account)
+-&gt; ExceptT
+     AccountsError
+     (StateT Register m)
+     (Either AccountsError a, Map String Account)
+forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; ExceptT AccountsError m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+(MonadTrans t, Monad m) =&gt;
+m a -&gt; t m a
+</span><span class="hs-identifier hs-var">lift</span></span><span> </span><span class="annot"><span class="annottext">(StateT Register m (Either AccountsError a, Map String Account)
+ -&gt; ExceptT
+      AccountsError
+      (StateT Register m)
+      (Either AccountsError a, Map String Account))
+-&gt; StateT Register m (Either AccountsError a, Map String Account)
+-&gt; ExceptT
+     AccountsError
+     (StateT Register m)
+     (Either AccountsError a, Map String Account)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">m (Either AccountsError a, Map String Account)
+-&gt; StateT Register m (Either AccountsError a, Map String Account)
+forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; StateT Register m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+(MonadTrans t, Monad m) =&gt;
+m a -&gt; t m a
+</span><span class="hs-identifier hs-var">lift</span></span><span> </span><span class="annot"><span class="annottext">(m (Either AccountsError a, Map String Account)
+ -&gt; StateT Register m (Either AccountsError a, Map String Account))
+-&gt; m (Either AccountsError a, Map String Account)
+-&gt; StateT Register m (Either AccountsError a, Map String Account)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Register
+-&gt; AccountsT m a -&gt; m (Either AccountsError a, Map String Account)
+forall (m :: * -&gt; *) a.
+Monad m =&gt;
+Register
+-&gt; AccountsT m a -&gt; m (Either AccountsError a, Map String Account)
+</span><a href="Examples.Account.SimpleDomain.html#runAccountsT"><span class="hs-identifier hs-var">runAccountsT</span></a></span><span> </span><span class="annot"><span class="annottext">Register
+</span><a href="#local-6989586621679194427"><span class="hs-identifier hs-var">current</span></a></span><span> </span><span class="annot"><span class="annottext">AccountsT m a
+</span><a href="#local-6989586621679194426"><span class="hs-identifier hs-var">comp</span></a></span><span>
+</span><span id="line-95"></span><span>    </span><span class="annot"><span class="annottext">Maybe a -&gt; AccountsT m (Maybe a)
+forall a. a -&gt; ExceptT AccountsError (StateT Register m) a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Maybe a -&gt; AccountsT m (Maybe a))
+-&gt; Maybe a -&gt; AccountsT m (Maybe a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Either AccountsError a, Map String Account)
+-&gt; Either AccountsError a
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">(Either AccountsError a, Map String Account)
+</span><a href="#local-6989586621679194429"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-96"></span><span>      </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="annot"><span class="annottext">AccountsError
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe a
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-97"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679194430"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679194430"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe a
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679194430"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span>  </span><span id="local-6989586621679194463"><span class="annot"><span class="annottext">issuePayment :: Payment -&gt; AccountsT m ()
+</span><a href="#local-6989586621679194463"><span class="hs-identifier hs-var hs-var hs-var hs-var">issuePayment</span></a></span></span><span> </span><span id="local-6989586621679194465"><span class="annot"><span class="annottext">payment :: Payment
+</span><a href="#local-6989586621679194465"><span class="hs-identifier hs-var">payment</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679194466"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194466"><span class="hs-identifier hs-var">sender</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194467"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194467"><span class="hs-identifier hs-var">amount</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194468"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194468"><span class="hs-identifier hs-var">recipient</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-100"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679194469"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194469"><span class="hs-identifier hs-var">senderBal</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194470"><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679194470"><span class="hs-identifier hs-var">senderPols</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; AccountsT m Account
+forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m Account
+</span><a href="Examples.Account.SimpleDomain.html#ensureExistingUser"><span class="hs-identifier hs-var">ensureExistingUser</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194466"><span class="hs-identifier hs-var">sender</span></a></span><span>
+</span><span id="line-101"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679194471"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194471"><span class="hs-identifier hs-var">recipientBal</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679194472"><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679194472"><span class="hs-identifier hs-var">recipientPols</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">String -&gt; AccountsT m Account
+forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m Account
+</span><a href="Examples.Account.SimpleDomain.html#ensureExistingUser"><span class="hs-identifier hs-var">ensureExistingUser</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194468"><span class="hs-identifier hs-var">recipient</span></a></span><span>
+</span><span id="line-102"></span><span>    </span><span id="local-6989586621679194473"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679194473"><span class="hs-identifier hs-var">sPols</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; String -&gt; ExceptT AccountsError (StateT Register m) Bool)
+-&gt; Bool
+-&gt; Set String
+-&gt; ExceptT AccountsError (StateT Register m) Bool
+forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
+(Foldable t, Monad m) =&gt;
+(b -&gt; a -&gt; m b) -&gt; b -&gt; t a -&gt; m b
+</span><span class="hs-identifier hs-var">foldM</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679194475"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679194475"><span class="hs-identifier hs-var">res</span></a></span></span><span> </span><span id="local-6989586621679194476"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194476"><span class="hs-identifier hs-var">el</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679194477"><span class="annot"><span class="annottext">Policy
+</span><a href="#local-6989586621679194477"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Policy
+</span><a href="#local-6989586621679194477"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Payment
+</span><a href="#local-6989586621679194465"><span class="hs-identifier hs-var">payment</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194469"><span class="hs-identifier hs-var">senderBal</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194466"><span class="hs-identifier hs-var">sender</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679194475"><span class="hs-identifier hs-var">res</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Policy -&gt; Bool)
+-&gt; ExceptT AccountsError (StateT Register m) Policy
+-&gt; ExceptT AccountsError (StateT Register m) Bool
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ExceptT AccountsError (StateT Register m) Policy
+forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m Policy
+</span><a href="Examples.Account.SimpleDomain.html#ensureExistingPolicy"><span class="hs-identifier hs-var">ensureExistingPolicy</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194476"><span class="hs-identifier hs-var">el</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679194470"><span class="hs-identifier hs-var">senderPols</span></a></span><span>
+</span><span id="line-103"></span><span>    </span><span class="annot"><span class="annottext">Bool -&gt; AccountsT m () -&gt; AccountsT m ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><span class="hs-identifier hs-var">unless</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679194473"><span class="hs-identifier hs-var">sPols</span></a></span><span> </span><span class="annot"><span class="annottext">(AccountsT m () -&gt; AccountsT m ())
+-&gt; AccountsT m () -&gt; AccountsT m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">AccountsError -&gt; AccountsT m ()
+forall a.
+AccountsError -&gt; ExceptT AccountsError (StateT Register m) a
+forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">AccountsError
+</span><a href="Examples.Account.SimpleDomain.html#PolicyError"><span class="hs-identifier hs-var">PolicyError</span></a></span><span>
+</span><span id="line-104"></span><span>    </span><span id="local-6989586621679194480"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679194480"><span class="hs-identifier hs-var">rPols</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; String -&gt; ExceptT AccountsError (StateT Register m) Bool)
+-&gt; Bool
+-&gt; Set String
+-&gt; ExceptT AccountsError (StateT Register m) Bool
+forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
+(Foldable t, Monad m) =&gt;
+(b -&gt; a -&gt; m b) -&gt; b -&gt; t a -&gt; m b
+</span><span class="hs-identifier hs-var">foldM</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679194481"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679194481"><span class="hs-identifier hs-var">res</span></a></span></span><span> </span><span id="local-6989586621679194482"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194482"><span class="hs-identifier hs-var">el</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679194483"><span class="annot"><span class="annottext">Policy
+</span><a href="#local-6989586621679194483"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Policy
+</span><a href="#local-6989586621679194483"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Payment
+</span><a href="#local-6989586621679194465"><span class="hs-identifier hs-var">payment</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194471"><span class="hs-identifier hs-var">recipientBal</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194468"><span class="hs-identifier hs-var">recipient</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679194481"><span class="hs-identifier hs-var">res</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Policy -&gt; Bool)
+-&gt; ExceptT AccountsError (StateT Register m) Policy
+-&gt; ExceptT AccountsError (StateT Register m) Bool
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ExceptT AccountsError (StateT Register m) Policy
+forall (m :: * -&gt; *). Monad m =&gt; String -&gt; AccountsT m Policy
+</span><a href="Examples.Account.SimpleDomain.html#ensureExistingPolicy"><span class="hs-identifier hs-var">ensureExistingPolicy</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194482"><span class="hs-identifier hs-var">el</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679194472"><span class="hs-identifier hs-var">recipientPols</span></a></span><span>
+</span><span id="line-105"></span><span>    </span><span class="annot"><span class="annottext">Bool -&gt; AccountsT m () -&gt; AccountsT m ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><span class="hs-identifier hs-var">unless</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679194480"><span class="hs-identifier hs-var">rPols</span></a></span><span> </span><span class="annot"><span class="annottext">(AccountsT m () -&gt; AccountsT m ())
+-&gt; AccountsT m () -&gt; AccountsT m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">AccountsError -&gt; AccountsT m ()
+forall a.
+AccountsError -&gt; ExceptT AccountsError (StateT Register m) a
+forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">AccountsError
+</span><a href="Examples.Account.SimpleDomain.html#PolicyError"><span class="hs-identifier hs-var">PolicyError</span></a></span><span>
+</span><span id="line-106"></span><span>    </span><span class="annot"><span class="annottext">(Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#modifyAccounts"><span class="hs-identifier hs-var">modifyAccounts</span></a></span><span> </span><span class="annot"><span class="annottext">((Map String Account -&gt; Map String Account) -&gt; AccountsT m ())
+-&gt; (Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Account -&gt; Map String Account -&gt; Map String Account
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194468"><span class="hs-identifier hs-var">recipient</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194471"><span class="hs-identifier hs-var">recipientBal</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194467"><span class="hs-identifier hs-var">amount</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679194472"><span class="hs-identifier hs-var">recipientPols</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-107"></span><span>    </span><span class="annot"><span class="annottext">(Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+</span><a href="Examples.Account.SimpleDomain.html#modifyAccounts"><span class="hs-identifier hs-var">modifyAccounts</span></a></span><span> </span><span class="annot"><span class="annottext">((Map String Account -&gt; Map String Account) -&gt; AccountsT m ())
+-&gt; (Map String Account -&gt; Map String Account) -&gt; AccountsT m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Account -&gt; Map String Account -&gt; Map String Account
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679194466"><span class="hs-identifier hs-var">sender</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194469"><span class="hs-identifier hs-var">senderBal</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679194467"><span class="hs-identifier hs-var">amount</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Set String
+</span><a href="#local-6989586621679194470"><span class="hs-identifier hs-var">senderPols</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-108"></span></pre></body></html>
