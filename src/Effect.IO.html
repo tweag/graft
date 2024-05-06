@@ -7,12 +7,13 @@
 </span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
 </span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
 </span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
-</span><span id="line-10"></span><span>
-</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Effect.IO</span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-12"></span><span>
-</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.IO.Class</span></span><span>
-</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.TH.html"><span class="hs-identifier">Effect.TH</span></a></span><span>
-</span><span id="line-15"></span><span>
-</span><span id="line-16"></span><span id="local-6989586621679193094"><span id="MonadIOEffect"><span id="local-6989586621679193104"><span id="LiftIO"><span class="hs-identifier">defineEffectType</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadIO</span></span></span></span></span><span>
-</span><span id="line-17"></span><span id="local-6989586621679193112"><span id="local-6989586621679193113"><span id="local-6989586621679193124"><span id="local-6989586621679193133"><span class="hs-identifier">makeEffect</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadIO</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadIOEffect</span></span></span></span></span><span>
-</span><span id="line-18"></span></pre></body></html>
+</span><span id="line-10"></span><span class="hs-pragma">{-# OPTIONS_GHC -Wno-orphans #-}</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Effect.IO</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.IO.Class</span></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Effect.TH.html"><span class="hs-identifier">Effect.TH</span></a></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span id="local-6989586621679146299"><span id="MonadIOEffect"><span id="local-6989586621679146309"><span id="LiftIO"><span class="hs-identifier">defineEffectType</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadIO</span></span></span></span></span><span>
+</span><span id="line-18"></span><span id="local-6989586621679146317"><span id="local-6989586621679146318"><span id="local-6989586621679146329"><span id="local-6989586621679146338"><span class="hs-identifier">makeEffect</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadIO</span><span> </span><span class="hs-special">''</span><span class="hs-identifier">MonadIOEffect</span></span></span></span></span><span>
+</span><span id="line-19"></span></pre></body></html>
