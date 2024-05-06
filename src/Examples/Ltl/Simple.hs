@@ -22,6 +22,7 @@
 module Examples.Ltl.Simple where
 
 import Control.Applicative
+import Control.Monad
 import Control.Monad.Except
 import Control.Monad.State
 import Data.Map (Map)

@@ -54,8 +54,7 @@ instance (MonadPlus m, InterpretEffect m op, InterpretNextBind t m op) => Interp
       Nested acts changeMod wrap -> wrap $ evalActs (changeMod nextBind) acts
       Direct direct -> case nextBind of
         DoNothing x ->
-          fmap (,DoNothing x) $
-            interpretEffect (fmap fst . evalActs (DoNothing x)) op
+          (,DoNothing x) <$> interpretEffect (fmap fst . evalActs (DoNothing x)) op
         Fail -> mzero
         Now t -> do
           mAx <- direct t

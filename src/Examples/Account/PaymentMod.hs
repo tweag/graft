@@ -11,10 +11,8 @@
 module Examples.Account.PaymentMod where
 
 import Control.Applicative
-import Control.Monad.Except
-import Data.Map (Map)
+import Control.Monad
 import Data.Map qualified as Map
-import Data.Set (Set)
 import Effect.Error
 import Effect.Error.Passthrough ()
 import Examples.Account.AbstractDomain
