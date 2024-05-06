@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/63143ac2c9186be6d9da6035fa22620018c85932";
     flake-utils.url = "github:numtide/flake-utils";
     pre-commit-hooks = {
       url = "github:cachix/pre-commit-hooks.nix";
@@ -17,7 +17,7 @@
     with flake-utils.lib;
       eachDefaultSystem (system: let
         pkgs = nixpkgs.legacyPackages.${system};
-        hpkgs = pkgs.haskell.packages.ghc94;
+        hpkgs = pkgs.haskell.packages.ghc96;
         pre-commit = pre-commit-hooks.lib.${system}.run {
           src = ./.;
           hooks = {
@@ -31,17 +31,17 @@
             ## itself a dependency of HLS. We therefore define a function
             ## `getDeps` that gathers direct Haskell build dependencies and we
             ## use it to go get our Ormolu.
-            ormolu = let
-              getDeps = p:
-                builtins.listToAttrs (map (dependency:
-                  pkgs.lib.nameValuePair dependency.pname dependency)
-                p.passthru.getBuildInputs.haskellBuildInputs);
-            in
-              (getDeps
-                (getDeps
-                  hpkgs.haskell-language-server)
-                .hls-ormolu-plugin)
-              .ormolu;
+            # ormolu = let
+            #   getDeps = p:
+            #     builtins.listToAttrs (map (dependency:
+            #       pkgs.lib.nameValuePair dependency.pname dependency)
+            #     p.passthru.getBuildInputs.haskellBuildInputs);
+            # in
+            #   (getDeps
+            #     (getDeps
+            #       hpkgs.haskell-language-server)
+            #     .hls-ormolu-plugin)
+            #   .ormolu;
           };
         };
       in {
@@ -52,7 +52,7 @@
             ## need to add it here. If it did not, we would have to resort to a
             ## trick such as the one used in `pre-commit-hooks`'s configuration
             ## above.
-            buildInputs = with hpkgs; [ghc hpack cabal-install haskell-language-server];
+            buildInputs = with hpkgs; [ghc hpack cabal-install ormolu haskell-language-server];
             inherit (pre-commit) shellHook;
           };
           ci = pkgs.mkShell {

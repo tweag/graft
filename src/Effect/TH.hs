@@ -239,7 +239,7 @@ makeEffect className effectName = do
 
     -- make a big tuple of the form (...((((), a), b), c) ...) out of a list like [a, b, c]
     bigTuple :: [Type] -> Type
-    bigTuple = foldl (\a b -> AppT (AppT (TupleT 2) a) b) (TupleT 0)
+    bigTuple = foldl (AppT . AppT (TupleT 2)) (TupleT 0)
 
 -- | Write a "reification" instance for an effect type. Such an instance
 -- allows writing 'AST's containing effects of that type using the syntax of

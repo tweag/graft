@@ -22,3 +22,4 @@ instance (MonadWriter e m) => InterpretEffectStateful x m (MonadWriterEffect e) 
       ((a, f), x') <- interpret x acts
       return ((a, x'), f)
   interpretEffectStateful _ x (Tell w) = (,x) <$> tell w
+  interpretEffectStateful _ x (Writer (a, w)) = (,x) <$> (tell w >> return a)

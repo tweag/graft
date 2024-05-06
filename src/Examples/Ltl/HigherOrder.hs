@@ -17,6 +17,7 @@
 module Examples.Ltl.HigherOrder where
 
 import Control.Applicative
+import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Identity
 import Control.Monad.State
